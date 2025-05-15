@@ -59,7 +59,6 @@ This work is built on many amazing research works and open-source projects,
 - [GaussianShader: 3D Gaussian Splatting with Shading Functions for Reflective Surfaces](https://github.com/Asparagus15/GaussianShader)
 - [3D Gaussian Splatting with Deferred Reflection](https://github.com/gapszju/3DGS-DR/tree/main)
 - [2DGS: 2D Gaussian Splatting for Geometrically Accurate Radiance Fields](https://surfsplatting.github.io/)
-- [EnvGS: Modeling View-Dependent Appearance with Environment Gaussian](https://github.com/zju3dv/EnvGS)
 
 We are grateful to the authors for releasing their code.
 
