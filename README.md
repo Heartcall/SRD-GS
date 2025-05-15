@@ -56,8 +56,10 @@ For mesh extraction, we adopt the same method as used in [2DGS](https://surfspla
 This work is built on many amazing research works and open-source projects,
 
 - [NeRF-Casting: Improved View-Dependent Appearance with Consistent Reflections](https://dorverbin.github.io/nerf-casting/)
+- [GaussianShader: 3D Gaussian Splatting with Shading Functions for Reflective Surfaces](https://github.com/Asparagus15/GaussianShader)
 - [3D Gaussian Splatting with Deferred Reflection](https://github.com/gapszju/3DGS-DR/tree/main)
 - [2DGS: 2D Gaussian Splatting for Geometrically Accurate Radiance Fields](https://surfsplatting.github.io/)
+- [EnvGS: Modeling View-Dependent Appearance with Environment Gaussian](https://github.com/zju3dv/EnvGS)
 
 We are grateful to the authors for releasing their code.
 
