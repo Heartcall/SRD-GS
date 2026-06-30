@@ -24,6 +24,7 @@ class SRDGaussianModelStaticTest(unittest.TestCase):
         self.assertEqual(args.srd_reflection_warmup, 3000)
         self.assertFalse(args.srd_detach_specular_geometry)
         self.assertFalse(args.srd_use_branch_gate)
+        self.assertFalse(args.srd_rasterize_branch_maps)
         self.assertEqual(args.srd_reflection_dim, 4)
         self.assertEqual(args.srd_transport_dim, 4)
 

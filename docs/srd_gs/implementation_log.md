@@ -546,3 +546,31 @@ Status: partial GO for accepted GT mesh geometry metrics on existing `ball` smok
 - `conda run -n ref_gs python scripts/srd_gs/inspect_single_scene_validation.py --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --eval --enable_srd_gs --output_dir outputs/srd_gs_validation/ball_gt_mesh`: passed.
 - `conda run -n ref_gs python eval_reflective_assets.py --eval_pairs_dir outputs/srd_gs_metric_chain/ball/refgs_baseline/render_eval_pairs --pred_geometry outputs/srd_gs_smoke/results/ball/refgs_baseline/mesh_unified.ply --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --geometry_sample_count 1000 --fscore_threshold 0.01 --output_dir outputs/srd_gs_metric_chain/ball/refgs_baseline/eval_with_gt_mesh`: passed.
 - `conda run -n ref_gs python eval_reflective_assets.py --eval_pairs_dir outputs/srd_gs_metric_chain/ball/full_srd_gs/render_eval_pairs --pred_geometry outputs/srd_gs_smoke/results/ball/full_srd_gs/mesh_surface.ply --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --geometry_sample_count 1000 --fscore_threshold 0.01 --output_dir outputs/srd_gs_metric_chain/ball/full_srd_gs/eval_with_gt_mesh`: passed.
+
+## Milestone 14: Branch-map Raster Feature Path
+
+Status: implementation GO for explicit branch-map raster feature path; CUDA runtime verification still required
+
+### Actions Completed
+
+- Added `tests/test_srd_branch_raster_features.py` and confirmed RED failure because `utils.srd_branch_maps` and `--srd_rasterize_branch_maps` were missing.
+- Added `utils/srd_branch_maps.py` with `pack_srd_raster_features()` and `unpack_srd_raster_maps()`.
+- Extended `utils/srd_branch_policy.py` with `raster_feature_channels` policy metadata.
+- Added `--srd_rasterize_branch_maps` to `arguments/__init__.py` with baseline-safe default `False`.
+- Stored `srd_rasterize_branch_maps` in `GaussianModel`.
+- Updated `gaussian_renderer.render()` to use feature-channel packing/unpacking when the new flag is enabled.
+- Added `configs/srd_gs/full_srd_gs_branch_raster.yaml`.
+- Updated static renderer/config tests.
+- Verified dry-run command generation for the new branch-raster config.
+
+### Key Findings
+
+- Default `full_srd_gs.yaml` remains conservative and does not enable branch-map rasterization.
+- The new branch-raster config writes `--enable_srd_gs --srd_rasterize_branch_maps --srd_use_branch_gate` into the train command.
+- The code path is now explicit and test-covered, but CUDA render/backward behavior remains unverified.
+
+### Tests and Checks
+
+- `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
+- `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
+- `scripts/srd_gs/run_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster.yaml --source_path /tmp/srd_dummy_scene --output_root /tmp/srd_branch_raster_dryrun --scene_name dummy --iterations 10`: passed as dry-run.

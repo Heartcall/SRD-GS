@@ -1,4 +1,30 @@
-def get_srd_branch_map_policy(use_branch_gate_requested=False):
+def get_srd_branch_map_policy(use_branch_gate_requested=False, rasterize_branch_maps=False):
+    if rasterize_branch_maps:
+        return {
+            "policy": "raster_feature_channels",
+            "warning": (
+                "Needs Runtime Verification: SRD branch maps are packed into "
+                "the diff-surfel feature-channel path. CUDA backward support "
+                "must be verified on a real training/render smoke."
+            ),
+            "use_branch_gate_requested": bool(use_branch_gate_requested),
+            "gate_applied": bool(use_branch_gate_requested),
+            "branch_gate_map": {
+                "rasterized": True,
+                "backward_to_gaussian": True,
+                "fallback_value": None,
+            },
+            "specular_weight_map": {
+                "rasterized": True,
+                "backward_to_gaussian": True,
+                "fallback_value": None,
+            },
+            "transport_feature_map": {
+                "rasterized": True,
+                "backward_to_gaussian": True,
+                "fallback_value": None,
+            },
+        }
     return {
         "policy": "fallback_neutral_gate",
         "warning": (

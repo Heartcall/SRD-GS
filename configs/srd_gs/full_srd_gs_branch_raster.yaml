@@ -1,0 +1,12 @@
+name: full_srd_gs_branch_raster
+implementation_status: experimental_needs_runtime_verification
+hypothesis: Rasterizing SRD branch-gate, specular-weight, and transport-feature maps should make branch losses and diagnostics depend on the intended Gaussian branch parameters instead of neutral fallbacks.
+what_it_removes: Removes the neutral branch-map fallback used by the conservative full SRD-GS config.
+expected_supporting_result: Non-fallback branch maps, non-null branch diagnostics, and stable or improved reflective-region geometry/material metrics after runtime verification.
+refuting_result: CUDA rasterizer failure, unstable training, branch collapse, worse rendering, or no measurable change versus fallback full SRD-GS.
+metrics_to_inspect_first: branch_gate_mean,chamfer_distance,f_score,normal_mae,highlight_leakage_score,refl_psnr
+train_args: "--enable_srd_gs --srd_rasterize_branch_maps --srd_use_branch_gate"
+branch_gate_policy: raster_feature_channels_needs_runtime_verification
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

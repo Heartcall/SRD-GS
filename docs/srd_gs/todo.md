@@ -20,10 +20,21 @@
 - Milestone 11: Claim-bearing metric-chain repair - partial GO for one-scene metric chain / broad paper-scale still blocked
 - Milestone 12: Single-scene validation gate - conditional GO for inspection / paper-scale still blocked
 - Milestone 13: GT mesh protocol revalidation - partial GO for accepted GT mesh metrics on existing ball smoke / paper-scale still blocked
+- Milestone 14: Branch-map raster feature path - implementation GO / CUDA runtime verification still required
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 13 confirms the updated `ball_gt_mesh.ply` is accepted GT and accepted-GT geometry metrics run on existing smoke artifacts, but SRD branch-map rasterization remains fallback and the current metrics are still 20-iteration/train-split engineering evidence.
+Do not launch broad paper-scale experiments yet. Milestone 14 adds a feature-flagged branch-map raster feature path and dry-run config, but CUDA rasterizer/backward support still needs a bounded runtime smoke before branch-map or paper-scale claims.
+
+## Completed Milestone 14 Notes
+
+- Added `--srd_rasterize_branch_maps` with default `False`.
+- Added `utils/srd_branch_maps.py` for pure tensor packing/unpacking of roughness, reflection feature, branch gate, specular weight, and transport feature channels.
+- `gaussian_renderer.render()` now uses this helper when SRD-GS is enabled.
+- Default/fallback behavior remains neutral unless `--srd_rasterize_branch_maps` is explicitly passed.
+- Added `configs/srd_gs/full_srd_gs_branch_raster.yaml` for dry-run/runtime experiments.
+- Dry-run command generation verified that the new config passes `--enable_srd_gs --srd_rasterize_branch_maps --srd_use_branch_gate`.
+- Branch-map rasterization remains `Needs Runtime Verification` until CUDA render/training smoke confirms non-fallback maps and backward stability.
 
 ## Completed Milestone 13 Notes
 

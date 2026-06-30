@@ -77,6 +77,7 @@ class ModelParams(ParamGroup):
         self.srd_reflection_warmup = 3000
         self.srd_detach_specular_geometry = False
         self.srd_use_branch_gate = False
+        self.srd_rasterize_branch_maps = False
         self.srd_reflection_dim = 4
         self.srd_transport_dim = 4
 

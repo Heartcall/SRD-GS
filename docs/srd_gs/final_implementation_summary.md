@@ -136,7 +136,7 @@ SRD-GS has stable multi-scene mesh/material superiority.
 
 1. Test-split render/GT export requires checkpoints trained or regenerated with `eval=True`; existing smoke metric-chain outputs used the train split because their checkpoint config had `eval=False`.
 2. Accepted GT mesh geometry is now available for Shiny Blender Synthetic `ball` through `ball_gt_mesh.ply`, and the metric chain runs against it. The current accepted-GT metrics are still from 20-iteration smoke artifacts and are not paper-scale evidence.
-3. SRD branch-map rasterization is currently a fallback path, not a full multi-channel rasterizer implementation.
+3. SRD branch-map rasterization now has an explicit feature-flagged raster feature path, but CUDA runtime/backward support remains unverified.
 4. Current texture/material baking is image-space only; UV atlas or mesh-bound material baking is not implemented.
 5. Ablation configs exist, but paper-scale ablation runs have not been executed.
 6. The current runtime smoke is only 20 iterations on one scene.
@@ -145,15 +145,14 @@ SRD-GS has stable multi-scene mesh/material superiority.
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Decide whether to extend the rasterizer ABI for SRD extra channels or add a separate branch-map rasterization pass.
+3. Run a bounded CUDA smoke for `--srd_rasterize_branch_maps` and inspect whether branch maps are non-fallback and backward-stable.
 4. Run one longer single-scene experiment before expanding to the full dry-run matrix.
 5. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification in Milestone 13:
+Fresh verification in Milestone 14:
 
-- `conda run -n ref_gs python -m unittest tests.test_dataset_split_and_gt_protocol tests.test_geometry_eval_utils tests.test_single_scene_validation_gate tests.test_srd_branch_map_fallback_policy`: passed, 12 tests.
-- `conda run -n ref_gs python scripts/srd_gs/inspect_single_scene_validation.py --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --eval --enable_srd_gs --output_dir outputs/srd_gs_validation/ball_gt_mesh`: passed.
-- `conda run -n ref_gs python eval_reflective_assets.py ... --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' ... --output_dir outputs/srd_gs_metric_chain/ball/refgs_baseline/eval_with_gt_mesh`: passed.
-- `conda run -n ref_gs python eval_reflective_assets.py ... --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' ... --output_dir outputs/srd_gs_metric_chain/ball/full_srd_gs/eval_with_gt_mesh`: passed.
+- `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
+- `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
+- `scripts/srd_gs/run_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster.yaml --source_path /tmp/srd_dummy_scene --output_root /tmp/srd_branch_raster_dryrun --scene_name dummy --iterations 10`: passed as dry-run.

@@ -49,9 +49,16 @@ class SRDRenderContractStaticTest(unittest.TestCase):
             with self.subTest(token=token):
                 self.assertIn(token, self.source)
 
-    def test_srd_does_not_send_extra_branch_channels_into_current_rasterizer(self):
-        self.assertNotIn("[gs_roughness, gs_feature, gs_branch_gate", self.source)
-        self.assertIn("rasterizer_extra_channels_unsupported", self.source)
+    def test_srd_branch_rasterization_is_explicitly_flag_gated(self):
+        expected_tokens = [
+            "rasterize_branch_maps = getattr(pc, \"srd_rasterize_branch_maps\", False)",
+            "pack_srd_raster_features(",
+            "unpack_srd_raster_maps(",
+            "rasterize_branch_maps=rasterize_branch_maps",
+        ]
+        for token in expected_tokens:
+            with self.subTest(token=token):
+                self.assertIn(token, self.source)
 
     def test_specular_geometry_detach_contract_exists(self):
         expected_tokens = [
