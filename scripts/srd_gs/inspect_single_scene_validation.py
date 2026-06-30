@@ -10,11 +10,11 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gaussian_renderer import get_srd_branch_map_policy
 from utils.geometry_eval_utils import (
     build_geometry_protocol,
     inspect_blender_split_policy,
 )
+from utils.srd_branch_policy import get_srd_branch_map_policy
 
 
 def _scene_name(source_path):
@@ -37,12 +37,13 @@ def _build_gt_geometry_gate(source_path):
     protocol = build_geometry_protocol(source_path)
     points_policy = protocol.get("points3d_source_policy", {})
     reason = protocol.get("not_available_reason")
-    if points_policy.get("source_evidence"):
+    if protocol["acceptance_status"] != "accepted_gt" and points_policy.get("source_evidence"):
         reason = "{}; {}".format(reason, points_policy["source_evidence"])
     return {
         "candidate_gt_geometry_path": protocol["candidate_gt_geometry_path"],
         "candidate_exists": protocol["candidate_exists"],
         "gt_geometry_type": protocol["gt_geometry_type"],
+        "accepted_gt_source": protocol.get("accepted_gt_source"),
         "acceptance_status": protocol["acceptance_status"],
         "accepted_gt_ready": protocol["acceptance_status"] == "accepted_gt",
         "raw_coordinate_evaluation": protocol["raw_coordinate_evaluation"],
@@ -104,7 +105,7 @@ def build_single_scene_validation_report(source_path, eval_flag, enable_srd_gs):
         "paper_scale_gate": paper_scale_gate,
         "recommended_next_actions": [
             "Train or regenerate one-scene checkpoints with eval=True before test-split metrics.",
-            "Do not use dataset-generated points3d.ply as accepted GT without external protocol approval.",
+            "Use explicit scene GT mesh files for raw-coordinate geometry metrics; keep dataset-generated points3d.ply rejected by default.",
             "Implement true SRD branch-map rasterization before claiming branch-gate/specular-weight training behavior.",
             "Keep broad paper-scale experiments blocked until all gates are GO.",
         ],

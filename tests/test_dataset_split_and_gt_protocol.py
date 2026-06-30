@@ -37,8 +37,17 @@ class DatasetSplitAndGTProtocolTest(unittest.TestCase):
         self.assertIn("random point cloud", policy["source_evidence"])
 
         protocol = build_geometry_protocol(BALL_PATH)
-        self.assertEqual(protocol["acceptance_status"], "not_accepted_gt")
-        self.assertIn("random", protocol["not_available_reason"])
+        self.assertEqual(protocol["points3d_source_policy"]["gt_acceptance"], "not_accepted")
+        self.assertFalse(protocol["points3d_source_policy"]["can_be_used_as_gt_without_manual_verification"])
+
+    def test_scene_gt_mesh_is_accepted_gt_geometry_when_present(self):
+        protocol = build_geometry_protocol(BALL_PATH)
+
+        self.assertEqual(protocol["acceptance_status"], "accepted_gt")
+        self.assertTrue(protocol["candidate_exists"])
+        self.assertEqual(protocol["gt_geometry_type"], "mesh")
+        self.assertTrue(protocol["candidate_gt_geometry_path"].endswith("ball_gt_mesh.ply"))
+        self.assertIsNone(protocol["not_available_reason"])
 
 
 if __name__ == "__main__":

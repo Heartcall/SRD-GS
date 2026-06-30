@@ -1,7 +1,7 @@
 from pathlib import Path
 import unittest
 
-from gaussian_renderer import get_srd_branch_map_policy
+from utils.srd_branch_policy import get_srd_branch_map_policy
 
 
 class SRDBranchMapFallbackPolicyTest(unittest.TestCase):

@@ -516,3 +516,33 @@ Status: conditional GO for validation-gate inspection; broad paper-scale experim
 - `conda run -n ref_gs python -m unittest tests.test_single_scene_validation_gate`: passed, 3 tests.
 - `python -m py_compile scripts/srd_gs/inspect_single_scene_validation.py tests/test_single_scene_validation_gate.py`: passed.
 - `conda run -n ref_gs python scripts/srd_gs/inspect_single_scene_validation.py --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --eval --enable_srd_gs --output_dir outputs/srd_gs_validation/ball`: passed.
+
+## Milestone 13: GT Mesh Protocol Revalidation
+
+Status: partial GO for accepted GT mesh geometry metrics on existing `ball` smoke artifacts; broad paper-scale experiments still blocked
+
+### Actions Completed
+
+- Detected updated Shiny Blender Synthetic GT mesh files under per-scene directories, including `/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball/ball_gt_mesh.ply`.
+- Added TDD coverage requiring `build_geometry_protocol()` to accept explicit scene GT mesh while keeping `points3d.ply` rejected.
+- Updated `utils/geometry_eval_utils.py` to prefer `<scene>_gt_mesh.ply` over `points3d.ply`.
+- Updated `eval_reflective_assets.py` so `--source_path` automatically computes geometry metrics when accepted GT mesh exists.
+- Moved pure branch-map policy metadata to `utils/srd_branch_policy.py`, avoiding heavy renderer imports in validation scripts/tests.
+- Added local ASCII PLY mesh face-normal computation to avoid `open3d` import for the updated GT mesh.
+- Regenerated validation output under `outputs/srd_gs_validation/ball_gt_mesh/`.
+- Evaluated existing Ref-GS and SRD-GS 20-iteration smoke meshes against `ball_gt_mesh.ply` under `outputs/srd_gs_metric_chain/ball/*/eval_with_gt_mesh/`.
+- Added `docs/srd_gs/13_gt_mesh_protocol_revalidation.md`.
+
+### Key Findings
+
+- `ball_gt_mesh.ply` clears the accepted-GT geometry gate for the `ball` scene.
+- `points3d.ply` remains rejected by default.
+- Paper-scale gate remains `NO-GO` because SRD branch maps are still fallback buffers, not rasterized differentiable maps.
+- Accepted-GT mesh metrics are now non-null for the existing smoke artifacts, but they are still 20-iteration/train-split engineering evidence.
+
+### Tests and Checks
+
+- `conda run -n ref_gs python -m unittest tests.test_dataset_split_and_gt_protocol tests.test_geometry_eval_utils tests.test_single_scene_validation_gate tests.test_srd_branch_map_fallback_policy`: passed, 12 tests.
+- `conda run -n ref_gs python scripts/srd_gs/inspect_single_scene_validation.py --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --eval --enable_srd_gs --output_dir outputs/srd_gs_validation/ball_gt_mesh`: passed.
+- `conda run -n ref_gs python eval_reflective_assets.py --eval_pairs_dir outputs/srd_gs_metric_chain/ball/refgs_baseline/render_eval_pairs --pred_geometry outputs/srd_gs_smoke/results/ball/refgs_baseline/mesh_unified.ply --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --geometry_sample_count 1000 --fscore_threshold 0.01 --output_dir outputs/srd_gs_metric_chain/ball/refgs_baseline/eval_with_gt_mesh`: passed.
+- `conda run -n ref_gs python eval_reflective_assets.py --eval_pairs_dir outputs/srd_gs_metric_chain/ball/full_srd_gs/render_eval_pairs --pred_geometry outputs/srd_gs_smoke/results/ball/full_srd_gs/mesh_surface.ply --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --geometry_sample_count 1000 --fscore_threshold 0.01 --output_dir outputs/srd_gs_metric_chain/ball/full_srd_gs/eval_with_gt_mesh`: passed.

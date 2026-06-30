@@ -19,10 +19,21 @@
 - Milestone 10: Paper-scale experiment expansion - done as dry-run package / paper-scale claim NO-GO
 - Milestone 11: Claim-bearing metric-chain repair - partial GO for one-scene metric chain / broad paper-scale still blocked
 - Milestone 12: Single-scene validation gate - conditional GO for inspection / paper-scale still blocked
+- Milestone 13: GT mesh protocol revalidation - partial GO for accepted GT mesh metrics on existing ball smoke / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 12 confirms the `ball` test split is available with `eval=True`, but rejects dataset-generated `points3d.ply` as accepted GT and keeps SRD branch-map rasterization blocked.
+Do not launch broad paper-scale experiments yet. Milestone 13 confirms the updated `ball_gt_mesh.ply` is accepted GT and accepted-GT geometry metrics run on existing smoke artifacts, but SRD branch-map rasterization remains fallback and the current metrics are still 20-iteration/train-split engineering evidence.
+
+## Completed Milestone 13 Notes
+
+- `utils/geometry_eval_utils.py` now discovers explicit scene GT meshes as `<scene>/<scene>_gt_mesh.ply`, with `../gt/<scene>_gt_mesh.ply` as fallback.
+- `points3d.ply` remains rejected by default as dataset-reader generated initialization geometry.
+- `eval_reflective_assets.py --source_path ...` now automatically enables geometry metrics when `build_geometry_protocol()` finds accepted GT mesh.
+- `utils/srd_branch_policy.py` avoids importing `gaussian_renderer` for pure branch-map policy checks.
+- ASCII PLY mesh loading computes vertex normals from faces locally, avoiding `open3d` for the updated GT mesh.
+- New outputs live under `outputs/srd_gs_validation/ball_gt_mesh/` and `outputs/srd_gs_metric_chain/ball/*/eval_with_gt_mesh/`.
+- Paper-scale gate remains `NO-GO` because `srd_branch_maps_not_rasterized` is still unresolved.
 
 ## Completed Milestone 12 Notes
 

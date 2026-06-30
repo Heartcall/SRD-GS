@@ -149,7 +149,7 @@ def main():
                 pred_geometry_path=args.pred_geometry,
                 gt_geometry_path=args.gt_geometry_path,
                 source_path=args.source_path,
-                accept_gt_geometry=args.accept_dataset_points3d_as_gt,
+                accept_gt_geometry=True if args.accept_dataset_points3d_as_gt else None,
                 sample_count=args.geometry_sample_count,
                 fscore_threshold=args.fscore_threshold,
             )

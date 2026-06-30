@@ -4,6 +4,8 @@
 
 Status: conditional GO for validation-gate inspection; paper-scale experiments remain NO-GO.
 
+Update: Milestone 13 supersedes the GT-geometry part of this gate after Shiny Blender Synthetic per-scene GT mesh files were added. `ball_gt_mesh.ply` is now accepted GT for `ball`; `points3d.ply` remains rejected.
+
 This milestone does not train, render, or evaluate new checkpoints. It converts the post-Milestone 11 blockers into a reusable inspection gate for one-scene validation.
 
 ## Changed Files

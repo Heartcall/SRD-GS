@@ -19,7 +19,7 @@ def _load_module():
 
 
 class SingleSceneValidationGateTest(unittest.TestCase):
-    def test_ball_eval_split_ready_but_dataset_points3d_does_not_unlock_paper_scale(self):
+    def test_ball_eval_split_and_updated_gt_mesh_clear_gt_blocker_but_not_branch_map_blocker(self):
         module = _load_module()
 
         report = module.build_single_scene_validation_report(
@@ -31,11 +31,12 @@ class SingleSceneValidationGateTest(unittest.TestCase):
         self.assertEqual(report["scene"], "ball")
         self.assertTrue(report["split_gate"]["test_split_ready"])
         self.assertEqual(report["split_gate"]["test_frames"], 200)
-        self.assertFalse(report["gt_geometry_gate"]["accepted_gt_ready"])
-        self.assertEqual(report["gt_geometry_gate"]["acceptance_status"], "not_accepted_gt")
-        self.assertIn("random point cloud", report["gt_geometry_gate"]["reason"])
+        self.assertTrue(report["gt_geometry_gate"]["accepted_gt_ready"])
+        self.assertEqual(report["gt_geometry_gate"]["acceptance_status"], "accepted_gt")
+        self.assertIn("ball_gt_mesh.ply", report["gt_geometry_gate"]["candidate_gt_geometry_path"])
+        self.assertIsNone(report["gt_geometry_gate"]["reason"])
         self.assertFalse(report["paper_scale_gate"]["allowed"])
-        self.assertIn("accepted_gt_geometry_unavailable", report["paper_scale_gate"]["blockers"])
+        self.assertNotIn("accepted_gt_geometry_unavailable", report["paper_scale_gate"]["blockers"])
         self.assertIn("srd_branch_maps_not_rasterized", report["paper_scale_gate"]["blockers"])
 
     def test_report_writer_emits_json_and_markdown(self):
