@@ -489,3 +489,30 @@ Status: partial GO for one-scene metric chain; broad paper-scale experiments sti
 - `git diff --check`: passed.
 - M11 artifact existence checks: passed.
 - Prohibited process scan for train/render/eval/export commands: no matching process.
+
+## Milestone 12: Single-scene Validation Gate
+
+Status: conditional GO for validation-gate inspection; broad paper-scale experiments still blocked
+
+### Actions Completed
+
+- Added `tests/test_single_scene_validation_gate.py` and confirmed RED failure before implementation because `scripts/srd_gs/inspect_single_scene_validation.py` did not exist.
+- Added `scripts/srd_gs/inspect_single_scene_validation.py`.
+- Added a CLI-entry regression test after direct script execution initially failed with `ModuleNotFoundError: No module named 'gaussian_renderer'`.
+- Fixed the script entrypoint by inserting the repository root into `sys.path`.
+- Generated `outputs/srd_gs_validation/ball/single_scene_validation_report.json`.
+- Generated `outputs/srd_gs_validation/ball/single_scene_validation_report.md`.
+- Added `docs/srd_gs/12_single_scene_validation_gate.md`.
+
+### Key Findings
+
+- `ball` has a usable test split when inspected with `eval=True`: 100 effective train frames and 200 effective test frames.
+- `points3d.ply` is not accepted GT geometry because the Blender dataset reader can generate/store it as a random point cloud.
+- SRD branch maps remain fallback buffers, not true rasterized differentiable branch maps.
+- Paper-scale gate remains `NO-GO` with blockers `accepted_gt_geometry_unavailable` and `srd_branch_maps_not_rasterized`.
+
+### Tests and Checks
+
+- `conda run -n ref_gs python -m unittest tests.test_single_scene_validation_gate`: passed, 3 tests.
+- `python -m py_compile scripts/srd_gs/inspect_single_scene_validation.py tests/test_single_scene_validation_gate.py`: passed.
+- `conda run -n ref_gs python scripts/srd_gs/inspect_single_scene_validation.py --source_path '/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball' --eval --enable_srd_gs --output_dir outputs/srd_gs_validation/ball`: passed.

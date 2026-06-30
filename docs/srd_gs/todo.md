@@ -18,10 +18,20 @@
 - Milestone 9: Minimal experiment loop - done
 - Milestone 10: Paper-scale experiment expansion - done as dry-run package / paper-scale claim NO-GO
 - Milestone 11: Claim-bearing metric-chain repair - partial GO for one-scene metric chain / broad paper-scale still blocked
+- Milestone 12: Single-scene validation gate - conditional GO for inspection / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 11 repaired the one-scene render/GT metric chain, but branch-map rasterization remains fallback and candidate GT geometry still needs dataset/protocol verification.
+Do not launch broad paper-scale experiments yet. Milestone 12 confirms the `ball` test split is available with `eval=True`, but rejects dataset-generated `points3d.ply` as accepted GT and keeps SRD branch-map rasterization blocked.
+
+## Completed Milestone 12 Notes
+
+- `scripts/srd_gs/inspect_single_scene_validation.py` writes a JSON/Markdown validation gate report without launching training, rendering, or evaluation.
+- `tests/test_single_scene_validation_gate.py` covers the report builder, report writer, and direct script entrypoint.
+- For Shiny Blender Synthetic `ball`, `eval=True` exposes 100 effective train frames and 200 effective test frames.
+- `points3d.ply` is classified as `not_accepted_gt` because the Blender dataset reader can generate/store it as a random point cloud.
+- SRD branch maps remain non-rasterized fallback buffers.
+- `outputs/srd_gs_validation/ball/single_scene_validation_report.{json,md}` record `Paper-scale gate: NO-GO`.
 
 ## Completed Milestone 11 Notes
 
