@@ -17,10 +17,22 @@
 - Milestone 8: Ablation configuration system - done
 - Milestone 9: Minimal experiment loop - done
 - Milestone 10: Paper-scale experiment expansion - done as dry-run package / paper-scale claim NO-GO
+- Milestone 11: Claim-bearing metric-chain repair - partial GO for one-scene metric chain / broad paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. First recommended fixes are render/GT export for eval, accepted GT geometry loading, and a decision on real SRD branch-map rasterization versus current fallback.
+Do not launch broad paper-scale experiments yet. Milestone 11 repaired the one-scene render/GT metric chain, but branch-map rasterization remains fallback and candidate GT geometry still needs dataset/protocol verification.
+
+## Completed Milestone 11 Notes
+
+- `render_eval_pairs.py` exports `pred_rgb`, `gt_rgb`, SRD diagnostic buffers, auto reflective masks, and `render_eval_manifest.json`.
+- `eval_reflective_assets.py` can read a render-eval pair directory and compute PSNR, SSIM, Refl-PSNR, and Refl-SSIM.
+- `utils/geometry_eval_utils.py` defines a raw-coordinate geometry protocol and can compute Chamfer/F-score/normal MAE from explicit geometry paths.
+- `configs/srd_gs/full_srd_gs.yaml` no longer enables `--srd_use_branch_gate` while branch maps are fallback.
+- The one-scene smoke used existing 20-iteration checkpoints and `train` split with `max_views=2`.
+- Ref-GS and SRD-GS now both have non-null RGB/reflective metrics in `outputs/srd_gs_metric_chain/ball/*/eval/metrics.csv`.
+- Candidate-GT geometry metrics exist in `outputs/srd_gs_metric_chain/ball/*/eval_with_candidate_gt/metrics.csv` only because `--accept_dataset_points3d_as_gt` was explicitly supplied.
+- Broad paper-scale experiments remain blocked.
 
 ## Completed Milestone 10 Notes
 

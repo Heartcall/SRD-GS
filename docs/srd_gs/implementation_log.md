@@ -446,3 +446,46 @@ Status: done as dry-run package; paper-scale claim gate NO-GO
   - Engineering pipeline: GO for one-scene 20-iteration smoke.
   - Paper-scale quality claim: NO-GO.
   - Stable mesh/material improvement claim: NO-GO.
+
+## Milestone 11: Claim-bearing Metric Chain Repair
+
+Status: partial GO for one-scene metric chain; broad paper-scale experiments still blocked
+
+### Actions Completed
+
+- Diagnosed SRD branch-map fallback in `gaussian_renderer/__init__.py`.
+- Added explicit `get_srd_branch_map_policy()` metadata.
+- Changed missing branch-gate fallback from zero to neutral one to avoid suppressing specular contribution.
+- Removed `--srd_use_branch_gate` from `configs/srd_gs/full_srd_gs.yaml` while rasterized branch maps are unavailable.
+- Added `render_eval_pairs.py` for checkpoint render/GT pair export.
+- Extended `eval_reflective_assets.py` to consume `render_eval_manifest.json` directories.
+- Added `utils/geometry_eval_utils.py` for raw-coordinate candidate GT geometry loading and metric computation.
+- Added `scripts/srd_gs/run_eval_one_scene.sh` for dry-run-first one-scene eval.
+- Added four M11 tests.
+- Ran one-scene metric-chain smoke on existing 20-iteration `ball` checkpoints for `refgs_baseline` and `full_srd_gs`.
+
+### Output Artifacts
+
+- `outputs/srd_gs_metric_chain/ball/refgs_baseline/render_eval_pairs/render_eval_manifest.json`
+- `outputs/srd_gs_metric_chain/ball/refgs_baseline/eval/metrics.csv`
+- `outputs/srd_gs_metric_chain/ball/refgs_baseline/eval_with_candidate_gt/metrics.csv`
+- `outputs/srd_gs_metric_chain/ball/full_srd_gs/render_eval_pairs/render_eval_manifest.json`
+- `outputs/srd_gs_metric_chain/ball/full_srd_gs/eval/metrics.csv`
+- `outputs/srd_gs_metric_chain/ball/full_srd_gs/eval_with_candidate_gt/metrics.csv`
+- `docs/srd_gs/11_claim_metric_chain_repair.md`
+
+### Notes
+
+- Initial `test` split failed because the checkpoint config has `eval=False`; the bounded smoke used `train` split with `max_views=2`.
+- Initial sandboxed CUDA run failed; the bounded smoke commands were rerun outside the sandbox.
+- The smoke proves metric-chain availability, not method superiority.
+- Candidate-GT geometry metrics require manual dataset verification before paper-scale claims.
+
+### Tests and Checks
+
+- `conda run -n ref_gs python -m py_compile render_eval_pairs.py eval_reflective_assets.py utils/metric_utils.py utils/geometry_eval_utils.py gaussian_renderer/__init__.py`: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 46 tests.
+- `bash -n scripts/srd_gs/run_eval_one_scene.sh`: passed.
+- `git diff --check`: passed.
+- M11 artifact existence checks: passed.
+- Prohibited process scan for train/render/eval/export commands: no matching process.
