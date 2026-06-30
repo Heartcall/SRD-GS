@@ -5,7 +5,8 @@ what_it_removes: Nothing; this is the full SRD-GS configuration with surface/ref
 expected_supporting_result: Lower reflective-region geometry error, lower highlight leakage score, cleaner surface-only mesh, and competitive PSNR/SSIM/LPIPS.
 refuting_result: Higher highlight leakage, worse mesh diagnostics, or substantial rendering degradation relative to Ref-GS.
 metrics_to_inspect_first: refl_psnr,refl_ssim,chamfer_distance,f_score,normal_mae,highlight_leakage_score
-train_args: "--enable_srd_gs --srd_use_branch_gate"
+train_args: "--enable_srd_gs"
+branch_gate_policy: fallback_neutral_gate_until_rasterizer_backward_support
 mesh_mode: surface
 texture_mode: specular_free
 eval_enabled: true
