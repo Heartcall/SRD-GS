@@ -26,6 +26,29 @@ DIR="result/"
 use_feature = True
 
 
+def _match_feature_dim(feature, target_dim):
+    """Pad or truncate rasterized feature channels to match Ref-GS light_mlp."""
+    if feature.shape[-1] == target_dim:
+        return feature
+    if feature.shape[-1] > target_dim:
+        return feature[..., :target_dim]
+    pad = torch.zeros(
+        feature.shape[0],
+        target_dim - feature.shape[-1],
+        dtype=feature.dtype,
+        device=feature.device,
+    )
+    return torch.cat([feature, pad], dim=-1)
+
+
+def _slice_feature_or_default(feature_map, start, width, default):
+    """Slice rasterized feature channels, falling back when the rasterizer omits extras."""
+    end = start + width
+    if feature_map.shape[-1] >= end:
+        return feature_map[..., start:end]
+    return default
+
+
 def get_outside_msk(xyz, ENV_CENTER, ENV_RADIUS):
     return torch.sum((xyz - ENV_CENTER[None])**2, dim=-1) > ENV_RADIUS**2
 
@@ -80,12 +103,21 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     shs = pc.get_features
     
     rets =  {}
+    enable_srd_gs = getattr(pc, "enable_srd_gs", False)
+    use_branch_gate = getattr(pc, "srd_use_branch_gate", False)
 
-    gs_albedo = pc.get_albedo
-    gs_roughness = pc.get_roughness
-    gs_feature = pc.get_language_feature
-    
-    input_ts = torch.cat([gs_roughness, gs_feature], dim=-1)
+    gs_albedo = pc.get_surface_albedo if enable_srd_gs else pc.get_albedo
+    gs_roughness = pc.get_surface_roughness if enable_srd_gs else pc.get_roughness
+    gs_feature = pc.get_reflection_feature if enable_srd_gs else pc.get_language_feature
+    gs_feature = _match_feature_dim(gs_feature, pc.gsfeat_dim)
+
+    if enable_srd_gs:
+        # rasterizer_extra_channels_unsupported: current rasterizer backward
+        # returns gradients only for roughness + feature channels.
+        _ = (pc.get_branch_gate, pc.get_specular_weight, pc.get_transport_feature)
+        input_ts = torch.cat([gs_roughness, gs_feature], dim=-1)
+    else:
+        input_ts = torch.cat([gs_roughness, gs_feature], dim=-1)
     
     albedo_map, out_ts, radii, allmap = rasterizer_black(
         means3D = means3D,
@@ -124,14 +156,51 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     
     viewdirs = viewpoint_camera.rays_d
     normals = render_normal.permute(1,2,0)
-    wo = F.normalize(reflect(-viewdirs, normals), dim=-1)
-    
+    normals_for_specular = normals
+    if enable_srd_gs and getattr(pc, "srd_detach_specular_geometry", False):
+        normals_for_specular = normals.detach()
+    reflection_dir = F.normalize(reflect(-viewdirs, normals_for_specular), dim=-1)
+    if enable_srd_gs and getattr(pc, "srd_detach_specular_geometry", False):
+        reflection_dir = reflection_dir.detach()
+    wo = reflection_dir
+
     out_ts = out_ts.permute(1,2,0)
-    
+
     albedo_map = albedo_map.permute(1,2,0)
-    roughness_map = out_ts[..., :1]
-    feature_map = out_ts[..., 1:]
-    
+    roughness_map_full = out_ts[..., :1]
+    feature_end = 1 + pc.gsfeat_dim
+    feature_map_full = out_ts[..., 1:feature_end]
+    if enable_srd_gs:
+        default_branch_gate = torch.zeros_like(roughness_map_full)
+        branch_gate_map_full = _slice_feature_or_default(
+            out_ts, feature_end, 1, default_branch_gate
+        ) if use_branch_gate else default_branch_gate
+        specular_weight_map_full = _slice_feature_or_default(
+            out_ts, feature_end + 1, 1, torch.ones_like(roughness_map_full)
+        )
+        transport_feature_map_full = _slice_feature_or_default(
+            out_ts,
+            feature_end + 2,
+            getattr(pc, "srd_transport_dim", 4),
+            torch.zeros(
+                image_height,
+                image_width,
+                getattr(pc, "srd_transport_dim", 4),
+                dtype=roughness_map_full.dtype,
+                device=roughness_map_full.device,
+            ),
+        )
+    else:
+        branch_gate_map_full = torch.ones_like(roughness_map_full)
+        specular_weight_map_full = torch.ones_like(roughness_map_full)
+        transport_feature_map_full = torch.zeros(
+            image_height,
+            image_width,
+            getattr(pc, "srd_transport_dim", 4),
+            dtype=roughness_map_full.dtype,
+            device=roughness_map_full.device,
+        )
+
     #####################################################################################################################
     
     with torch.no_grad():
@@ -139,10 +208,14 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     
     wo = wo.reshape(-1, 3)[select_index]
     normals = normals.reshape(-1, 3)[select_index]
-    roughness_map = roughness_map.reshape(-1, 1)[select_index]
+    roughness_map = roughness_map_full.reshape(-1, 1)[select_index]
     albedo_map = albedo_map.reshape(-1, 3)[select_index]
-    
-    feature_map = feature_map.reshape(-1, pc.gsfeat_dim)[select_index]
+
+    branch_gate_map = branch_gate_map_full.reshape(-1, 1)[select_index]
+    specular_weight_map = specular_weight_map_full.reshape(-1, 1)[select_index]
+    transport_feature_map = transport_feature_map_full.reshape(-1, transport_feature_map_full.shape[-1])[select_index]
+
+    feature_map = feature_map_full.reshape(-1, pc.gsfeat_dim)[select_index]
     feature_map = F.normalize(feature_map, dim=-1)
     
     feature_map = feature_map.reshape(-1, 1, pc.gsfeat_dim)
@@ -165,11 +238,16 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     input_mlp = torch.cat([wrap_input, spec_feat_dirc], -1)
     mlp_output = pc.light_mlp(input_mlp).float()
     spec_light = torch.exp(torch.clamp(mlp_output, max=5.0))
+    if enable_srd_gs:
+        spec_light = spec_light * specular_weight_map
     
     # Diffuse color
     diff_light = albedo_map
     
-    pbr_rgb = spec_light + diff_light        
+    if enable_srd_gs:
+        pbr_rgb = diff_light + branch_gate_map * spec_light
+    else:
+        pbr_rgb = spec_light + diff_light
     pbr_rgb = linear2srgb(pbr_rgb)
     pbr_rgb = torch.clamp(pbr_rgb, min=0., max=1.)
     
@@ -178,7 +256,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     output_rgb = torch.zeros(image_height, image_width, 3).cuda()
     output_rgb.reshape(-1, 3)[select_index] = pbr_rgb
     output_rgb = output_rgb.permute(2,0,1)
-    
+
     rets.update({
         'pbr_rgb': output_rgb,
 
@@ -191,8 +269,40 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         "viewspace_points": means2D,
         "visibility_filter" : radii > 0,
         "radii": radii,
-    }) 
-        
+    })
+
+    if enable_srd_gs:
+        diffuse_rgb = torch.zeros(image_height, image_width, 3).cuda()
+        diffuse_rgb.reshape(-1, 3)[select_index] = linear2srgb(diff_light)
+        diffuse_rgb = torch.clamp(diffuse_rgb.permute(2,0,1), min=0., max=1.)
+
+        specular_rgb = torch.zeros(image_height, image_width, 3).cuda()
+        specular_rgb.reshape(-1, 3)[select_index] = linear2srgb(spec_light)
+        specular_rgb = torch.clamp(specular_rgb.permute(2,0,1), min=0., max=1.)
+
+        branch_gate_out = branch_gate_map_full.permute(2,0,1)
+        specular_weight_out = specular_weight_map_full.permute(2,0,1)
+        roughness_out = roughness_map_full.permute(2,0,1)
+        transport_feature_out = transport_feature_map_full.permute(2,0,1)
+        reflection_dir_out = reflection_dir.permute(2,0,1)
+        reflection_residual = branch_gate_out * specular_rgb
+        surface_rgb = diffuse_rgb
+
+        rets.update({
+            'surface_rgb': surface_rgb,
+            'surface_alpha': render_alpha,
+            'surface_depth': surf_depth,
+            'surface_normal': surf_normal,
+            'diffuse_rgb': diffuse_rgb,
+            'specular_rgb': specular_rgb,
+            'roughness_map': roughness_out,
+            'reflection_dir': reflection_dir_out,
+            'branch_gate_map': branch_gate_out,
+            'specular_weight_map': specular_weight_out,
+            'transport_feature_map': transport_feature_out,
+            'reflection_residual': reflection_residual,
+        })
+
     if iteration % 500 == 0:
         with torch.no_grad():
             

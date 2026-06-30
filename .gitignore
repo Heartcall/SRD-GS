@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+# 实验输出产物
+outputs/
+result/
+
+# 大文件格式统一忽略
+*.ply
+*.pth
+*.pt
+*.tiff

@@ -1,0 +1,11 @@
+name: no_branch_separation
+implementation_status: runnable_srd_config_needs_runtime_verification
+hypothesis: Branch separation discourages specular residuals from leaking into the surface branch.
+what_it_removes: Sets branch separation loss weight to zero.
+expected_supporting_result: Full SRD-GS should have lower highlight leakage and cleaner surface-only mesh than this ablation.
+refuting_result: No measurable change in highlight leakage, material consistency, or surface mesh diagnostics.
+metrics_to_inspect_first: highlight_leakage_score,chamfer_distance,f_score,normal_mae,refl_psnr
+train_args: "--enable_srd_gs --srd_use_branch_gate --lambda_srd_sep 0"
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

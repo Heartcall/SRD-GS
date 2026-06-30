@@ -97,3 +97,88 @@ def tv_loss(x):
     h_tv = torch.pow((x[:, :, 1:, :] - x[:, :, : h_x - 1, :]), 2).sum()
     w_tv = torch.pow((x[:, :, :, 1:] - x[:, :, :, : w_x - 1]), 2).sum()
     return 2 * (h_tv / count_h + w_tv / count_w) / batch_size
+
+
+def _weighted_mean(value, confidence=None, eps=1e-6):
+    if confidence is None:
+        return value.mean()
+    while confidence.dim() < value.dim():
+        confidence = confidence.unsqueeze(0)
+    confidence = confidence.to(dtype=value.dtype, device=value.device)
+    confidence = torch.broadcast_to(confidence, value.shape)
+    return (value * confidence).sum() / confidence.sum().clamp_min(eps)
+
+
+def branch_separation_loss(branch_gate_map, specular_weight_map, confidence=None):
+    """
+    input tensors: branch_gate_map and specular_weight_map with broadcast-compatible shape.
+    output tensor: scalar overlap penalty.
+    differentiability: differentiable w.r.t. branch_gate_map and specular_weight_map.
+    application level: per-pixel rendered SRD buffers.
+    stage: Stage B and Stage C.
+    risk: over-penalizing overlap can remove valid glossy reflections if the weight is too high.
+    """
+    overlap = torch.abs(branch_gate_map * specular_weight_map)
+    return _weighted_mean(overlap, confidence)
+
+
+def material_consistency_loss(material, reference_material, confidence=None):
+    """
+    input tensors: material and reference_material, e.g. diffuse/surface RGB or roughness maps.
+    output tensor: scalar robust L1 consistency loss.
+    differentiability: differentiable w.r.t. both material tensors.
+    application level: per-pixel or per-texel material buffers.
+    stage: Stage B and Stage C.
+    risk: invalid correspondences or specular-contaminated references can over-smooth material.
+    """
+    return _weighted_mean(torch.abs(material - reference_material), confidence)
+
+
+def transport_consistency_loss(transport_feature, reference_feature=None, confidence=None):
+    """
+    input tensors: transport_feature and optional reference_feature.
+    output tensor: scalar feature consistency or spatial smoothness loss.
+    differentiability: differentiable w.r.t. transport_feature and reference_feature when provided.
+    application level: per-pixel reflection transport feature buffers.
+    stage: Stage B and Stage C.
+    risk: spatial smoothness is only a proxy until visibility-aware correspondence is added.
+    """
+    if reference_feature is not None:
+        return _weighted_mean(torch.abs(transport_feature - reference_feature), confidence)
+
+    if transport_feature.dim() < 3:
+        return torch.abs(transport_feature).mean()
+
+    dx = torch.abs(transport_feature[..., :, 1:] - transport_feature[..., :, :-1]).mean()
+    dy = torch.abs(transport_feature[..., 1:, :] - transport_feature[..., :-1, :]).mean()
+    return dx + dy
+
+
+def highlight_leakage_loss(diffuse_rgb, specular_rgb, branch_gate_map, confidence=None):
+    """
+    input tensors: diffuse_rgb, specular_rgb, and branch_gate_map.
+    output tensor: scalar highlight leakage penalty.
+    differentiability: differentiable w.r.t. diffuse_rgb and specular_rgb.
+    application level: per-pixel rendered color buffers.
+    stage: Stage C.
+    risk: if specular_rgb is inaccurate, this proxy may suppress valid high-frequency diffuse texture.
+    """
+    specular_energy = torch.mean(torch.abs(specular_rgb), dim=0, keepdim=True)
+    leakage_weight = specular_energy * branch_gate_map
+    if confidence is not None:
+        leakage_weight = leakage_weight * confidence
+    diffuse_penalty = _weighted_mean(torch.abs(diffuse_rgb), leakage_weight)
+    specular_penalty = 0.1 * _weighted_mean(torch.abs(specular_rgb), branch_gate_map)
+    return diffuse_penalty + specular_penalty
+
+
+def specular_sparsity_loss(specular_rgb, confidence=None):
+    """
+    input tensors: specular_rgb and optional confidence mask.
+    output tensor: scalar L1 sparsity loss.
+    differentiability: differentiable w.r.t. specular_rgb.
+    application level: per-pixel rendered specular residual.
+    stage: Stage B and Stage C.
+    risk: excessive sparsity can underfit broad glossy lobes on rough materials.
+    """
+    return _weighted_mean(torch.abs(specular_rgb), confidence)

@@ -1,0 +1,11 @@
+name: no_staged_training
+implementation_status: runnable_srd_config_needs_runtime_verification
+hypothesis: Staged training avoids optimizing reflection residuals before geometry has stabilized.
+what_it_removes: Forces manual Stage C from the beginning with no reflection warmup.
+expected_supporting_result: Full staged SRD-GS should produce more stable geometry and lower highlight leakage than this end-to-end variant.
+refuting_result: End-to-end Stage C matches or beats staged training on geometry, texture, and reflective-region metrics.
+metrics_to_inspect_first: normal_mae,depth_error,chamfer_distance,highlight_leakage_score,refl_psnr
+train_args: "--enable_srd_gs --srd_use_branch_gate --srd_stage 3 --srd_reflection_warmup 0"
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

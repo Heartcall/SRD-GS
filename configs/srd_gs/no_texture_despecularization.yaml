@@ -1,0 +1,11 @@
+name: no_texture_despecularization
+implementation_status: runnable_export_config_needs_runtime_verification
+hypothesis: Specular-free texture export should reduce highlight leakage compared with direct final-RGB baking.
+what_it_removes: Uses direct RGB texture baking instead of specular-free surface/diffuse baking.
+expected_supporting_result: Full SRD-GS specular-free export should have lower highlight leakage score than this direct RGB baseline.
+refuting_result: Direct RGB baking has equal or lower highlight leakage and equal material consistency.
+metrics_to_inspect_first: highlight_leakage_score,albedo_error,roughness_error,material_consistency
+train_args: "--enable_srd_gs --srd_use_branch_gate"
+mesh_mode: surface
+texture_mode: direct_rgb
+eval_enabled: true

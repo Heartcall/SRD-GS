@@ -3,7 +3,7 @@
 # GRAPHDECO research group, https://team.inria.fr/graphdeco
 # All rights reserved.
 #
-# This software is free for non-commercial, research and evaluation use 
+# This software is free for non-commercial, research and evaluation use
 # under the terms of the LICENSE.md file.
 #
 # For inquiries contact  george.drettakis@inria.fr
@@ -24,7 +24,7 @@ class ParamGroup:
                 shorthand = True
                 key = key[1:]
             t = type(value)
-            value = value if not fill_none else None 
+            value = value if not fill_none else None
             if shorthand:
                 if t == bool:
                     group.add_argument("--" + key, ("-" + key[0:1]), default=value, action="store_true")
@@ -47,7 +47,7 @@ class ParamGroup:
                 setattr(group, arg[0], arg[1])
         return group
 
-class ModelParams(ParamGroup): 
+class ModelParams(ParamGroup):
     def __init__(self, parser, sentinel=False):
         self.sh_degree = 3
         self._source_path = ""
@@ -57,12 +57,12 @@ class ModelParams(ParamGroup):
         self._white_background = False
         self.data_device = "cuda"
         self.eval = False
-        
+
         self.run_dim = 256
         self.albedo_bias = 0
         self.gsrgb_loss = False
         self.rand_init = False
-        
+
         self.init_until_iter = 0
         self.env_scope_center = [0.,0.,0.]
         self.env_scope_radius = 0.0
@@ -71,6 +71,14 @@ class ModelParams(ParamGroup):
         self.density_weight = 0.0
         self.tv_weight = 0.0
         self.xyz_axis = [0.,0.,0.]
+
+        self.enable_srd_gs = False
+        self.srd_stage = 0
+        self.srd_reflection_warmup = 3000
+        self.srd_detach_specular_geometry = False
+        self.srd_use_branch_gate = False
+        self.srd_reflection_dim = 4
+        self.srd_transport_dim = 4
 
         super().__init__(parser, "Loading Parameters", sentinel)
 
@@ -98,25 +106,30 @@ class OptimizationParams(ParamGroup):
         self.opacity_lr = 0.05
         self.scaling_lr = 0.005
         self.rotation_lr = 0.001
-        
+
         self.albedo_lr = 0.001
         self.mask_lr = 0.002
         self.roughness_lr = 0.002
         self.feature_lr = 0.002
         self.encoding_lr = 0.002
         self.mlp_lr = 0.0005
-        
+
         self.percent_dense = 0.01
         self.lambda_dssim = 0.2
         self.lambda_dist = 0.0
         self.lambda_normal = 0.05
+        self.lambda_srd_sep = 0.02
+        self.lambda_srd_ref = 0.01
+        self.lambda_srd_mat = 0.01
+        self.lambda_srd_tex = 0.01
+        self.lambda_srd_sparsity = 0.005
         self.opacity_cull = 0.05
 
         self.densification_interval = 100
         self.opacity_reset_interval = 3000
         self.densify_from_iter = 500
         self.densify_until_iter = 15_000
-        
+
         self.densify_grad_threshold = 0.0002
         super().__init__(parser, "Optimization Parameters")
 

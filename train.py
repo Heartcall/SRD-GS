@@ -10,7 +10,16 @@ from tqdm import tqdm
 
 from random import randint
 from scene import Scene, GaussianModel
-from utils.loss_utils import l1_loss, ssim, entropy_loss, binary_cross_entropy, tv_loss
+from utils.loss_utils import (
+    branch_separation_loss,
+    highlight_leakage_loss,
+    l1_loss,
+    material_consistency_loss,
+    specular_sparsity_loss,
+    ssim,
+    transport_consistency_loss,
+    binary_cross_entropy,
+)
 from utils.general_utils import safe_state
 from gaussian_renderer import *
 
@@ -23,6 +32,35 @@ try:
     TENSORBOARD_FOUND = True
 except ImportError:
     TENSORBOARD_FOUND = False
+
+
+def get_srd_training_stage(dataset, iteration):
+    if not getattr(dataset, "enable_srd_gs", False):
+        return "baseline"
+
+    manual_stage = int(getattr(dataset, "srd_stage", 0))
+    if manual_stage == 1:
+        return "stage_a"
+    if manual_stage == 2:
+        return "stage_b"
+    if manual_stage == 3:
+        return "stage_c"
+
+    warmup = max(1, int(getattr(dataset, "srd_reflection_warmup", 3000)))
+    if iteration <= warmup:
+        return "stage_a"
+    if iteration <= 2 * warmup:
+        return "stage_b"
+    return "stage_c"
+
+
+def should_apply_srd_losses(dataset, iteration):
+    return get_srd_training_stage(dataset, iteration) in ("stage_b", "stage_c")
+
+
+def _zero_like_loss(reference):
+    return reference.sum() * 0.0
+
 
 def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint):
     first_iter = 0
@@ -50,6 +88,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     ema_loss_for_log = 0.0
     ema_dist_for_log = 0.0
     ema_normal_for_log = 0.0
+    ema_srd_for_log = {
+        "loss_sep": 0.0,
+        "loss_ref": 0.0,
+        "loss_mat": 0.0,
+        "loss_tex": 0.0,
+    }
 
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
     first_iter += 1
@@ -100,6 +144,50 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         normal_loss = lambda_normal * (normal_error).mean()
         dist_loss = lambda_dist * (rend_dist).mean()
         loss = loss + dist_loss + normal_loss
+
+        srd_stage = get_srd_training_stage(dataset, iteration)
+        loss_photo = loss_pbr
+        loss_geo = normal_loss + dist_loss
+        loss_sep = _zero_like_loss(loss_pbr)
+        loss_ref = _zero_like_loss(loss_pbr)
+        loss_mat = _zero_like_loss(loss_pbr)
+        loss_tex = _zero_like_loss(loss_pbr)
+        loss_sparsity = _zero_like_loss(loss_pbr)
+        specular_energy = _zero_like_loss(loss_pbr)
+        branch_gate_mean = _zero_like_loss(loss_pbr)
+        surface_alpha_mean = render_pkg["rend_alpha"].mean()
+
+        if should_apply_srd_losses(dataset, iteration):
+            alpha_conf = render_pkg["rend_alpha"].detach()
+            loss_sep = branch_separation_loss(
+                render_pkg["branch_gate_map"],
+                render_pkg["specular_weight_map"],
+                alpha_conf,
+            ) * getattr(opt, "lambda_srd_sep", 0.02)
+            loss_ref = transport_consistency_loss(
+                render_pkg["transport_feature_map"],
+                confidence=alpha_conf,
+            ) * getattr(opt, "lambda_srd_ref", 0.01)
+            loss_mat = material_consistency_loss(
+                render_pkg["surface_rgb"],
+                render_pkg["diffuse_rgb"].detach(),
+                alpha_conf,
+            ) * getattr(opt, "lambda_srd_mat", 0.01)
+            loss_sparsity = specular_sparsity_loss(
+                render_pkg["specular_rgb"],
+                alpha_conf,
+            ) * getattr(opt, "lambda_srd_sparsity", 0.005)
+            if srd_stage == "stage_c":
+                loss_tex = highlight_leakage_loss(
+                    render_pkg["diffuse_rgb"],
+                    render_pkg["specular_rgb"].detach(),
+                    render_pkg["branch_gate_map"].detach(),
+                    alpha_conf,
+                ) * getattr(opt, "lambda_srd_tex", 0.01)
+
+            loss = loss + loss_sep + loss_ref + loss_mat + loss_tex + loss_sparsity
+            specular_energy = render_pkg["specular_rgb"].abs().mean()
+            branch_gate_mean = render_pkg["branch_gate_map"].mean()
         
         # loss
         total_loss = loss
@@ -111,6 +199,21 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             ema_loss_for_log = 0.4 * loss.item() + 0.6 * ema_loss_for_log
             ema_dist_for_log = 0.4 * dist_loss.item() + 0.6 * ema_dist_for_log
             ema_normal_for_log = 0.4 * normal_loss.item() + 0.6 * ema_normal_for_log
+            ema_srd_for_log["loss_sep"] = 0.4 * loss_sep.item() + 0.6 * ema_srd_for_log["loss_sep"]
+            ema_srd_for_log["loss_ref"] = 0.4 * loss_ref.item() + 0.6 * ema_srd_for_log["loss_ref"]
+            ema_srd_for_log["loss_mat"] = 0.4 * loss_mat.item() + 0.6 * ema_srd_for_log["loss_mat"]
+            ema_srd_for_log["loss_tex"] = 0.4 * loss_tex.item() + 0.6 * ema_srd_for_log["loss_tex"]
+
+            if tb_writer:
+                tb_writer.add_scalar("train/loss_photo", loss_photo.item(), iteration)
+                tb_writer.add_scalar("train/loss_geo", loss_geo.item(), iteration)
+                tb_writer.add_scalar("train/loss_sep", loss_sep.item(), iteration)
+                tb_writer.add_scalar("train/loss_ref", loss_ref.item(), iteration)
+                tb_writer.add_scalar("train/loss_mat", loss_mat.item(), iteration)
+                tb_writer.add_scalar("train/loss_tex", loss_tex.item(), iteration)
+                tb_writer.add_scalar("train/specular_energy", specular_energy.item(), iteration)
+                tb_writer.add_scalar("train/branch_gate_mean", branch_gate_mean.item(), iteration)
+                tb_writer.add_scalar("train/surface_alpha_mean", surface_alpha_mean.item(), iteration)
 
 
             if iteration % 10 == 0:
@@ -118,6 +221,11 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     "Loss": f"{ema_loss_for_log:.{5}f}",
                     "distort": f"{ema_dist_for_log:.{5}f}",
                     "normal": f"{ema_normal_for_log:.{5}f}",
+                    "srd": srd_stage,
+                    "sep": f"{ema_srd_for_log['loss_sep']:.{5}f}",
+                    "ref": f"{ema_srd_for_log['loss_ref']:.{5}f}",
+                    "mat": f"{ema_srd_for_log['loss_mat']:.{5}f}",
+                    "tex": f"{ema_srd_for_log['loss_tex']:.{5}f}",
                     "Points": f"{len(gaussians.get_xyz)}"
                 }
                 progress_bar.set_postfix(loss_dict)

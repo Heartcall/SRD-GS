@@ -62,7 +62,7 @@ def to_cam_open3d(viewpoint_stack):
 
 
 class GaussianExtractor(object):
-    def __init__(self, gaussians, render, pipe, bg_color=None):
+    def __init__(self, gaussians, render, pipe, bg_color=None, surface_only=True, mesh_mode="surface"):
         """
         a class that extracts attributes a scene presented by 2DGS
 
@@ -76,6 +76,10 @@ class GaussianExtractor(object):
         background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
         self.gaussians = gaussians
         self.render = partial(render, pipe=pipe, bg_color=background)
+        self.surface_only = surface_only
+        self.mesh_mode = mesh_mode
+        if self.mesh_mode not in ("surface", "unified", "all_branch"):
+            raise ValueError("mesh_mode must be one of: surface, unified, all_branch")
         self.clean()
 
     @torch.no_grad()
@@ -85,7 +89,36 @@ class GaussianExtractor(object):
         self.rgbmaps = []
         self.normals = []
         self.depth_normals = []
+        self.specularmaps = []
+        self.branch_gatemaps = []
         self.viewpoint_stack = []
+
+    def _select_reconstruction_buffers(self, render_pkg):
+        if self.surface_only or self.mesh_mode == "surface":
+            rgb = render_pkg.get('surface_rgb', render_pkg.get('render', render_pkg.get('pbr_rgb')))
+            alpha = render_pkg.get('surface_alpha', render_pkg.get('rend_alpha'))
+            depth = render_pkg.get('surface_depth', render_pkg.get('surf_depth'))
+            normal = render_pkg.get('surface_normal', render_pkg.get('surf_normal', render_pkg.get('rend_normal')))
+            depth_normal = render_pkg.get('surface_normal', render_pkg.get('surf_normal'))
+        else:
+            rgb = render_pkg.get('render', render_pkg.get('pbr_rgb'))
+            alpha = render_pkg.get('rend_alpha')
+            depth = render_pkg.get('surf_depth')
+            normal = render_pkg.get('rend_normal')
+            depth_normal = render_pkg.get('surf_normal')
+
+        missing = [
+            name for name, value in (
+                ('rgb', rgb),
+                ('alpha', alpha),
+                ('depth', depth),
+                ('normal', normal),
+                ('depth_normal', depth_normal),
+            ) if value is None
+        ]
+        if missing:
+            raise KeyError("render package missing mesh buffers: {}".format(", ".join(missing)))
+        return rgb, alpha, normal, depth, depth_normal
 
     @torch.no_grad()
     def reconstruction(self, viewpoint_stack):
@@ -96,21 +129,22 @@ class GaussianExtractor(object):
         self.viewpoint_stack = viewpoint_stack
         for i, viewpoint_cam in tqdm(enumerate(self.viewpoint_stack), desc="reconstruct radiance fields"):
             render_pkg = self.render(viewpoint_cam, self.gaussians)
-            rgb = render_pkg['render']
-            alpha = render_pkg['rend_alpha']
-            normal = torch.nn.functional.normalize(render_pkg['rend_normal'], dim=0)
-            depth = render_pkg['surf_depth']
-            depth_normal = render_pkg['surf_normal']
+            rgb, alpha, normal, depth, depth_normal = self._select_reconstruction_buffers(render_pkg)
+            normal = torch.nn.functional.normalize(normal, dim=0)
             self.rgbmaps.append(rgb.cpu())
             self.depthmaps.append(depth.cpu())
             self.alphamaps.append(alpha.cpu())
             self.normals.append(normal.cpu())
             self.depth_normals.append(depth_normal.cpu())
+            self.specularmaps.append(render_pkg.get('specular_rgb', torch.zeros_like(rgb)).cpu())
+            self.branch_gatemaps.append(render_pkg.get('branch_gate_map', torch.zeros_like(alpha)).cpu())
         
         self.rgbmaps = torch.stack(self.rgbmaps, dim=0)
         self.depthmaps = torch.stack(self.depthmaps, dim=0)
         self.alphamaps = torch.stack(self.alphamaps, dim=0)
         self.depth_normals = torch.stack(self.depth_normals, dim=0)
+        self.specularmaps = torch.stack(self.specularmaps, dim=0)
+        self.branch_gatemaps = torch.stack(self.branch_gatemaps, dim=0)
         self.estimate_bounding_sphere()
 
     def estimate_bounding_sphere(self):
@@ -152,8 +186,11 @@ class GaussianExtractor(object):
 
         for i, cam_o3d in tqdm(enumerate(to_cam_open3d(self.viewpoint_stack)), desc="TSDF integration progress"):
             rgb = self.rgbmaps[i]
-            depth = self.depthmaps[i]
-            
+            depth = self.depthmaps[i].clone()
+            alpha = self.alphamaps[i]
+            if self.surface_only or self.mesh_mode == "surface":
+                depth[(alpha < 0.5)] = 0
+
             # if we have mask provided, use it
             if mask_backgrond and (self.viewpoint_stack[i].gt_alpha_mask is not None):
                 depth[(self.viewpoint_stack[i].gt_alpha_mask < 0.5)] = 0
@@ -286,3 +323,8 @@ class GaussianExtractor(object):
             save_img_f32(self.depthmaps[idx][0].cpu().numpy(), os.path.join(vis_path, 'depth_{0:05d}'.format(idx) + ".tiff"))
             save_img_u8(self.normals[idx].permute(1,2,0).cpu().numpy() * 0.5 + 0.5, os.path.join(vis_path, 'normal_{0:05d}'.format(idx) + ".png"))
             save_img_u8(self.depth_normals[idx].permute(1,2,0).cpu().numpy() * 0.5 + 0.5, os.path.join(vis_path, 'depth_normal_{0:05d}'.format(idx) + ".png"))
+            save_img_f32(self.depthmaps[idx][0].cpu().numpy(), os.path.join(vis_path, 'surface_depth_{0:05d}'.format(idx) + ".tiff"))
+            save_img_u8(self.depth_normals[idx].permute(1,2,0).cpu().numpy() * 0.5 + 0.5, os.path.join(vis_path, 'surface_normal_{0:05d}'.format(idx) + ".png"))
+            save_img_u8(self.alphamaps[idx].permute(1,2,0).cpu().numpy(), os.path.join(vis_path, 'surface_alpha_{0:05d}'.format(idx) + ".png"))
+            save_img_u8(self.specularmaps[idx].permute(1,2,0).cpu().numpy(), os.path.join(vis_path, 'specular_rgb_{0:05d}'.format(idx) + ".png"))
+            save_img_u8(self.branch_gatemaps[idx].permute(1,2,0).cpu().numpy(), os.path.join(vis_path, 'branch_gate_map_{0:05d}'.format(idx) + ".png"))

@@ -1,0 +1,11 @@
+name: all_branch_mesh
+implementation_status: runnable_mesh_ablation_needs_runtime_verification
+hypothesis: Mesh extraction from all/unified branches should be more vulnerable to reflection contamination than surface-only extraction.
+what_it_removes: Removes the surface-only mesh extraction restriction and uses all-branch mesh mode.
+expected_supporting_result: Surface-only mesh should reduce floating components, holes, or geometry errors compared with all-branch mesh.
+refuting_result: All-branch mesh equals or improves surface-only mesh diagnostics without increasing texture highlight leakage.
+metrics_to_inspect_first: chamfer_distance,f_score,normal_mae,connected_components,highlight_leakage_score
+train_args: "--enable_srd_gs --srd_use_branch_gate"
+mesh_mode: all_branch
+texture_mode: specular_free
+eval_enabled: true

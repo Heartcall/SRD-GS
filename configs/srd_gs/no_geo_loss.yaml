@@ -1,0 +1,11 @@
+name: no_geo_loss
+implementation_status: runnable_config_needs_runtime_verification
+hypothesis: Geometry-aware normal/distance losses are needed to keep surface branch depth and normals stable under reflective appearance.
+what_it_removes: Sets existing normal and distance geometry loss weights to zero.
+expected_supporting_result: Full SRD-GS should improve normal MAE, depth error, and mesh diagnostics relative to this ablation.
+refuting_result: No degradation in normal/depth/mesh metrics when geometry losses are removed.
+metrics_to_inspect_first: normal_mae,depth_error,chamfer_distance,f_score,refl_psnr
+train_args: "--enable_srd_gs --srd_use_branch_gate --lambda_normal 0 --lambda_dist 0"
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

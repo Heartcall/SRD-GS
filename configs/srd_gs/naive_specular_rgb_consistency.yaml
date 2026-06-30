@@ -1,0 +1,11 @@
+name: naive_specular_rgb_consistency
+implementation_status: placeholder_config_not_runnable_until_loss_exists
+hypothesis: Naive multi-view consistency on specular RGB should be inferior to physical consistency on stable material/transport variables.
+what_it_removes: Replaces physical transport consistency with a planned naive specular-RGB consistency control; the current codebase does not yet implement this loss.
+expected_supporting_result: If later implemented, this control should show over-smoothing or incorrect reflection compared with full SRD-GS.
+refuting_result: Naive specular RGB consistency matches or beats full SRD-GS on reflective-region and material metrics.
+metrics_to_inspect_first: refl_psnr,refl_ssim,highlight_leakage_score,material_consistency
+train_args: "--enable_srd_gs --srd_use_branch_gate"
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: false

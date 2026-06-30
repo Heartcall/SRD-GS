@@ -1,0 +1,11 @@
+name: refgs_baseline
+implementation_status: runnable_baseline_config
+hypothesis: Baseline Ref-GS provides the unified-render comparison for SRD-GS.
+what_it_removes: Removes all SRD-GS surface/reflection decoupling, staged SRD losses, surface-only mesh extraction, and specular-free texture export.
+expected_supporting_result: SRD-GS variants should match or exceed this baseline on target reflective-region, mesh, and texture diagnostics before any claim is made.
+refuting_result: Baseline remains better on reflective-region geometry, highlight leakage, and rendering metrics across validated scenes.
+metrics_to_inspect_first: psnr,ssim,refl_psnr,refl_ssim,chamfer_distance,f_score,highlight_leakage_score
+train_args: ""
+mesh_mode: unified
+texture_mode: direct_rgb
+eval_enabled: true

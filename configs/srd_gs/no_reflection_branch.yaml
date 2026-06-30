@@ -1,0 +1,11 @@
+name: no_reflection_branch
+implementation_status: proxy_config_needs_runtime_verification
+hypothesis: Removing reflection-branch contribution should reveal whether view-dependent residual modeling is necessary for reflective-region fidelity.
+what_it_removes: Uses SRD surface buffers but disables learned branch gate usage and sets reflection-related loss weights to zero as a proxy for reflection-branch removal.
+expected_supporting_result: If reflection branch is necessary, reflective-region PSNR/SSIM should drop and specular residual diagnostics should worsen.
+refuting_result: Similar reflective-region metrics and similar highlight leakage compared with full SRD-GS.
+metrics_to_inspect_first: refl_psnr,refl_ssim,highlight_leakage_score,specular_weight,material_consistency
+train_args: "--enable_srd_gs --lambda_srd_ref 0 --lambda_srd_sparsity 0"
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

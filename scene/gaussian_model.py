@@ -2,7 +2,7 @@
 # GRAPHDECO research group, https://team.inria.fr/graphdeco
 # All rights reserved.
 #
-# This software is free for non-commercial, research and evaluation use 
+# This software is free for non-commercial, research and evaluation use
 # under the terms of the LICENSE.md file.
 #
 # For inquiries contact  george.drettakis@inria.fr
@@ -39,30 +39,30 @@ class SphMipEncoding(nn.Module):
         super(SphMipEncoding, self).__init__()
         self.n_levels = n_levels
         self.plane_size = plane_size
-        
+
         self.register_parameter("fm", nn.Parameter(torch.zeros(Sn, dim, plane_size, 2*plane_size, feature_dim)),)
-        
+
         if rand_init:
             self.init_parameters()
 
     def init_parameters(self) -> None:
         nn.init.uniform_(self.fm, -1e-2, 1e-2)
-        
+
     def forward(self, x, level, index=0, weight=False):
         """
         x: [0,1], Nx3
         level: [0, max_level], Nx1
         """
         x[..., 0] = x[..., 0] * 0.5 + 0.25
-        
+
         decomposed_x = x
-        
+
         level = torch.broadcast_to(level, decomposed_x.shape[:3]).contiguous()
-        
+
         fm = self.fm[index]  # [N, L, 2L, feat_dim]
-        
+
         padding_fm = torch.cat([fm[:, :, self.plane_size:, :], fm, fm[:, :, :self.plane_size, :]], dim=2)
-        
+
         enc = nvdiffrast.torch.texture(
             padding_fm,
             decomposed_x,
@@ -70,10 +70,10 @@ class SphMipEncoding(nn.Module):
             boundary_mode="clamp",
             max_mip_level=self.n_levels - 1,
         )
-        
+
         enc = (enc.permute(1, 2, 0, 3).contiguous().view(x.shape[0], -1,))
         return enc
-    
+
 
 class GaussianModel:
     def setup_functions(self):
@@ -84,7 +84,7 @@ class GaussianModel:
             trans[:, 3,:3] = center
             trans[:, 3, 3] = 1
             return trans
-        
+
         self.scaling_activation = torch.exp
         self.scaling_inverse_activation = torch.log
 
@@ -96,7 +96,7 @@ class GaussianModel:
 
     def __init__(self, sh_degree : int, args):
         self.active_sh_degree = 0
-        self.max_sh_degree = sh_degree  
+        self.max_sh_degree = sh_degree
         self._xyz = torch.empty(0)
         self._features_dc = torch.empty(0)
         self._features_rest = torch.empty(0)
@@ -110,23 +110,35 @@ class GaussianModel:
         self.percent_dense = 0
         self.spatial_lr_scale = 0
         self.setup_functions()
-        
+
+        self.enable_srd_gs = getattr(args, "enable_srd_gs", False)
+        self.srd_detach_specular_geometry = getattr(args, "srd_detach_specular_geometry", False)
+        self.srd_use_branch_gate = getattr(args, "srd_use_branch_gate", False)
+        self.srd_reflection_dim = getattr(args, "srd_reflection_dim", 4)
+        self.srd_transport_dim = getattr(args, "srd_transport_dim", 4)
+
         self._roughness = torch.empty(0)
+        self._surface_albedo = torch.empty(0)
+        self._surface_roughness = torch.empty(0)
+        self._reflection_feature = torch.empty(0)
+        self._specular_weight = torch.empty(0)
+        self._branch_gate = torch.empty(0)
+        self._transport_feature = torch.empty(0)
         self.albedo_bias = args.albedo_bias
-        
+
         #################################################################################################
-        n_levels = 9  
+        n_levels = 9
         plane_size = 2**(n_levels)
-        
+
         self.sph_dim = 16
         self.dim = 1
-        
+
         self.dir_encoding = SphMipEncoding(n_levels, plane_size, self.sph_dim, 1, self.dim, args.rand_init).cuda()
         print('SphMipEncoding ### level:', n_levels, '  size:', plane_size)
-        
+
         self.gsfeat_dim = 4
         run_dim = args.run_dim
-        
+
         self.light_mlp = nn.Sequential(
             nn.Linear(self.sph_dim * self.gsfeat_dim + self.sph_dim, run_dim),
             nn.ReLU(inplace=True),
@@ -135,7 +147,7 @@ class GaussianModel:
             nn.Linear(run_dim, 3),
         ).cuda()
         nn.init.constant_(self.light_mlp[-1].bias, np.log(0.25))
-        
+
         self.light_mlp2 = nn.Sequential(
             nn.Linear(self.sph_dim * self.gsfeat_dim + self.sph_dim, run_dim//2),
             nn.ReLU(inplace=True),
@@ -159,72 +171,111 @@ class GaussianModel:
             self.optimizer.state_dict(),
             self.spatial_lr_scale,
         )
-    
+
     def restore(self, model_args, training_args):
-        (self.active_sh_degree, 
-        self._xyz, 
-        self._features_dc, 
+        (self.active_sh_degree,
+        self._xyz,
+        self._features_dc,
         self._features_rest,
-        self._scaling, 
-        self._rotation, 
+        self._scaling,
+        self._rotation,
         self._opacity,
-        self.max_radii2D, 
-        xyz_gradient_accum, 
+        self.max_radii2D,
+        xyz_gradient_accum,
         denom,
-        opt_dict, 
+        opt_dict,
         self.spatial_lr_scale) = model_args
         self.training_setup(training_args)
         self.xyz_gradient_accum = xyz_gradient_accum
         self.denom = denom
         self.optimizer.load_state_dict(opt_dict)
 
-    
+
     @property
-    def get_albedo(self):        
+    def get_albedo(self):
         bias = torch.tensor(5.0, dtype=torch.float32).to("cuda")
         return torch.exp(torch.clamp(self._albedo, max=5.0)-torch.log(bias))
-       
+
+    @property
+    def get_surface_albedo(self):
+        bias = torch.tensor(5.0, dtype=torch.float32).to("cuda")
+        return self.get_albedo if not self.enable_srd_gs else torch.exp(torch.clamp(self._surface_albedo, max=5.0)-torch.log(bias))
+
     @property
     def get_mask(self):
         return torch.sigmoid(self._mask)
- 
+
     @property
     def get_roughness(self):
         return torch.sigmoid(self._roughness)
-    
+
+    @property
+    def get_surface_roughness(self):
+        return self.get_roughness if not self.enable_srd_gs else torch.sigmoid(self._surface_roughness)
+
+    @property
+    def get_reflection_feature(self):
+        return torch.tanh(self._reflection_feature)
+
+    @property
+    def get_specular_weight(self):
+        return torch.sigmoid(self._specular_weight)
+
+    @property
+    def get_branch_gate(self):
+        return torch.sigmoid(self._branch_gate)
+
+    @property
+    def get_transport_feature(self):
+        return torch.tanh(self._transport_feature)
+
     @property
     def get_language_feature(self):
         return torch.tanh(self._language_feature)
-    
+
     @property
     def get_scaling(self):
         return self.scaling_activation(self._scaling)
-    
+
     @property
     def get_rotation(self):
         return self.rotation_activation(self._rotation)
-    
+
     @property
     def get_xyz(self):
         return self._xyz
-    
+
     @property
     def get_features(self):
         features_dc = self._features_dc
         features_rest = self._features_rest
         return torch.cat((features_dc, features_rest), dim=1)
-    
+
     @property
     def get_opacity(self):
         return self.opacity_activation(self._opacity)
-        
-    
+
+
     def get_covariance(self, scaling_modifier = 1):
         return self.covariance_activation(self.get_xyz, self.get_scaling, scaling_modifier, self._rotation)
 
     def oneupSHdegree(self):
         if self.active_sh_degree < self.max_sh_degree:
             self.active_sh_degree += 1
+
+    def _initialize_srd_parameters(self, num_points):
+        self._surface_albedo = nn.Parameter(self._albedo.detach().clone().requires_grad_(True))
+        self._surface_roughness = nn.Parameter(self._roughness.detach().clone().requires_grad_(True))
+        self._reflection_feature = nn.Parameter(
+            (1e-4 * torch.randn((num_points, self.srd_reflection_dim), device="cuda")).requires_grad_(True)
+        )
+        low_specular = 0.05 * torch.ones((num_points, 1), dtype=torch.float, device="cuda")
+        self._specular_weight = nn.Parameter(self.inverse_opacity_activation(low_specular).requires_grad_(True))
+        low_reflection_gate = 0.05 * torch.ones((num_points, 1), dtype=torch.float, device="cuda")
+        self._branch_gate = nn.Parameter(self.inverse_opacity_activation(low_reflection_gate).requires_grad_(True))
+        self._transport_feature = nn.Parameter(
+            (1e-4 * torch.randn((num_points, self.srd_transport_dim), device="cuda")).requires_grad_(True)
+        )
 
     def create_from_pcd(self, pcd : BasicPointCloud, spatial_lr_scale : float):
         self.spatial_lr_scale = spatial_lr_scale
@@ -249,11 +300,12 @@ class GaussianModel:
         self._rotation = nn.Parameter(rots.requires_grad_(True))
         self._opacity = nn.Parameter(opacities.requires_grad_(True))
         self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")
-        
+
         self._albedo = nn.Parameter(torch.zeros((fused_point_cloud.shape[0], 3), device="cuda").requires_grad_(True)-self.albedo_bias)
         self._roughness = nn.Parameter((torch.zeros((fused_point_cloud.shape[0], 1), device="cuda")).requires_grad_(True))
         self._mask = nn.Parameter((torch.zeros((fused_point_cloud.shape[0], 1), device="cuda")).requires_grad_(True))
         self._language_feature = nn.Parameter(torch.zeros((fused_point_cloud.shape[0], self.gsfeat_dim), device="cuda").requires_grad_(True))
+        self._initialize_srd_parameters(fused_point_cloud.shape[0])
 
     def training_setup(self, training_args):
         self.percent_dense = training_args.percent_dense
@@ -268,17 +320,23 @@ class GaussianModel:
             {'params': [self._scaling], 'lr': training_args.scaling_lr, "name": "scaling"},
             {'params': [self._rotation], 'lr': training_args.rotation_lr, "name": "rotation"}
         ]
-        
+
         l.extend([
             {'params': [self._albedo], 'lr': training_args.albedo_lr, "name": "albedo"},
             {'params': [self._roughness], 'lr': training_args.roughness_lr, "name": "roughness"},
             {'params': [self._mask], 'lr': training_args.mask_lr, "name": "mask"},
-            
+
             {'params': [self._language_feature], 'lr': training_args.feature_lr, "name": "feature"},
+            {'params': [self._surface_albedo], 'lr': training_args.albedo_lr, "name": "surface_albedo"},
+            {'params': [self._surface_roughness], 'lr': training_args.roughness_lr, "name": "surface_roughness"},
+            {'params': [self._reflection_feature], 'lr': training_args.feature_lr, "name": "reflection_feature"},
+            {'params': [self._specular_weight], 'lr': training_args.mask_lr, "name": "specular_weight"},
+            {'params': [self._branch_gate], 'lr': training_args.mask_lr, "name": "branch_gate"},
+            {'params': [self._transport_feature], 'lr': training_args.feature_lr, "name": "transport_feature"},
             {'params': list(self.light_mlp.parameters()), 'lr': training_args.mlp_lr, "name": "light_mlp"},
             {'params': list(self.dir_encoding.parameters()), 'lr': training_args.encoding_lr, "name": "dir_encoding"},
         ])
-        
+
         self.optimizer = torch.optim.Adam(l, lr=0.0, eps=1e-15)
         self.xyz_scheduler_args = get_expon_lr_func(lr_init=training_args.position_lr_init*self.spatial_lr_scale,
                                                     lr_final=training_args.position_lr_final*self.spatial_lr_scale,
@@ -295,40 +353,52 @@ class GaussianModel:
 
     def construct_list_of_attributes(self):
         l = ['x', 'y', 'z',]
-        
+
         # All channels except the 3 DC
         for i in range(self._features_dc.shape[1]*self._features_dc.shape[2]):
             l.append('f_dc_{}'.format(i))
         for i in range(self._features_rest.shape[1]*self._features_rest.shape[2]):
             l.append('f_rest_{}'.format(i))
-            
+
         l.append('opacity')
-        
+
         for i in range(self._scaling.shape[1]):
             l.append('scale_{}'.format(i))
         for i in range(self._rotation.shape[1]):
             l.append('rot_{}'.format(i))
-            
+
         for i in range(self._roughness.shape[1]):
             l.append('roughness_{}'.format(i))
         for i in range(self._mask.shape[1]):
             l.append('mask_{}'.format(i))
         for i in range(self._albedo.shape[1]):
             l.append('albedo_{}'.format(i))
-            
+
         for i in range(self._language_feature.shape[1]):
             l.append('feature_{}'.format(i))
-            
+        for i in range(self._surface_albedo.shape[1]):
+            l.append('surface_albedo_{}'.format(i))
+        for i in range(self._surface_roughness.shape[1]):
+            l.append('surface_roughness_{}'.format(i))
+        for i in range(self._reflection_feature.shape[1]):
+            l.append('reflection_feature_{}'.format(i))
+        for i in range(self._specular_weight.shape[1]):
+            l.append('specular_weight_{}'.format(i))
+        for i in range(self._branch_gate.shape[1]):
+            l.append('branch_gate_{}'.format(i))
+        for i in range(self._transport_feature.shape[1]):
+            l.append('transport_feature_{}'.format(i))
+
         return l
 
     def save_ply(self, path):
         mkdir_p(os.path.dirname(path))
 
         xyz = self._xyz.detach().cpu().numpy()
-        
+
         f_dc = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
         f_rest = self._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
-        
+
         opacities = self._opacity.detach().cpu().numpy()
         scale = self._scaling.detach().cpu().numpy()
         rotation = self._rotation.detach().cpu().numpy()
@@ -336,47 +406,67 @@ class GaussianModel:
         roughness = self._roughness.detach().cpu().numpy()
         mask = self._mask.detach().cpu().numpy()
         albedo = self._albedo.detach().cpu().numpy()
-        
+
         language_feature = self._language_feature.detach().cpu().numpy()
-        
+        surface_albedo = self._surface_albedo.detach().cpu().numpy()
+        surface_roughness = self._surface_roughness.detach().cpu().numpy()
+        reflection_feature = self._reflection_feature.detach().cpu().numpy()
+        specular_weight = self._specular_weight.detach().cpu().numpy()
+        branch_gate = self._branch_gate.detach().cpu().numpy()
+        transport_feature = self._transport_feature.detach().cpu().numpy()
+
         dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
 
         elements = np.empty(xyz.shape[0], dtype=dtype_full)
-        attributes = np.concatenate((xyz, f_dc, f_rest, opacities, scale, rotation, roughness, mask, albedo, language_feature), axis=1)
+        attributes = np.concatenate((
+            xyz, f_dc, f_rest, opacities, scale, rotation, roughness, mask, albedo, language_feature,
+            surface_albedo, surface_roughness, reflection_feature, specular_weight, branch_gate, transport_feature
+        ), axis=1)
         elements[:] = list(map(tuple, attributes))
         el = PlyElement.describe(elements, 'vertex')
         PlyData([el]).write(path)
-        
+
         torch.save(self.light_mlp, path.split('point_cloud.ply')[0]+'/light_mlp.pt')
         torch.save(self.dir_encoding, path.split('point_cloud.ply')[0]+'/dir_encoding.pt')
-    
-        
+
+
     def reset_opacity(self):
         self._opacity.data[torch.isnan(self._opacity.data.mean(dim=-1))] = 0.0
         self._opacity.data[torch.isnan(self._xyz.data.mean(dim=-1))] = 0.0
         self._opacity.data[torch.isnan(self._scaling.data.mean(dim=-1))] = 0.0
         self._opacity.data[torch.isnan(self._rotation.data.mean(dim=-1))] = 0.0
-        
+
         opacities_new = self.inverse_opacity_activation(torch.min(self.get_opacity, torch.ones_like(self.get_opacity)*0.01))
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")
         self._opacity = optimizable_tensors["opacity"]
-        
-        
+
+
     def reset_feature(self):
         features_new = torch.randn(self._language_feature.shape[0], 8).float().cuda()
         optimizable_tensors = self.replace_tensor_to_optimizer(features_new, "feature")
         self._language_feature = optimizable_tensors["feature"]
-        
-        
-        
+
+
+    def _load_optional_ply_group(self, plydata, prefix, default, attr_names=None):
+        if attr_names is None:
+            attr_names = [p.name for p in plydata.elements[0].properties if p.name.startswith(prefix)]
+        attr_names = sorted(attr_names, key = lambda x: int(x.split('_')[-1]))
+        if len(attr_names) == 0:
+            return default.copy()
+        values = np.zeros((default.shape[0], len(attr_names)))
+        for idx, attr_name in enumerate(attr_names):
+            values[:, idx] = np.asarray(plydata.elements[0][attr_name])
+        return values
+
+
     def load_ply(self, path):
-        
+
         plydata = PlyData.read(path)
-        
+
         xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
                         np.asarray(plydata.elements[0]["y"]),
                         np.asarray(plydata.elements[0]["z"])),  axis=1)
-        
+
         opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
 
         features_dc = np.zeros((xyz.shape[0], 3, 1))
@@ -405,29 +495,29 @@ class GaussianModel:
         for idx, attr_name in enumerate(rot_names):
             rots[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
-        
+
         roughness_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("roughness")]
         roughness = np.zeros((xyz.shape[0], len(roughness_names)))
         for idx, attr_name in enumerate(roughness_names):
             roughness[:, idx] = np.asarray(plydata.elements[0][attr_name])
-            
+
         mask_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("mask")]
         mask = np.zeros((xyz.shape[0], len(mask_names)))
         for idx, attr_name in enumerate(mask_names):
             mask[:, idx] = np.asarray(plydata.elements[0][attr_name])
-            
+
         albedo_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("albedo")]
         albedo = np.zeros((xyz.shape[0], len(albedo_names)))
         for idx, attr_name in enumerate(albedo_names):
             albedo[:, idx] = np.asarray(plydata.elements[0][attr_name])
-        
-        
+
+
         language_feature_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("feature")]
         language_feature_names = sorted(language_feature_names, key = lambda x: int(x.split('_')[-1]))
         language_feature = np.zeros((xyz.shape[0], len(language_feature_names)))
         for idx, attr_name in enumerate(language_feature_names):
             language_feature[:, idx] = np.asarray(plydata.elements[0][attr_name])
-        
+
         self._xyz = nn.Parameter(torch.tensor(xyz, dtype=torch.float, device="cuda").requires_grad_(True))
         self._features_dc = nn.Parameter(torch.tensor(features_dc, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(True))
         self._features_rest = nn.Parameter(torch.tensor(features_extra, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(True))
@@ -438,23 +528,64 @@ class GaussianModel:
         self._roughness = nn.Parameter(torch.tensor(roughness, dtype=torch.float, device="cuda").requires_grad_(True))
         self._mask = nn.Parameter(torch.tensor(mask, dtype=torch.float, device="cuda").requires_grad_(True))
         self._albedo = nn.Parameter(torch.tensor(albedo, dtype=torch.float, device="cuda").requires_grad_(True))
-        
+
         self._language_feature = nn.Parameter(torch.tensor(language_feature, dtype=torch.float, device="cuda").requires_grad_(True))
-        
+
+        surface_albedo_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("surface_albedo")]
+        surface_roughness_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("surface_roughness")]
+        reflection_feature_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("reflection_feature")]
+        specular_weight_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("specular_weight")]
+        branch_gate_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("branch_gate")]
+        transport_feature_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("transport_feature")]
+
+        surface_albedo = self._load_optional_ply_group(
+            plydata, "surface_albedo", default=self._albedo.detach().cpu().numpy(), attr_names=surface_albedo_names
+        )
+        surface_roughness = self._load_optional_ply_group(
+            plydata, "surface_roughness", default=self._roughness.detach().cpu().numpy(), attr_names=surface_roughness_names
+        )
+        default_reflection_feature = np.zeros((xyz.shape[0], self.srd_reflection_dim), dtype=np.float32)
+        reflection_feature = self._load_optional_ply_group(
+            plydata, "reflection_feature", default=default_reflection_feature, attr_names=reflection_feature_names
+        )
+        default_specular_weight = self.inverse_opacity_activation(
+            0.05 * torch.ones((xyz.shape[0], 1), dtype=torch.float, device="cuda")
+        ).detach().cpu().numpy()
+        specular_weight = self._load_optional_ply_group(
+            plydata, "specular_weight", default=default_specular_weight, attr_names=specular_weight_names
+        )
+        default_branch_gate = self.inverse_opacity_activation(
+            0.05 * torch.ones((xyz.shape[0], 1), dtype=torch.float, device="cuda")
+        ).detach().cpu().numpy()
+        branch_gate = self._load_optional_ply_group(
+            plydata, "branch_gate", default=default_branch_gate, attr_names=branch_gate_names
+        )
+        default_transport_feature = np.zeros((xyz.shape[0], self.srd_transport_dim), dtype=np.float32)
+        transport_feature = self._load_optional_ply_group(
+            plydata, "transport_feature", default=default_transport_feature, attr_names=transport_feature_names
+        )
+
+        self._surface_albedo = nn.Parameter(torch.tensor(surface_albedo, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._surface_roughness = nn.Parameter(torch.tensor(surface_roughness, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._reflection_feature = nn.Parameter(torch.tensor(reflection_feature, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._specular_weight = nn.Parameter(torch.tensor(specular_weight, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._branch_gate = nn.Parameter(torch.tensor(branch_gate, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._transport_feature = nn.Parameter(torch.tensor(transport_feature, dtype=torch.float, device="cuda").requires_grad_(True))
+
         self.active_sh_degree = self.max_sh_degree
         self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")
-        
+
         self.light_mlp =  torch.load(path.split('point_cloud.ply')[0]+'/light_mlp.pt')
         self.dir_encoding =  torch.load(path.split('point_cloud.ply')[0]+'/dir_encoding.pt')
         print('Load Path', path)
 
-    
+
     def replace_tensor_to_optimizer(self, tensor, name):
         optimizable_tensors = {}
         for group in self.optimizer.param_groups:
             if group["name"] == "light_mlp" or group["name"] == "dir_encoding":
                 continue
-                
+
             if group["name"] == name:
                 stored_state = self.optimizer.state.get(group['params'][0], None)
                 stored_state["exp_avg"] = torch.zeros_like(tensor)
@@ -472,7 +603,7 @@ class GaussianModel:
         for group in self.optimizer.param_groups:
             if group["name"] == "light_mlp" or group["name"] == "dir_encoding":
                 continue
-                
+
             stored_state = self.optimizer.state.get(group['params'][0], None)
             if stored_state is not None:
                 stored_state["exp_avg"] = stored_state["exp_avg"][mask]
@@ -498,13 +629,19 @@ class GaussianModel:
         self._opacity = optimizable_tensors["opacity"]
         self._scaling = optimizable_tensors["scaling"]
         self._rotation = optimizable_tensors["rotation"]
-        
+
         self._albedo = optimizable_tensors["albedo"]
         self._mask = optimizable_tensors["mask"]
         self._roughness = optimizable_tensors["roughness"]
 
         self._language_feature = optimizable_tensors["feature"]
-        
+        self._surface_albedo = optimizable_tensors["surface_albedo"]
+        self._surface_roughness = optimizable_tensors["surface_roughness"]
+        self._reflection_feature = optimizable_tensors["reflection_feature"]
+        self._specular_weight = optimizable_tensors["specular_weight"]
+        self._branch_gate = optimizable_tensors["branch_gate"]
+        self._transport_feature = optimizable_tensors["transport_feature"]
+
         self.xyz_gradient_accum = self.xyz_gradient_accum[valid_points_mask]
 
         self.denom = self.denom[valid_points_mask]
@@ -515,7 +652,7 @@ class GaussianModel:
         for group in self.optimizer.param_groups:
             if group["name"] == "light_mlp" or group["name"] == "dir_encoding":
                 continue
-                
+
             assert len(group["params"]) == 1
             extension_tensor = tensors_dict[group["name"]]
             stored_state = self.optimizer.state.get(group['params'][0], None)
@@ -538,7 +675,9 @@ class GaussianModel:
     def densification_postfix(
         self, new_xyz, new_features_dc, new_features_rest, new_opacities, new_scaling, new_rotation,
         new_albedo, new_mask, new_roughness,
-        new_language_feature
+        new_language_feature,
+        new_surface_albedo, new_surface_roughness, new_reflection_feature, new_specular_weight,
+        new_branch_gate, new_transport_feature
     ):
         d = {
             "xyz": new_xyz,
@@ -547,12 +686,18 @@ class GaussianModel:
             "opacity": new_opacities,
             "scaling" : new_scaling,
             "rotation" : new_rotation,
-            
+
             "albedo" : new_albedo,
             "mask" : new_mask,
             "roughness" : new_roughness,
-            
+
             "feature" : new_language_feature,
+            "surface_albedo" : new_surface_albedo,
+            "surface_roughness" : new_surface_roughness,
+            "reflection_feature" : new_reflection_feature,
+            "specular_weight" : new_specular_weight,
+            "branch_gate" : new_branch_gate,
+            "transport_feature" : new_transport_feature,
         }
 
         optimizable_tensors = self.cat_tensors_to_optimizer(d)
@@ -562,12 +707,18 @@ class GaussianModel:
         self._opacity = optimizable_tensors["opacity"]
         self._scaling = optimizable_tensors["scaling"]
         self._rotation = optimizable_tensors["rotation"]
-        
+
         self._albedo = optimizable_tensors["albedo"]
         self._mask = optimizable_tensors["mask"]
         self._roughness = optimizable_tensors["roughness"]
-        
+
         self._language_feature = optimizable_tensors["feature"]
+        self._surface_albedo = optimizable_tensors["surface_albedo"]
+        self._surface_roughness = optimizable_tensors["surface_roughness"]
+        self._reflection_feature = optimizable_tensors["reflection_feature"]
+        self._specular_weight = optimizable_tensors["specular_weight"]
+        self._branch_gate = optimizable_tensors["branch_gate"]
+        self._transport_feature = optimizable_tensors["transport_feature"]
 
         self.xyz_gradient_accum = torch.zeros((self.get_xyz.shape[0], 1), device="cuda")
         self.denom = torch.zeros((self.get_xyz.shape[0], 1), device="cuda")
@@ -596,13 +747,21 @@ class GaussianModel:
         new_albedo = self._albedo[selected_pts_mask].repeat(N,1)
         new_mask = self._mask[selected_pts_mask].repeat(N,1)
         new_roughness = self._roughness[selected_pts_mask].repeat(N,1)
-        
+
         new_language_feature = self._language_feature[selected_pts_mask].repeat(N,1)
-        
+        new_surface_albedo = self._surface_albedo[selected_pts_mask].repeat(N,1)
+        new_surface_roughness = self._surface_roughness[selected_pts_mask].repeat(N,1)
+        new_reflection_feature = self._reflection_feature[selected_pts_mask].repeat(N,1)
+        new_specular_weight = self._specular_weight[selected_pts_mask].repeat(N,1)
+        new_branch_gate = self._branch_gate[selected_pts_mask].repeat(N,1)
+        new_transport_feature = self._transport_feature[selected_pts_mask].repeat(N,1)
+
         self.densification_postfix(
             new_xyz, new_features_dc, new_features_rest, new_opacity, new_scaling, new_rotation,
             new_albedo, new_mask, new_roughness,
-            new_language_feature
+            new_language_feature,
+            new_surface_albedo, new_surface_roughness, new_reflection_feature, new_specular_weight,
+            new_branch_gate, new_transport_feature
         )
 
         prune_filter = torch.cat((selected_pts_mask, torch.zeros(N * selected_pts_mask.sum(), device="cuda", dtype=bool)))
@@ -613,30 +772,38 @@ class GaussianModel:
         selected_pts_mask = torch.where(torch.norm(grads, dim=-1) >= grad_threshold, True, False)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(self.get_scaling, dim=1).values <= self.percent_dense*scene_extent)
-        
+
         new_xyz = self._xyz[selected_pts_mask]
         new_features_dc = self._features_dc[selected_pts_mask]
         new_features_rest = self._features_rest[selected_pts_mask]
         new_opacities = self._opacity[selected_pts_mask]
         new_scaling = self._scaling[selected_pts_mask]
         new_rotation = self._rotation[selected_pts_mask]
-        
+
         new_albedo = self._albedo[selected_pts_mask]
         new_mask = self._mask[selected_pts_mask]
         new_roughness = self._roughness[selected_pts_mask]
-        
+
         new_language_feature = self._language_feature[selected_pts_mask]
+        new_surface_albedo = self._surface_albedo[selected_pts_mask]
+        new_surface_roughness = self._surface_roughness[selected_pts_mask]
+        new_reflection_feature = self._reflection_feature[selected_pts_mask]
+        new_specular_weight = self._specular_weight[selected_pts_mask]
+        new_branch_gate = self._branch_gate[selected_pts_mask]
+        new_transport_feature = self._transport_feature[selected_pts_mask]
 
         self.densification_postfix(
             new_xyz, new_features_dc, new_features_rest, new_opacities, new_scaling, new_rotation,
             new_albedo, new_mask, new_roughness,
-            new_language_feature
+            new_language_feature,
+            new_surface_albedo, new_surface_roughness, new_reflection_feature, new_specular_weight,
+            new_branch_gate, new_transport_feature
         )
 
     def densify_and_prune(self, max_grad, min_opacity, extent, max_screen_size):
         grads = self.xyz_gradient_accum / self.denom
         grads[grads.isnan()] = 0.0
-        
+
         self.densify_and_clone(grads, max_grad, extent)
         self.densify_and_split(grads, max_grad, extent)
 

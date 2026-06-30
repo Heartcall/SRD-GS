@@ -1,0 +1,11 @@
+name: no_transport_consistency
+implementation_status: runnable_srd_config_needs_runtime_verification
+hypothesis: Reflection transport consistency stabilizes view-dependent residuals without forcing specular RGB to be view-independent.
+what_it_removes: Sets SRD reflection/transport consistency loss weight to zero.
+expected_supporting_result: Full SRD-GS should improve reflective-region metrics and reduce material inconsistency.
+refuting_result: No change in reflective-region metrics, material consistency, or specular residual behavior.
+metrics_to_inspect_first: refl_psnr,refl_ssim,material_consistency,highlight_leakage_score
+train_args: "--enable_srd_gs --srd_use_branch_gate --lambda_srd_ref 0"
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

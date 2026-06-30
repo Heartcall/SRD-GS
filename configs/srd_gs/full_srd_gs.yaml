@@ -1,0 +1,11 @@
+name: full_srd_gs
+implementation_status: runnable_srd_config_needs_runtime_verification
+hypothesis: Full SRD-GS should reduce reflection contamination in geometry-bearing surface outputs while preserving competitive rendering.
+what_it_removes: Nothing; this is the full SRD-GS configuration with surface/reflection buffers, staged SRD losses, surface-only mesh, and specular-free texture export.
+expected_supporting_result: Lower reflective-region geometry error, lower highlight leakage score, cleaner surface-only mesh, and competitive PSNR/SSIM/LPIPS.
+refuting_result: Higher highlight leakage, worse mesh diagnostics, or substantial rendering degradation relative to Ref-GS.
+metrics_to_inspect_first: refl_psnr,refl_ssim,chamfer_distance,f_score,normal_mae,highlight_leakage_score
+train_args: "--enable_srd_gs --srd_use_branch_gate"
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true
