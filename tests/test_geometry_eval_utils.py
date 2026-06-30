@@ -32,7 +32,8 @@ class GeometryEvalUtilsTest(unittest.TestCase):
         self.assertEqual(protocol["dataset"], "Shiny Blender Synthetic")
         self.assertTrue(protocol["raw_coordinate_evaluation"])
         self.assertFalse(protocol["icp_enabled_by_default"])
-        self.assertEqual(protocol["acceptance_status"], "Needs Dataset Verification")
+        self.assertEqual(protocol["acceptance_status"], "not_accepted_gt")
+        self.assertIn("random", protocol["not_available_reason"])
         self.assertIn("points3d.ply", protocol["candidate_gt_geometry_path"])
 
     def test_explicit_point_cloud_paths_produce_geometry_metrics(self):
