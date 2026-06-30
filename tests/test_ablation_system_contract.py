@@ -43,10 +43,13 @@ class AblationSystemContractTest(unittest.TestCase):
     def test_runners_default_to_dry_run_and_reference_train_export_eval_steps(self):
         run_one = Path("scripts/srd_gs/run_one_scene.sh")
         run_ablation = Path("scripts/srd_gs/run_ablation_one_scene.sh")
+        run_branch_raster_smoke = Path("scripts/srd_gs/run_branch_raster_smoke_one_scene.sh")
         self.assertTrue(run_one.exists())
         self.assertTrue(run_ablation.exists())
+        self.assertTrue(run_branch_raster_smoke.exists())
         one_text = run_one.read_text(encoding="utf-8")
         ablation_text = run_ablation.read_text(encoding="utf-8")
+        branch_raster_text = run_branch_raster_smoke.read_text(encoding="utf-8")
 
         self.assertIn("DRY_RUN=1", one_text)
         self.assertIn("--execute", one_text)
@@ -56,6 +59,10 @@ class AblationSystemContractTest(unittest.TestCase):
         self.assertIn("eval_reflective_assets.py", one_text)
         self.assertIn("configs/srd_gs/*.yaml", ablation_text)
         self.assertIn("run_one_scene.sh", ablation_text)
+        self.assertIn("DRY_RUN=1", branch_raster_text)
+        self.assertIn("render_eval_pairs.py", branch_raster_text)
+        self.assertIn("eval_reflective_assets.py", branch_raster_text)
+        self.assertIn("--source_path", branch_raster_text)
 
     def test_collect_results_summarizes_metrics_json_to_csv(self):
         with tempfile.TemporaryDirectory() as tmp_dir:

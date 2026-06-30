@@ -574,3 +574,48 @@ Status: implementation GO for explicit branch-map raster feature path; CUDA runt
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
 - `scripts/srd_gs/run_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster.yaml --source_path /tmp/srd_dummy_scene --output_root /tmp/srd_branch_raster_dryrun --scene_name dummy --iterations 10`: passed as dry-run.
+
+## Milestone 15: Branch-raster Smoke Runner
+
+Status: bounded runtime smoke GO; paper-scale and quality-superiority claims still blocked
+
+### Actions Completed
+
+- Added `tests/test_branch_raster_smoke_runner.py` and confirmed RED failure because `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh` did not exist.
+- Added `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh`.
+- The runner defaults to dry-run and composes training, surface mesh extraction, specular-free texture export, test-split render-pair export, and accepted-GT mesh evaluation.
+- The runner adds `--eval` when the branch-raster config has `eval_enabled: true`.
+- The final evaluation command passes both `--pred_geometry` and `--source_path`, preserving the accepted-GT mesh protocol and raw-coordinate geometry metrics.
+- Added `docs/srd_gs/15_branch_raster_smoke_runner.md`.
+- Debugged the first runtime failure: one-shot 11-channel `language_feature_precomp` was incompatible with the installed fixed-width CUDA rasterizer backward.
+- Updated `gaussian_renderer.render()` to rasterize branch/specular/transport maps through base-width feature chunks.
+- Added a runner `LD_LIBRARY_PATH` guard for the local `open3d -> PIL/libLerc` import path.
+- Added `--depth_trunc` and defaulted the smoke runner to `10.0` after the default `3.0` produced an empty mesh at this scene scale.
+- Added `--max_texture_views` to keep future texture smoke exports bounded.
+- Updated `render_eval_pairs.py` so the manifest records the renderer-returned branch-map policy.
+- Executed the bounded `ball` smoke under `outputs/srd_gs_branch_raster_smoke_m15_depth10`.
+
+### Key Findings
+
+- Milestone 15 removes the prior gap where branch-raster dry-run training existed but did not generate a complete test-split metric chain.
+- CUDA backward reaches iteration 10 with the chunked branch-map raster path.
+- `render_eval_manifest.json` reports `policy=raster_feature_chunks`, `gate_applied=true`, and rasterized/backward-enabled branch/specular/transport maps.
+- Surface mesh extraction produces a non-empty mesh when `depth_trunc=10.0`.
+- Accepted-GT mesh metrics are finite for the produced surface mesh, but the numbers are 10-iteration engineering evidence only.
+
+### Runtime Smoke Metrics
+
+- PSNR: `4.3260074167208415`
+- SSIM: `-0.2661652640383713`
+- Refl-PSNR: `2.9511043338686926`
+- Refl-SSIM: `-0.22668858272641326`
+- Chamfer distance: `0.48252609372138977`
+- F-score: `0.0`
+- Normal MAE: `87.33883666992188`
+- Highlight leakage score: `0.0011635884875431657`
+
+### Tests and Checks
+
+- `python -m unittest tests.test_branch_raster_smoke_runner`: passed, 1 test.
+- `conda run -n ref_gs python -m unittest tests.test_render_eval_pairs_static tests.test_srd_branch_raster_features tests.test_srd_render_contract_static`: passed, 12 tests.
+- `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh ... --iterations 10 --depth_trunc 10.0 --execute`: passed on `ball` under `outputs/srd_gs_branch_raster_smoke_m15_depth10`.

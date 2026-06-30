@@ -21,10 +21,23 @@
 - Milestone 12: Single-scene validation gate - conditional GO for inspection / paper-scale still blocked
 - Milestone 13: GT mesh protocol revalidation - partial GO for accepted GT mesh metrics on existing ball smoke / paper-scale still blocked
 - Milestone 14: Branch-map raster feature path - implementation GO / CUDA runtime verification still required
+- Milestone 15: Branch-raster smoke runner - bounded runtime smoke GO / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 14 adds a feature-flagged branch-map raster feature path and dry-run config, but CUDA rasterizer/backward support still needs a bounded runtime smoke before branch-map or paper-scale claims.
+Do not launch broad paper-scale experiments yet. Milestone 15 confirms a bounded 10-iteration branch-raster smoke on `ball`, including CUDA backward, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh metrics. The next step should be one longer single-scene run before multi-scene ablations.
+
+## Completed Milestone 15 Notes
+
+- Added `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh`.
+- The runner defaults to dry-run and writes train, mesh, texture, render-pair, and accepted-GT mesh eval commands.
+- The train command includes `--eval` so test-split render metrics are available after training.
+- The eval command passes `--source_path` and `--pred_geometry`, enabling accepted scene GT mesh discovery such as `ball_gt_mesh.ply`.
+- Added `tests/test_branch_raster_smoke_runner.py` to lock the command contract.
+- Replaced one-shot 11-channel branch-map packing in `gaussian_renderer.render()` with base-width chunked raster passes so the installed CUDA backward returns compatible gradients.
+- Added runner guards for conda `libstdc++`, `depth_trunc=10.0`, and bounded texture-view export.
+- Executed `outputs/srd_gs_branch_raster_smoke_m15_depth10` on `ball` for 10 iterations with non-fallback `raster_feature_chunks` manifest policy and accepted-GT mesh metrics.
+- Broad paper-scale experiments remain blocked until a longer single-scene run and multi-scene validation pass.
 
 ## Completed Milestone 14 Notes
 

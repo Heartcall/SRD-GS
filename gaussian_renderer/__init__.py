@@ -22,7 +22,12 @@ from utils.graphics_utils import fov2focal
 from utils.color_utils import *
 from utils.sph_utils import *
 from utils.srd_branch_policy import get_srd_branch_map_policy
-from utils.srd_branch_maps import pack_srd_raster_features, unpack_srd_raster_maps
+from utils.srd_branch_maps import (
+    pack_srd_raster_feature_chunks,
+    pack_srd_raster_features,
+    unpack_srd_raster_maps,
+    unpack_srd_raster_maps_from_chunks,
+)
 
 DIR="result/"
 use_feature = True
@@ -123,7 +128,18 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     gs_feature = pc.get_reflection_feature if enable_srd_gs else pc.get_language_feature
     gs_feature = _match_feature_dim(gs_feature, pc.gsfeat_dim)
 
-    if enable_srd_gs:
+    extra_branch_inputs = []
+    srd_chunk_metadata = None
+    if enable_srd_gs and rasterize_branch_maps:
+        input_ts, extra_branch_inputs, srd_chunk_metadata = pack_srd_raster_feature_chunks(
+            gs_roughness,
+            gs_feature,
+            pc.get_branch_gate,
+            pc.get_specular_weight,
+            pc.get_transport_feature,
+            channel_limit=1 + pc.gsfeat_dim,
+        )
+    elif enable_srd_gs:
         input_ts, _ = pack_srd_raster_features(
             gs_roughness,
             gs_feature,
@@ -146,6 +162,23 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         rotations = rotations,
         cov3D_precomp = None
     )
+    extra_branch_feature_maps = []
+    if enable_srd_gs and rasterize_branch_maps:
+        # The installed diff-surfel rasterizer has a fixed feature-channel
+        # backward width. Extra SRD maps are rasterized in compatible chunks.
+        for branch_input_ts in extra_branch_inputs:
+            _, extra_out_ts, _, _ = rasterizer_black(
+                means3D=means3D,
+                means2D=means2D,
+                shs=None,
+                colors_precomp=gs_albedo,
+                language_feature_precomp=branch_input_ts,
+                opacities=opacity,
+                scales=scales,
+                rotations=rotations,
+                cov3D_precomp=None,
+            )
+            extra_branch_feature_maps.append(extra_out_ts.permute(1, 2, 0))
 
     render_alpha = allmap[1:2]
 
@@ -187,13 +220,23 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     feature_end = 1 + pc.gsfeat_dim
     feature_map_full = out_ts[..., 1:feature_end]
     if enable_srd_gs:
-        branch_maps, srd_branch_map_policy = unpack_srd_raster_maps(
-            out_ts,
-            gsfeat_dim=pc.gsfeat_dim,
-            transport_dim=getattr(pc, "srd_transport_dim", 4),
-            rasterize_branch_maps=rasterize_branch_maps,
-            use_branch_gate_requested=use_branch_gate,
-        )
+        if rasterize_branch_maps:
+            branch_maps, srd_branch_map_policy = unpack_srd_raster_maps_from_chunks(
+                out_ts,
+                extra_branch_feature_maps,
+                gsfeat_dim=pc.gsfeat_dim,
+                transport_dim=getattr(pc, "srd_transport_dim", 4),
+                chunk_metadata=srd_chunk_metadata,
+                use_branch_gate_requested=use_branch_gate,
+            )
+        else:
+            branch_maps, srd_branch_map_policy = unpack_srd_raster_maps(
+                out_ts,
+                gsfeat_dim=pc.gsfeat_dim,
+                transport_dim=getattr(pc, "srd_transport_dim", 4),
+                rasterize_branch_maps=rasterize_branch_maps,
+                use_branch_gate_requested=use_branch_gate,
+            )
         branch_gate_map_full = branch_maps["branch_gate_map"]
         specular_weight_map_full = branch_maps["specular_weight_map"]
         transport_feature_map_full = branch_maps["transport_feature_map"]

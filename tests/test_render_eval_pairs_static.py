@@ -26,6 +26,7 @@ class RenderEvalPairsStaticTest(unittest.TestCase):
 
         self.assertNotIn("albedo", RENDER_EVAL_FIELDS)
         self.assertIn("not_available_reason", text)
+        self.assertIn("render_pkg.get(\"srd_branch_map_policy\")", text)
 
     def test_manifest_records_baseline_and_srd_modes(self):
         manifest = build_empty_manifest(

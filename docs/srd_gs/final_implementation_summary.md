@@ -75,6 +75,7 @@
 - `configs/srd_gs/*.yaml` defines baseline, full SRD-GS, and ablation variants.
 - `scripts/srd_gs/run_one_scene.sh` and `scripts/srd_gs/run_ablation_one_scene.sh` default to dry-run.
 - `scripts/srd_gs/collect_results.py`, `make_tables.py`, and `make_failure_panels.py` aggregate available results.
+- `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh` generates a bounded branch-raster smoke chain with `eval=True`, test-split render-pair export, and accepted-GT mesh evaluation.
 
 ## Runtime Smoke Evidence
 
@@ -120,6 +121,7 @@ Current supported claim:
 
 ```text
 SRD-GS has an implemented and tested engineering path for surface/reflection branch parameters, renderer buffers, SRD losses, surface-only mesh extraction, image-space specular-free material export, blocked-safe evaluation, ablation configuration, and a one-scene smoke loop.
+SRD-GS branch/specular/transport maps can run through the installed fixed-width CUDA rasterizer by using base-width chunked feature passes; this reached a bounded 10-iteration `ball` smoke with test-split render pairs and accepted-GT mesh metrics.
 ```
 
 Current unsupported claims:
@@ -136,7 +138,7 @@ SRD-GS has stable multi-scene mesh/material superiority.
 
 1. Test-split render/GT export requires checkpoints trained or regenerated with `eval=True`; existing smoke metric-chain outputs used the train split because their checkpoint config had `eval=False`.
 2. Accepted GT mesh geometry is now available for Shiny Blender Synthetic `ball` through `ball_gt_mesh.ply`, and the metric chain runs against it. The current accepted-GT metrics are still from 20-iteration smoke artifacts and are not paper-scale evidence.
-3. SRD branch-map rasterization now has an explicit feature-flagged raster feature path, but CUDA runtime/backward support remains unverified.
+3. SRD branch-map rasterization now has an explicit feature-flagged chunked raster path and bounded `ball` smoke evidence. It still needs a longer single-scene run and multi-scene validation before paper-scale claims.
 4. Current texture/material baking is image-space only; UV atlas or mesh-bound material baking is not implemented.
 5. Ablation configs exist, but paper-scale ablation runs have not been executed.
 6. The current runtime smoke is only 20 iterations on one scene.
@@ -145,14 +147,17 @@ SRD-GS has stable multi-scene mesh/material superiority.
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Run a bounded CUDA smoke for `--srd_rasterize_branch_maps` and inspect whether branch maps are non-fallback and backward-stable.
-4. Run one longer single-scene experiment before expanding to the full dry-run matrix.
+3. Run one longer single-scene branch-raster experiment before expanding to the full dry-run matrix.
+4. Compare branch-raster SRD-GS against Ref-GS and fallback SRD-GS at the same longer budget.
 5. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification in Milestone 14:
+Fresh verification through Milestone 15:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
 - `scripts/srd_gs/run_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster.yaml --source_path /tmp/srd_dummy_scene --output_root /tmp/srd_branch_raster_dryrun --scene_name dummy --iterations 10`: passed as dry-run.
+- `python -m unittest tests.test_branch_raster_smoke_runner`: passed, 1 test.
+- `conda run -n ref_gs python -m unittest tests.test_render_eval_pairs_static tests.test_srd_branch_raster_features tests.test_srd_render_contract_static`: passed, 12 tests.
+- `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_branch_raster_smoke_m15_depth10 --scene_name ball --iterations 10 --max_mesh_views 4 --depth_trunc 10.0 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.

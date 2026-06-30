@@ -52,8 +52,9 @@ class SRDRenderContractStaticTest(unittest.TestCase):
     def test_srd_branch_rasterization_is_explicitly_flag_gated(self):
         expected_tokens = [
             "rasterize_branch_maps = getattr(pc, \"srd_rasterize_branch_maps\", False)",
-            "pack_srd_raster_features(",
-            "unpack_srd_raster_maps(",
+            "pack_srd_raster_feature_chunks(",
+            "unpack_srd_raster_maps_from_chunks(",
+            "extra_branch_feature_maps",
             "rasterize_branch_maps=rasterize_branch_maps",
         ]
         for token in expected_tokens:
