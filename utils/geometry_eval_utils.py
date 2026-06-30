@@ -1,0 +1,198 @@
+import os
+
+import numpy as np
+
+from utils.metric_utils import compute_geometry_metrics
+
+
+SHINY_BALL_PATH = "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball"
+
+
+def build_geometry_protocol(source_path):
+    source_path = os.path.abspath(source_path)
+    candidate_path = os.path.join(source_path, "points3d.ply")
+    candidate_exists = os.path.exists(candidate_path)
+    return {
+        "dataset": "Shiny Blender Synthetic" if source_path == SHINY_BALL_PATH else "unknown",
+        "source_path": source_path,
+        "candidate_gt_geometry_path": candidate_path if candidate_exists else "",
+        "candidate_exists": candidate_exists,
+        "gt_geometry_type": "point_cloud" if candidate_exists else "unknown",
+        "coordinate_system": "dataset_raw_coordinates",
+        "scale_policy": "no_rescale",
+        "raw_coordinate_evaluation": True,
+        "icp_enabled_by_default": False,
+        "icp_policy": "disabled_by_default_optional_only",
+        "surface_sampling_count": 20000,
+        "fscore_threshold": 0.01,
+        "normal_mae_input_requirement": "pred_normals_and_gt_normals_required",
+        "acceptance_status": "Needs Dataset Verification",
+        "not_available_reason": None if candidate_exists else "GT geometry not found / Needs Dataset Verification",
+    }
+
+
+def _read_ascii_ply_vertices(path):
+    with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+        lines = handle.readlines()
+    vertex_count = None
+    header_end = None
+    properties = []
+    in_vertex = False
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("element vertex"):
+            vertex_count = int(stripped.split()[-1])
+            in_vertex = True
+            continue
+        if stripped.startswith("element ") and not stripped.startswith("element vertex"):
+            in_vertex = False
+        if in_vertex and stripped.startswith("property"):
+            properties.append(stripped.split()[-1])
+        if stripped == "end_header":
+            header_end = idx + 1
+            break
+    if vertex_count is None or header_end is None:
+        raise ValueError("unsupported_ply_header")
+    if not {"x", "y", "z"}.issubset(set(properties)):
+        raise ValueError("ply_missing_xyz_properties")
+    xyz_indices = [properties.index(axis) for axis in ("x", "y", "z")]
+    points = []
+    for line in lines[header_end:header_end + vertex_count]:
+        if not line.strip():
+            continue
+        values = line.split()
+        points.append([float(values[i]) for i in xyz_indices])
+    return np.asarray(points, dtype=np.float32)
+
+
+def _read_ply_vertices_and_normals(path):
+    from plyfile import PlyData
+    ply = PlyData.read(path)
+    vertices = ply["vertex"]
+    points = np.stack([vertices["x"], vertices["y"], vertices["z"]], axis=-1).astype(np.float32)
+    names = set(vertices.data.dtype.names or [])
+    normals = None
+    if {"nx", "ny", "nz"}.issubset(names):
+        normals = np.stack([vertices["nx"], vertices["ny"], vertices["nz"]], axis=-1).astype(np.float32)
+    elif "face" in [element.name for element in ply.elements]:
+        raise ValueError("mesh_normals_require_open3d")
+    return points, normals
+
+
+def load_point_cloud_xyz(path):
+    if not path or not os.path.exists(path):
+        raise FileNotFoundError(path)
+    try:
+        return _read_ascii_ply_vertices(path)
+    except UnicodeDecodeError:
+        pass
+    try:
+        from plyfile import PlyData
+        ply = PlyData.read(path)
+        vertices = ply["vertex"]
+        return np.stack([vertices["x"], vertices["y"], vertices["z"]], axis=-1).astype(np.float32)
+    except Exception:
+        import open3d as o3d
+        geometry = o3d.io.read_point_cloud(path)
+        if len(geometry.points) > 0:
+            return np.asarray(geometry.points, dtype=np.float32)
+        mesh = o3d.io.read_triangle_mesh(path)
+        return np.asarray(mesh.vertices, dtype=np.float32)
+
+
+def load_geometry_xyz_normals(path):
+    if not path or not os.path.exists(path):
+        raise FileNotFoundError(path)
+    try:
+        return _read_ply_vertices_and_normals(path)
+    except Exception:
+        pass
+    import open3d as o3d
+    mesh = o3d.io.read_triangle_mesh(path)
+    if len(mesh.vertices) > 0:
+        if len(mesh.vertex_normals) == 0 and len(mesh.triangles) > 0:
+            mesh.compute_vertex_normals()
+        points = np.asarray(mesh.vertices, dtype=np.float32)
+        normals = np.asarray(mesh.vertex_normals, dtype=np.float32) if len(mesh.vertex_normals) > 0 else None
+        return points, normals
+    point_cloud = o3d.io.read_point_cloud(path)
+    points = np.asarray(point_cloud.points, dtype=np.float32)
+    normals = np.asarray(point_cloud.normals, dtype=np.float32) if len(point_cloud.normals) > 0 else None
+    return points, normals
+
+
+def _sample_points(points, sample_count):
+    points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+    if sample_count <= 0 or len(points) <= sample_count:
+        return points
+    indices = np.linspace(0, len(points) - 1, sample_count).astype(np.int64)
+    return points[indices]
+
+
+def _sample_points_and_normals(points, normals, sample_count):
+    points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+    if sample_count <= 0 or len(points) <= sample_count:
+        return points, normals
+    indices = np.linspace(0, len(points) - 1, sample_count).astype(np.int64)
+    sampled_normals = None if normals is None else np.asarray(normals, dtype=np.float32).reshape(-1, 3)[indices]
+    return points[indices], sampled_normals
+
+
+def _nearest_indices(src_points, dst_points):
+    try:
+        from scipy.spatial import cKDTree
+        return cKDTree(dst_points).query(src_points, k=1)[1]
+    except Exception:
+        diff = src_points[:, None, :] - dst_points[None, :, :]
+        return np.sum(diff * diff, axis=-1).argmin(axis=1)
+
+
+def compute_geometry_metrics_from_paths(
+    pred_geometry_path=None,
+    gt_geometry_path=None,
+    source_path=None,
+    accept_gt_geometry=False,
+    sample_count=20000,
+    fscore_threshold=0.01,
+):
+    if not gt_geometry_path and source_path:
+        protocol = build_geometry_protocol(source_path)
+        gt_geometry_path = protocol["candidate_gt_geometry_path"]
+        if not accept_gt_geometry:
+            return compute_geometry_metrics(
+                pred_points=None,
+                gt_points=None,
+                fscore_threshold=fscore_threshold,
+            )
+    if not accept_gt_geometry:
+        return compute_geometry_metrics(
+            pred_points=None,
+            gt_points=None,
+            fscore_threshold=fscore_threshold,
+        )
+    if not pred_geometry_path or not os.path.exists(pred_geometry_path):
+        return compute_geometry_metrics(
+            pred_points=None,
+            gt_points=load_point_cloud_xyz(gt_geometry_path) if gt_geometry_path and os.path.exists(gt_geometry_path) else None,
+            fscore_threshold=fscore_threshold,
+        )
+    if not gt_geometry_path or not os.path.exists(gt_geometry_path):
+        return compute_geometry_metrics(
+            pred_points=load_point_cloud_xyz(pred_geometry_path),
+            gt_points=None,
+            fscore_threshold=fscore_threshold,
+        )
+    pred_points_full, pred_normals_full = load_geometry_xyz_normals(pred_geometry_path)
+    gt_points_full, gt_normals_full = load_geometry_xyz_normals(gt_geometry_path)
+    pred_points, pred_normals = _sample_points_and_normals(pred_points_full, pred_normals_full, sample_count)
+    gt_points, gt_normals = _sample_points_and_normals(gt_points_full, gt_normals_full, sample_count)
+    matched_gt_normals = None
+    if pred_normals is not None and gt_normals is not None and len(pred_points) > 0 and len(gt_points) > 0:
+        matched_gt_normals = gt_normals[_nearest_indices(pred_points, gt_points)]
+    return compute_geometry_metrics(
+        pred_points=pred_points,
+        gt_points=gt_points,
+        pred_normals=pred_normals,
+        gt_normals=matched_gt_normals,
+        fscore_threshold=fscore_threshold,
+    )
