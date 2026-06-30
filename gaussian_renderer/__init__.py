@@ -26,6 +26,34 @@ DIR="result/"
 use_feature = True
 
 
+def get_srd_branch_map_policy(use_branch_gate_requested=False):
+    return {
+        "policy": "fallback_neutral_gate",
+        "warning": (
+            "Needs Runtime Verification: SRD branch maps are not rasterized by "
+            "the current diff-surfel feature-channel path. Branch gate falls "
+            "back to a neutral value so specular contribution is not suppressed."
+        ),
+        "use_branch_gate_requested": bool(use_branch_gate_requested),
+        "gate_applied": False,
+        "branch_gate_map": {
+            "rasterized": False,
+            "backward_to_gaussian": False,
+            "fallback_value": 1.0,
+        },
+        "specular_weight_map": {
+            "rasterized": False,
+            "backward_to_gaussian": False,
+            "fallback_value": 1.0,
+        },
+        "transport_feature_map": {
+            "rasterized": False,
+            "backward_to_gaussian": False,
+            "fallback_value": 0.0,
+        },
+    }
+
+
 def _match_feature_dim(feature, target_dim):
     """Pad or truncate rasterized feature channels to match Ref-GS light_mlp."""
     if feature.shape[-1] == target_dim:
@@ -105,6 +133,12 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     rets =  {}
     enable_srd_gs = getattr(pc, "enable_srd_gs", False)
     use_branch_gate = getattr(pc, "srd_use_branch_gate", False)
+    srd_branch_map_policy = get_srd_branch_map_policy(use_branch_gate) if enable_srd_gs else {
+        "policy": "baseline_no_srd",
+        "warning": None,
+        "use_branch_gate_requested": False,
+        "gate_applied": False,
+    }
 
     gs_albedo = pc.get_surface_albedo if enable_srd_gs else pc.get_albedo
     gs_roughness = pc.get_surface_roughness if enable_srd_gs else pc.get_roughness
@@ -171,10 +205,10 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     feature_end = 1 + pc.gsfeat_dim
     feature_map_full = out_ts[..., 1:feature_end]
     if enable_srd_gs:
-        default_branch_gate = torch.zeros_like(roughness_map_full)
-        branch_gate_map_full = _slice_feature_or_default(
-            out_ts, feature_end, 1, default_branch_gate
-        ) if use_branch_gate else default_branch_gate
+        # Option C fallback policy: until branch/specular/transport channels
+        # are truly rasterized with backward support, keep the gate neutral.
+        default_branch_gate = torch.ones_like(roughness_map_full)
+        branch_gate_map_full = default_branch_gate
         specular_weight_map_full = _slice_feature_or_default(
             out_ts, feature_end + 1, 1, torch.ones_like(roughness_map_full)
         )
@@ -301,6 +335,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
             'specular_weight_map': specular_weight_out,
             'transport_feature_map': transport_feature_out,
             'reflection_residual': reflection_residual,
+            'srd_branch_map_policy': srd_branch_map_policy,
         })
 
     if iteration % 500 == 0:
