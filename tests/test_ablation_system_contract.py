@@ -69,6 +69,8 @@ class AblationSystemContractTest(unittest.TestCase):
             root = Path(tmp_dir)
             metrics_path = root / "scene_a" / "variant_a" / "eval" / "metrics.json"
             metrics_path.parent.mkdir(parents=True)
+            gt_metrics_path = root / "scene_b" / "variant_b" / "eval_with_gt_mesh" / "metrics.json"
+            gt_metrics_path.parent.mkdir(parents=True)
             metrics_path.write_text(
                 json.dumps(
                     {
@@ -79,6 +81,23 @@ class AblationSystemContractTest(unittest.TestCase):
                                 "value": 31.5,
                                 "supports_hypothesis": "rendering_fidelity",
                                 "higher_is_better": True,
+                                "not_available_reason": None,
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            gt_metrics_path.write_text(
+                json.dumps(
+                    {
+                        "metrics": [
+                            {
+                                "category": "geometry",
+                                "name": "chamfer_distance",
+                                "value": 0.25,
+                                "supports_hypothesis": "surface_geometry_quality",
+                                "higher_is_better": False,
                                 "not_available_reason": None,
                             }
                         ]
@@ -104,11 +123,14 @@ class AblationSystemContractTest(unittest.TestCase):
             with output_csv.open("r", encoding="utf-8") as handle:
                 rows = list(csv.DictReader(handle))
 
-        self.assertEqual(len(rows), 1)
+        self.assertEqual(len(rows), 2)
         self.assertEqual(rows[0]["scene"], "scene_a")
         self.assertEqual(rows[0]["variant"], "variant_a")
         self.assertEqual(rows[0]["name"], "psnr")
         self.assertEqual(rows[0]["value"], "31.5")
+        self.assertEqual(rows[1]["scene"], "scene_b")
+        self.assertEqual(rows[1]["variant"], "variant_b")
+        self.assertEqual(rows[1]["name"], "chamfer_distance")
 
 
 if __name__ == "__main__":

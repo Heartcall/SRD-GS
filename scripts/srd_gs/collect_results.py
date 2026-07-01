@@ -9,6 +9,8 @@ def infer_scene_variant(metrics_path, results_root):
     parts = rel.split(os.sep)
     if len(parts) >= 4 and parts[-2] == "eval":
         return parts[-4], parts[-3]
+    if len(parts) >= 4 and parts[-2] == "eval_with_gt_mesh":
+        return parts[-4], parts[-3]
     if len(parts) >= 3:
         return parts[-3], parts[-2]
     if len(parts) == 2:

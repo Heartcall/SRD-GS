@@ -619,3 +619,44 @@ Status: bounded runtime smoke GO; paper-scale and quality-superiority claims sti
 - `python -m unittest tests.test_branch_raster_smoke_runner`: passed, 1 test.
 - `conda run -n ref_gs python -m unittest tests.test_render_eval_pairs_static tests.test_srd_branch_raster_features tests.test_srd_render_contract_static`: passed, 12 tests.
 - `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh ... --iterations 10 --depth_trunc 10.0 --execute`: passed on `ball` under `outputs/srd_gs_branch_raster_smoke_m15_depth10`.
+
+## Milestone 16: Single-scene Three-variant Comparison
+
+Status: bounded comparison GO; paper-scale and stable quality-superiority claims still blocked
+
+### Actions Completed
+
+- Added `tests/test_single_scene_comparison_runner.py` and confirmed RED failure because `scripts/srd_gs/run_single_scene_comparison.sh` was missing.
+- Extended `tests/test_ablation_system_contract.py` to cover `eval_with_gt_mesh/metrics.json` collection and confirmed RED failure from incorrect scene/variant inference.
+- Added `scripts/srd_gs/run_single_scene_comparison.sh`.
+- Updated `scripts/srd_gs/collect_results.py` so `eval_with_gt_mesh` summaries retain the correct scene and variant names.
+- Updated `configs/srd_gs/full_srd_gs_branch_raster.yaml` to record bounded runtime validation status.
+- Executed the 30-iteration `ball` comparison for `refgs_baseline`, `full_srd_gs`, and `full_srd_gs_branch_raster`.
+- Added `docs/srd_gs/16_single_scene_comparison.md`.
+
+### Key Findings
+
+- All three variants completed train, mesh extraction, texture export, test-split render pairs, and accepted-GT mesh evaluation.
+- All three variants produced non-empty meshes with `depth_trunc=10.0`.
+- `full_srd_gs_branch_raster` preserved the expected `raster_feature_chunks` manifest policy with branch/specular/transport maps rasterized and backward-enabled.
+- The branch-raster path is technically runnable but shows a short-budget quality tradeoff: lower highlight leakage and lower normal MAE, but worse PSNR/Refl-PSNR and worse Chamfer.
+
+### Runtime Metrics
+
+| Variant | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Baking highlight leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `refgs_baseline` | 5.7927 | 5.2827 | 0.430455 | 0.000 | 85.4228 | 0.207529 |
+| `full_srd_gs` | 5.7881 | 5.2728 | 0.429746 | 0.000 | 87.2881 | 0.206033 |
+| `full_srd_gs_branch_raster` | 4.0390 | 2.7114 | 0.435425 | 0.001 | 82.9009 | 0.001642 |
+
+### Claim Boundary
+
+- Engineering metric-chain comparison: GO for one scene and one short budget.
+- Branch-raster runtime path: GO for bounded single-scene execution.
+- Stable rendering, geometry, or material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- `python -m unittest tests.test_single_scene_comparison_runner tests.test_ablation_system_contract`: passed, 4 tests.
+- `bash scripts/srd_gs/run_single_scene_comparison.sh ... --iterations 30 --execute`: passed under `outputs/srd_gs_single_scene_comparison_m16_i30`.

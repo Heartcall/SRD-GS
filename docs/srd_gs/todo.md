@@ -22,10 +22,21 @@
 - Milestone 13: GT mesh protocol revalidation - partial GO for accepted GT mesh metrics on existing ball smoke / paper-scale still blocked
 - Milestone 14: Branch-map raster feature path - implementation GO / CUDA runtime verification still required
 - Milestone 15: Branch-raster smoke runner - bounded runtime smoke GO / paper-scale still blocked
+- Milestone 16: Single-scene three-variant comparison - bounded comparison GO / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 15 confirms a bounded 10-iteration branch-raster smoke on `ball`, including CUDA backward, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh metrics. The next step should be one longer single-scene run before multi-scene ablations.
+Do not launch broad paper-scale experiments yet. Milestone 16 confirms a bounded 30-iteration `ball` comparison for `refgs_baseline`, `full_srd_gs`, and `full_srd_gs_branch_raster`. The next step should address branch-raster quality tradeoff through delayed/ramped branch-gate usage or a longer single-scene schedule test before multi-scene ablations.
+
+## Completed Milestone 16 Notes
+
+- Added `scripts/srd_gs/run_single_scene_comparison.sh`.
+- Updated `scripts/srd_gs/collect_results.py` to correctly infer scene/variant from `eval_with_gt_mesh/metrics.json`.
+- Added `tests/test_single_scene_comparison_runner.py`.
+- Executed `outputs/srd_gs_single_scene_comparison_m16_i30` on Shiny Blender Synthetic `ball` for 30 iterations.
+- The branch-raster variant preserved non-fallback `raster_feature_chunks` diagnostics and completed the full train/mesh/texture/render/eval chain.
+- The branch-raster variant reduced image-space baking highlight leakage but hurt PSNR/Refl-PSNR and did not improve Chamfer in this short-budget comparison.
+- Paper-scale and stable quality-superiority claims remain blocked.
 
 ## Completed Milestone 15 Notes
 
