@@ -880,3 +880,104 @@ Status: neutral render-gate control GO; rendering quality still NO-GO; paper-sca
 - `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 9 tests.
 - `python -m py_compile tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_neutral_i300.yaml ... --iterations 300 --execute`: passed under `outputs/srd_gs_i300_neutral_gate_m21`.
+
+## Milestone 22: Render Regression Artifact Diagnosis
+
+Status: read-only artifact diagnosis GO; root-cause still incomplete; paper-scale still blocked
+
+### Actions Completed
+
+- Added `tests/test_render_regression_diagnosis.py` and confirmed RED failure because `scripts/srd_gs/diagnose_render_regression.py` did not exist.
+- Added `scripts/srd_gs/diagnose_render_regression.py`.
+- The script reads completed result roots only: `eval_with_gt_mesh/metrics.json`, `render_eval_pairs/render_eval_manifest.json`, render-pair diagnostic images, and `pbr_textures_specular_free/baking_report.json`.
+- The script writes `case_summary.csv`, `map_stats.csv`, `pairwise_deltas.csv`, `diagnosis_summary.json`, and `diagnosis_report.md`.
+- Executed the script over existing M18/M20/M21 `ball` artifacts under `outputs/srd_gs_render_regression_diag_m22`.
+- Added `docs/srd_gs/22_render_regression_artifact_diagnosis.md`.
+
+### Key Findings
+
+- M20 and M21 both regress in PSNR/Refl-PSNR versus M18.
+- M21 keeps `render_gate_weight=0.0` and still regresses, so rendered branch-gate activation is not the sole cause.
+- M20/M21 improve raw-coordinate Chamfer versus M18 while worsening RGB and reflective residual means, so geometry and rendering quality are moving in different directions in this evidence set.
+- Branch-gate map means and reflective-mask means are similar across M18/M20/M21, which makes a gross branch-mask coverage change less likely as the only explanation.
+- Specular/diffuse statistics shift substantially from M18 to M20/M21, but this diagnosis does not prove whether those shifts are cause or effect.
+
+### Metrics
+
+| Variant | Iter | Render gate | PSNR | Refl-PSNR | Chamfer | F-score | Leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay | 30 | 0.0 | 4.0842 | 2.7730 | 0.428561 | 0.000 | 0.001707 |
+| M20 render gate on | 300 | 1.0 | 2.9394 | 1.5411 | 0.311117 | 0.000 | 0.006588 |
+| M21 render gate neutral | 300 | 0.0 | 2.9205 | 1.5409 | 0.300529 | 0.001 | 0.003792 |
+
+Pairwise deltas versus M18:
+
+| Variant | PSNR delta | Refl-PSNR delta | Chamfer delta | F-score delta | Leakage delta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| M20 render gate on | -1.1448 | -1.2319 | -0.117444 | 0.000 | +0.004881 |
+| M21 render gate neutral | -1.1637 | -1.2321 | -0.128032 | +0.001 | +0.002085 |
+
+### Claim Boundary
+
+- Read-only artifact diagnosis: GO.
+- Evidence against rendered gate activation as the sole rendering-regression cause: GO for existing `ball` M18/M20/M21 artifacts only.
+- Complete root-cause diagnosis: NO-GO.
+- Rendering fidelity recovery: NO-GO.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- `python -m unittest tests.test_render_regression_diagnosis`: passed, 1 test.
+- `python scripts/srd_gs/diagnose_render_regression.py --case M18_render_gate_delay_i30=... --case M20_i300_render_gate_on=... --case M21_i300_render_gate_neutral=... --output_dir outputs/srd_gs_render_regression_diag_m22`: passed.
+
+## Milestone 23: Checkpoint Drift Diagnosis
+
+Status: read-only checkpoint diagnosis GO; root-cause still incomplete; paper-scale still blocked
+
+### Actions Completed
+
+- Added `tests/test_checkpoint_drift_diagnosis.py` and confirmed RED failure because `scripts/srd_gs/diagnose_checkpoint_drift.py` did not exist.
+- Added `scripts/srd_gs/diagnose_checkpoint_drift.py`.
+- The script reads completed model roots only: `point_cloud/iteration_*/point_cloud.ply` and `cfg_args`.
+- The script writes `checkpoint_summary.csv`, `parameter_stats.csv`, `parameter_deltas.csv`, `checkpoint_diagnosis_summary.json`, and `checkpoint_diagnosis_report.md`.
+- Executed the script over existing M18/M20/M21 `ball` model artifacts under `outputs/srd_gs_checkpoint_drift_diag_m23`.
+- Added `docs/srd_gs/23_checkpoint_drift_diagnosis.md`.
+
+### Key Findings
+
+- All three checkpoints have `100000` Gaussians; Gaussian count growth alone does not explain the rendering drop.
+- M20 and M21 both have much higher activated opacity mean than M18.
+- M20 and M21 both have much higher reflection-feature absolute mean than M18.
+- M21's branch-gate activated mean matches M18, while rendering remains degraded; this supports the earlier finding that branch-gate activation/coverage alone is not the complete explanation.
+- Training loss logs were unavailable in the supplied model roots, so Stage A loss progression could not be analyzed.
+
+### Metrics
+
+| Variant | Iter | Gaussian count | Opacity activated mean | Scale exp mean | Reflection feature abs mean | Specular weight mean | Branch gate mean |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay | 30 | 100000 | 0.172880 | 0.010646 | 0.010349 | 0.049999 | 0.050000 |
+| M20 render gate on | 300 | 100000 | 0.316771 | 0.011631 | 0.053440 | 0.050445 | 0.048644 |
+| M21 render gate neutral | 300 | 100000 | 0.316184 | 0.011632 | 0.053871 | 0.050382 | 0.050000 |
+
+Pairwise deltas versus M18:
+
+| Variant | Gaussian count delta | Opacity mean delta | Scale exp mean delta | Reflection feature abs mean delta | Specular weight mean delta | Branch gate mean delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M20 render gate on | 0 | +0.143890 | +0.000985 | +0.043091 | +0.000445 | -0.001356 |
+| M21 render gate neutral | 0 | +0.143303 | +0.000986 | +0.043523 | +0.000382 | 0.000000 |
+
+### Claim Boundary
+
+- Read-only checkpoint/config diagnosis: GO.
+- Evidence against Gaussian count growth as the sole rendering-regression cause: GO for existing `ball` M18/M20/M21 checkpoints only.
+- Opacity/reflection-feature drift as a plausible next control target: GO.
+- Complete root-cause diagnosis: NO-GO.
+- Rendering fidelity recovery: NO-GO.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- `python -m unittest tests.test_checkpoint_drift_diagnosis`: passed, 1 test.
+- `python scripts/srd_gs/diagnose_checkpoint_drift.py --case M18_render_gate_delay_i30=... --case M20_i300_render_gate_on=... --case M21_i300_render_gate_neutral=... --output_dir outputs/srd_gs_checkpoint_drift_diag_m23`: passed.

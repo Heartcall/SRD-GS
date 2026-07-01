@@ -28,10 +28,36 @@
 - Milestone 19: Bounded Stage B/C render-gate-delay pilot - runtime GO / quality mixed / paper-scale still blocked
 - Milestone 20: Same-budget render-gate-delay control - runtime GO / rendering still NO-GO / paper-scale still blocked
 - Milestone 21: Neutral render-gate 300-iteration control - runtime GO / rendering still NO-GO / paper-scale still blocked
+- Milestone 22: Render regression artifact diagnosis - read-only diagnosis GO / root-cause still incomplete / paper-scale still blocked
+- Milestone 23: Checkpoint drift diagnosis - read-only diagnosis GO / opacity-reflection drift plausible / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 21 confirms that keeping rendered branch-gate modulation neutral at the 300-iteration checkpoint does not recover PSNR/Refl-PSNR, although Chamfer, F-score, and baking highlight leakage improve over M20. The next step should be a read-only artifact diagnosis over M18/M20/M21 outputs to localize whether the rendering drop comes from checkpoint-length training dynamics, specular-weight behavior, branch diagnostics, or evaluation-mask effects before launching more training.
+Do not launch broad paper-scale experiments yet. Milestone 23 confirms from existing checkpoints that M18/M20/M21 keep the same Gaussian count, while M20/M21 show higher activated opacity mean and higher reflection-feature absolute mean than M18. The next step should be one bounded single-scene control for the plausible opacity/reflection-feature drift mechanism. Keep it dry-run-first, baseline-compatible, and single-scene/single-checkpoint; do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 23 Notes
+
+- Added `scripts/srd_gs/diagnose_checkpoint_drift.py`.
+- Added `tests/test_checkpoint_drift_diagnosis.py` with temporary M18/M20/M21-style PLY checkpoints.
+- Ran a read-only checkpoint/config diagnosis over existing M18/M20/M21 `ball` model roots.
+- Wrote `outputs/srd_gs_checkpoint_drift_diag_m23/checkpoint_summary.csv`, `parameter_stats.csv`, `parameter_deltas.csv`, `checkpoint_diagnosis_summary.json`, and `checkpoint_diagnosis_report.md`.
+- Diagnosis flags: `no_gaussian_count_growth`, `training_loss_logs_unavailable`, and `branch_or_specular_parameter_drift_present`.
+- All three checkpoints have Gaussian count `100000`; Gaussian count growth alone does not explain the rendering drop.
+- M20/M21 versus M18 activated opacity mean deltas are `+0.143890` and `+0.143303`.
+- M20/M21 versus M18 reflection-feature absolute mean deltas are `+0.043091` and `+0.043523`.
+- Training loss logs were unavailable, so loss progression remains unverified.
+- The diagnosis identifies opacity/reflection-feature drift as a plausible next control target, but does not prove complete root cause. Rendering quality, stable superiority, material/PBR, and paper-scale claims remain NO-GO.
+
+## Completed Milestone 22 Notes
+
+- Added `scripts/srd_gs/diagnose_render_regression.py`.
+- Added `tests/test_render_regression_diagnosis.py` with temporary M18/M20/M21-style artifacts.
+- Ran a read-only diagnosis over existing M18/M20/M21 `ball` result roots.
+- Wrote `outputs/srd_gs_render_regression_diag_m22/case_summary.csv`, `map_stats.csv`, `pairwise_deltas.csv`, `diagnosis_summary.json`, and `diagnosis_report.md`.
+- Diagnosis flags: `rendering_regression_vs_baseline`, `render_gate_activation_not_sole_cause`, and `geometry_can_improve_while_rendering_degrades`.
+- M20 versus M18 deltas: PSNR `-1.1448`, Refl-PSNR `-1.2319`, Chamfer `-0.117444`, leakage `+0.004881`.
+- M21 versus M18 deltas: PSNR `-1.1637`, Refl-PSNR `-1.2321`, Chamfer `-0.128032`, leakage `+0.002085`.
+- The artifact diagnosis localizes the remaining issue away from rendered gate activation alone, but does not prove a full root cause. Rendering quality, stable superiority, material/PBR, and paper-scale claims remain NO-GO.
 
 ## Completed Milestone 21 Notes
 

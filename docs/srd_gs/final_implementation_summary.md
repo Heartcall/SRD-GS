@@ -129,6 +129,8 @@ Render-gate delay decouples diagnostic branch-gate rasterization from rendered s
 The render-gate-delay branch-raster path can execute Stage B/C losses in a bounded 300-iteration `ball` pilot with non-fallback diagnostics, but the quality signal is mixed.
 A same-budget 300-iteration Stage-A control keeps M19's final rendered gate state and shows similar rendering degradation, suggesting accelerated Stage B/C is not the sole cause.
 A neutral-render-gate 300-iteration Stage-A control keeps diagnostics active and improves Chamfer/F-score/leakage over M20, but PSNR/Refl-PSNR still do not recover.
+A read-only M18/M20/M21 artifact diagnosis confirms the 300-iteration rendering regression persists even when `render_gate_weight=0.0`, so rendered gate activation is not the sole cause; the complete root cause remains unresolved.
+A read-only M18/M20/M21 checkpoint diagnosis shows Gaussian count is unchanged while activated opacity and reflection-feature magnitude drift upward in the 300-iteration checkpoints, making opacity/reflection-feature drift a plausible next control target.
 ```
 
 Current unsupported claims:
@@ -154,14 +156,17 @@ SRD-GS has stable multi-scene mesh/material superiority.
 9. The accelerated Stage B/C pilot improves Chamfer and Normal MAE over M18, but PSNR/Refl-PSNR degrade, F-score remains zero, and baking leakage increases.
 10. The same-budget Stage-A control closely matches M19's rendering degradation, so the next blocker is rendered gate activation or 300-iteration dynamics rather than Stage B/C acceleration alone.
 11. The neutral-render-gate control shows rendered gate activation is not the sole blocker; the remaining rendering drop likely needs artifact-level diagnosis of checkpoint dynamics, specular-weight behavior, branch diagnostics, or evaluation-mask effects.
+12. The M22 artifact diagnosis narrows the issue away from rendered gate activation alone and gross branch-mask coverage changes, but it does not yet distinguish checkpoint-length optimization dynamics from learned diffuse/specular parameter drift.
+13. The M23 checkpoint diagnosis shows all compared checkpoints have `100000` Gaussians, while M20/M21 opacity and reflection-feature statistics drift from M18; training loss logs are unavailable, so causality remains unproven.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Run a read-only artifact diagnosis over M18/M20/M21 render pairs, masks, branch maps, specular maps, and baking reports before launching more training.
-4. Only after the diagnosis identifies a plausible failure mechanism, test one bounded single-scene training/control change.
-5. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
+3. Test one bounded single-scene control for the plausible opacity/reflection-feature drift mechanism, dry-run first and baseline-compatible.
+4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
+5. If the bounded control is executed, keep it to `ball` and one short checkpoint before any broader claims.
+6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
@@ -185,3 +190,7 @@ Fresh verification through Milestone 18:
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_i300_control.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_i300_control_m20 --scene_name ball --iterations 300 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.
 - `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 9 tests.
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_neutral_i300.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_i300_neutral_gate_m21 --scene_name ball --iterations 300 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.
+- `python -m unittest tests.test_render_regression_diagnosis`: passed, 1 test.
+- `python scripts/srd_gs/diagnose_render_regression.py --case M18_render_gate_delay_i30=... --case M20_i300_render_gate_on=... --case M21_i300_render_gate_neutral=... --output_dir outputs/srd_gs_render_regression_diag_m22`: passed.
+- `python -m unittest tests.test_checkpoint_drift_diagnosis`: passed, 1 test.
+- `python scripts/srd_gs/diagnose_checkpoint_drift.py --case M18_render_gate_delay_i30=... --case M20_i300_render_gate_on=... --case M21_i300_render_gate_neutral=... --output_dir outputs/srd_gs_checkpoint_drift_diag_m23`: passed.
