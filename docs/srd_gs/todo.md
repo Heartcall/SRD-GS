@@ -23,10 +23,23 @@
 - Milestone 14: Branch-map raster feature path - implementation GO / CUDA runtime verification still required
 - Milestone 15: Branch-raster smoke runner - bounded runtime smoke GO / paper-scale still blocked
 - Milestone 16: Single-scene three-variant comparison - bounded comparison GO / paper-scale still blocked
+- Milestone 17: Branch-gate delay/ramp schedule - runtime/control plumbing GO / short-budget quality improvement NO-GO
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 16 confirms a bounded 30-iteration `ball` comparison for `refgs_baseline`, `full_srd_gs`, and `full_srd_gs_branch_raster`. The next step should address branch-raster quality tradeoff through delayed/ramped branch-gate usage or a longer single-scene schedule test before multi-scene ablations.
+Do not launch broad paper-scale experiments yet. Milestone 17 confirms that a simple branch-gate delay/ramp is wired correctly but does not improve the 30-iteration `ball` branch-raster tradeoff. The next step should test a stronger bounded control, such as disabling branch-gate modulation in rendering until Stage B/C or using a longer single-scene budget where SRD losses activate.
+
+## Completed Milestone 17 Notes
+
+- Added `utils/srd_schedule.py::compute_srd_branch_gate_weight()`.
+- Added `--srd_branch_gate_start_iter` and `--srd_branch_gate_ramp_iters` with backward-compatible defaults.
+- `gaussian_renderer.render()` now applies an effective gate `1 + weight * (gate - 1)` when `--srd_use_branch_gate` is enabled.
+- Propagated checkpoint iteration into `render_eval_pairs.py`, `export_pbr_textures.py`, and `extract_surface_mesh.py`/`GaussianExtractor`.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_gate_ramp.yaml`.
+- Executed `outputs/srd_gs_branch_gate_ramp_m17_i30` on `ball` for 30 iterations.
+- The schedule variant completed train/mesh/texture/render/eval and kept non-fallback `raster_feature_chunks` diagnostics.
+- The schedule variant did not improve PSNR/Refl-PSNR, Chamfer, or normal MAE versus the M16 immediate branch-raster variant.
+- Paper-scale and stable quality-superiority claims remain blocked.
 
 ## Completed Milestone 16 Notes
 

@@ -45,6 +45,7 @@ def main():
         pipe,
         surface_only=args.mesh_mode == 'surface',
         mesh_mode=args.mesh_mode,
+        render_iteration=scene.loaded_iter,
     )
     extractor.reconstruction(train_views)
     mesh = extractor.extract_mesh_bounded(

@@ -78,6 +78,8 @@ class ModelParams(ParamGroup):
         self.srd_detach_specular_geometry = False
         self.srd_use_branch_gate = False
         self.srd_rasterize_branch_maps = False
+        self.srd_branch_gate_start_iter = 0
+        self.srd_branch_gate_ramp_iters = 0
         self.srd_reflection_dim = 4
         self.srd_transport_dim = 4
 

@@ -10,10 +10,10 @@ from utils.texture_baking import bake_image_space_materials, create_baking_repor
 
 
 @torch.no_grad()
-def collect_render_packages(views, gaussians, pipe, bg_color):
+def collect_render_packages(views, gaussians, pipe, bg_color, render_iteration=0):
     render_packages = []
     for view in views:
-        render_pkg = render(view, gaussians, pipe, bg_color)
+        render_pkg = render(view, gaussians, pipe, bg_color, iteration=render_iteration)
         render_packages.append(render_pkg)
     return render_packages
 
@@ -42,7 +42,7 @@ def main():
         raise RuntimeError("no cameras available for {} split".format(args.split))
 
     background = torch.tensor([0, 0, 0], dtype=torch.float32, device="cuda")
-    render_packages = collect_render_packages(views, gaussians, pipe, background)
+    render_packages = collect_render_packages(views, gaussians, pipe, background, render_iteration=scene.loaded_iter)
     outputs = bake_image_space_materials(render_packages, mode=args.mode)
 
     output_dir = args.output_dir

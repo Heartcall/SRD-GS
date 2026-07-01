@@ -70,6 +70,43 @@ class BranchRasterSmokeRunnerTest(unittest.TestCase):
         self.assertIn("--pred_geometry", eval_command)
         self.assertIn("--geometry_sample_count 1000", eval_command)
 
+    def test_gate_ramp_config_writes_schedule_flags(self):
+        script = Path("scripts/srd_gs/run_branch_raster_smoke_one_scene.sh")
+        config = Path("configs/srd_gs/full_srd_gs_branch_raster_gate_ramp.yaml")
+        self.assertTrue(config.exists())
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_root = Path(tmp_dir)
+            subprocess.run(
+                [
+                    "bash",
+                    str(script),
+                    "--config",
+                    str(config),
+                    "--scene_path",
+                    "/tmp/srd_scene",
+                    "--output_root",
+                    str(output_root),
+                    "--scene_name",
+                    "ball",
+                    "--iterations",
+                    "40",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            variant_dir = output_root / "results" / "ball" / "full_srd_gs_branch_raster_gate_ramp"
+            train_command = (variant_dir / "train_command.txt").read_text(encoding="utf-8")
+            render_command = (variant_dir / "render_eval_pairs_command.txt").read_text(encoding="utf-8")
+
+        self.assertIn("--srd_branch_gate_start_iter 10", train_command)
+        self.assertIn("--srd_branch_gate_ramp_iters 20", train_command)
+        self.assertIn("--srd_branch_gate_start_iter 10", render_command)
+        self.assertIn("--srd_branch_gate_ramp_iters 20", render_command)
+
 
 if __name__ == "__main__":
     unittest.main()

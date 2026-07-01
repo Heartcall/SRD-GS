@@ -62,7 +62,16 @@ def to_cam_open3d(viewpoint_stack):
 
 
 class GaussianExtractor(object):
-    def __init__(self, gaussians, render, pipe, bg_color=None, surface_only=True, mesh_mode="surface"):
+    def __init__(
+        self,
+        gaussians,
+        render,
+        pipe,
+        bg_color=None,
+        surface_only=True,
+        mesh_mode="surface",
+        render_iteration=0,
+    ):
         """
         a class that extracts attributes a scene presented by 2DGS
 
@@ -75,7 +84,7 @@ class GaussianExtractor(object):
             bg_color = [0, 0, 0]
         background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
         self.gaussians = gaussians
-        self.render = partial(render, pipe=pipe, bg_color=background)
+        self.render = partial(render, pipe=pipe, bg_color=background, iteration=render_iteration)
         self.surface_only = surface_only
         self.mesh_mode = mesh_mode
         if self.mesh_mode not in ("surface", "unified", "all_branch"):

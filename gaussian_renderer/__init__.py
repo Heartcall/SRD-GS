@@ -28,6 +28,7 @@ from utils.srd_branch_maps import (
     unpack_srd_raster_maps,
     unpack_srd_raster_maps_from_chunks,
 )
+from utils.srd_schedule import compute_srd_branch_gate_weight
 
 DIR="result/"
 use_feature = True
@@ -113,6 +114,12 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     enable_srd_gs = getattr(pc, "enable_srd_gs", False)
     use_branch_gate = getattr(pc, "srd_use_branch_gate", False)
     rasterize_branch_maps = getattr(pc, "srd_rasterize_branch_maps", False)
+    branch_gate_weight = compute_srd_branch_gate_weight(
+        use_branch_gate=use_branch_gate,
+        iteration=iteration,
+        start_iter=getattr(pc, "srd_branch_gate_start_iter", 0),
+        ramp_iters=getattr(pc, "srd_branch_gate_ramp_iters", 0),
+    )
     srd_branch_map_policy = get_srd_branch_map_policy(
         use_branch_gate_requested=use_branch_gate,
         rasterize_branch_maps=rasterize_branch_maps,
@@ -243,6 +250,12 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         if not use_branch_gate:
             branch_gate_map_full = torch.ones_like(roughness_map_full)
             srd_branch_map_policy["gate_applied"] = False
+        else:
+            branch_gate_map_full = torch.ones_like(branch_gate_map_full) + branch_gate_weight * (
+                branch_gate_map_full - 1.0
+            )
+            srd_branch_map_policy["gate_applied"] = branch_gate_weight > 0.0
+            srd_branch_map_policy["branch_gate_weight"] = branch_gate_weight
     else:
         branch_gate_map_full = torch.ones_like(roughness_map_full)
         specular_weight_map_full = torch.ones_like(roughness_map_full)

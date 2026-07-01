@@ -1,0 +1,12 @@
+name: full_srd_gs_branch_raster_gate_ramp
+implementation_status: bounded_ball_i30_runtime_validated_quality_nogo
+hypothesis: Delaying and ramping the SRD branch gate should preserve the non-fallback branch-raster diagnostics while reducing early rendering degradation from applying the learned gate at iteration 1.
+what_it_removes: Removes immediate full-strength branch-gate modulation during early training.
+expected_supporting_result: Better PSNR/Refl-PSNR than immediate branch-raster while keeping low highlight leakage and non-fallback branch diagnostics.
+refuting_result: Similar or worse rendering than immediate branch-raster, loss of non-fallback branch diagnostics, or no material/geometry benefit.
+metrics_to_inspect_first: psnr,refl_psnr,chamfer_distance,normal_mae,highlight_leakage_score,branch_gate_weight
+train_args: "--enable_srd_gs --srd_rasterize_branch_maps --srd_use_branch_gate --srd_branch_gate_start_iter 10 --srd_branch_gate_ramp_iters 20"
+branch_gate_policy: raster_feature_chunks_with_gate_delay_ramp
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

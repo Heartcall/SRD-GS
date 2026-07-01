@@ -138,7 +138,7 @@ def render_eval_pairs(model_params, pipe, split, iteration, output_dir, max_view
     first_mask = None
     first_mask_path = None
     for index, view in enumerate(views):
-        render_pkg = render(view, gaussians, pipe, background)
+        render_pkg = render(view, gaussians, pipe, background, iteration=iteration)
         rendered_branch_policy = render_pkg.get("srd_branch_map_policy")
         if rendered_branch_policy is not None:
             manifest["branch_map_policy"] = rendered_branch_policy

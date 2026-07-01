@@ -115,6 +115,8 @@ class GaussianModel:
         self.srd_detach_specular_geometry = getattr(args, "srd_detach_specular_geometry", False)
         self.srd_use_branch_gate = getattr(args, "srd_use_branch_gate", False)
         self.srd_rasterize_branch_maps = getattr(args, "srd_rasterize_branch_maps", False)
+        self.srd_branch_gate_start_iter = getattr(args, "srd_branch_gate_start_iter", 0)
+        self.srd_branch_gate_ramp_iters = getattr(args, "srd_branch_gate_ramp_iters", 0)
         self.srd_reflection_dim = getattr(args, "srd_reflection_dim", 4)
         self.srd_transport_dim = getattr(args, "srd_transport_dim", 4)
 

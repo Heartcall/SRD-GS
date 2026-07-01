@@ -660,3 +660,44 @@ Status: bounded comparison GO; paper-scale and stable quality-superiority claims
 
 - `python -m unittest tests.test_single_scene_comparison_runner tests.test_ablation_system_contract`: passed, 4 tests.
 - `bash scripts/srd_gs/run_single_scene_comparison.sh ... --iterations 30 --execute`: passed under `outputs/srd_gs_single_scene_comparison_m16_i30`.
+
+## Milestone 17: Branch-gate Delay/Ramp Schedule
+
+Status: runtime/control plumbing GO; short-budget quality improvement NO-GO
+
+### Actions Completed
+
+- Added `tests/test_srd_branch_gate_schedule.py` and confirmed RED failure because `utils.srd_schedule` did not exist.
+- Added `utils/srd_schedule.py::compute_srd_branch_gate_weight()`.
+- Added `--srd_branch_gate_start_iter` and `--srd_branch_gate_ramp_iters` with defaults that preserve existing behavior.
+- Stored the schedule fields in `GaussianModel`.
+- Updated `gaussian_renderer.render()` to blend from neutral gate to learned rasterized gate by schedule weight.
+- Propagated checkpoint iteration into render eval, texture export, and surface mesh extraction.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_gate_ramp.yaml`.
+- Executed the 30-iteration `ball` gate-ramp branch-raster run under `outputs/srd_gs_branch_gate_ramp_m17_i30`.
+- Collected `outputs/srd_gs_branch_gate_ramp_m17_i30/tables/ball_gate_ramp_metric_summary.csv`.
+- Added `docs/srd_gs/17_branch_gate_schedule.md`.
+
+### Key Findings
+
+- The scheduled branch-gate variant runs end-to-end and records `branch_gate_weight=1.0` at checkpoint iteration 30.
+- It preserves `raster_feature_chunks` branch diagnostics with rasterized/backward-enabled branch/specular/transport maps.
+- The simple `start_iter=10`, `ramp_iters=20` schedule does not improve the M16 short-budget tradeoff.
+
+### Metrics
+
+| Variant | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Baking highlight leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M16 immediate branch-raster | 4.0390 | 2.7114 | 0.435425 | 0.001 | 82.9009 | 0.001642 |
+| M17 gate-ramp branch-raster | 4.0389 | 2.7112 | 0.442081 | 0.001 | 85.6183 | 0.001714 |
+
+### Claim Boundary
+
+- Schedule plumbing: GO.
+- Short-budget quality improvement: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- `python -m unittest tests.test_srd_branch_gate_schedule tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 9 tests.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_gate_ramp.yaml ... --iterations 30 --execute`: passed under `outputs/srd_gs_branch_gate_ramp_m17_i30`.
