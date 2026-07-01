@@ -1,0 +1,13 @@
+name: full_srd_gs_branch_raster_opacity_quarter_i300
+implementation_status: bounded_ball_i300_control_ready_paperscale_nogo
+hypothesis: Downweighting opacity updates to one quarter on top of the M24 reflection/specular freeze should test whether partial opacity dynamics can retain the M25 rendering recovery while reducing the geometry tradeoff caused by fully frozen opacity.
+what_it_removes: Reduces optimizer updates for opacity to 25 percent and removes optimizer updates for reflection_feature and specular_weight while keeping branch-raster diagnostics, diagnostic branch-gate scheduling, and neutral rendered gate modulation active for a same-budget 300-iteration control.
+expected_supporting_result: Successful train/mesh/texture/render/eval chain with raster_feature_chunks diagnostics, opacity drift lower than M20/M21/M24 but not fully frozen like M25, PSNR/Refl-PSNR close to M25, and Chamfer closer to M20/M21/M24 than M25 without introducing empty meshes or missing metrics.
+refuting_result: CUDA failure, empty mesh, fallback branch policy, missing metrics, opacity drift near M20/M21/M24, PSNR/Refl-PSNR falling back toward M24, or Chamfer not improving versus M25.
+metrics_to_inspect_first: psnr,refl_psnr,chamfer_distance,f_score,normal_mae,highlight_leakage_score,opacity_activated_mean,scale_exp_mean,reflection_feature_abs_mean,specular_weight_activated_mean,render_gate_weight
+train_args: "--enable_srd_gs --srd_rasterize_branch_maps --srd_use_branch_gate --srd_branch_gate_start_iter 10 --srd_branch_gate_ramp_iters 20 --srd_render_gate_start_iter 100000 --srd_render_gate_ramp_iters 0"
+train_only_args: "--srd_opacity_lr_scale 0.25 --srd_reflection_feature_lr_scale 0.0 --srd_specular_weight_lr_scale 0.0"
+branch_gate_policy: raster_feature_chunks_i300_opacity_quarter_reflection_specular_freeze_neutral_render_gate
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

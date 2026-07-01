@@ -1141,3 +1141,71 @@ Checkpoint deltas versus M18:
 - `git diff --check`: passed.
 - M25 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 26: Partial Opacity LR Control
+
+Status: runtime GO; opacity-drift downweight control GO; mixed rendering-geometry tradeoff; paper-scale still blocked
+
+### Actions Completed
+
+- Added `configs/srd_gs/full_srd_gs_branch_raster_opacity_quarter_i300.yaml`.
+- The config keeps the M24 reflection/specular freeze and uses `--srd_opacity_lr_scale 0.25`.
+- Added tests for dry-run command isolation and config discovery.
+- Verified dry-run command files under `outputs/srd_gs_opacity_quarter_m26_i300_dryrun`.
+- Executed a bounded 300-iteration `ball` run under `outputs/srd_gs_opacity_quarter_m26_i300`.
+- Collected `outputs/srd_gs_opacity_quarter_m26_i300/tables/ball_opacity_quarter_metric_summary.csv`.
+- Ran checkpoint drift diagnosis with M18/M20/M21/M24/M25/M26 under `outputs/srd_gs_opacity_quarter_m26_i300/checkpoint_drift`.
+- Ran render-regression diagnosis with M18/M20/M21/M24/M25/M26 under `outputs/srd_gs_opacity_quarter_m26_i300/render_regression`.
+- Added `docs/srd_gs/26_opacity_quarter_control.md`.
+
+### Runtime Notes
+
+- The first sandbox execution attempt failed with `RuntimeError: No CUDA GPUs are available`.
+- The same bounded command succeeded after explicit host-visible CUDA approval.
+- Training stayed in `stage_a` through iteration 300.
+- The run completed train, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh evaluation.
+- Manifest records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=0.0`, and `gate_applied=false`.
+- Mesh artifact is non-empty: `115M`.
+
+### Metrics
+
+| Variant | Iter | Render gate | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay | 30 | 0.0 | 4.0842 | 2.7730 | 0.428561 | 0.000 | 86.4124 | 0.001707 |
+| M20 render gate on | 300 | 1.0 | 2.9394 | 1.5411 | 0.311117 | 0.000 | 75.4314 | 0.006588 |
+| M21 render gate neutral | 300 | 0.0 | 2.9205 | 1.5409 | 0.300529 | 0.001 | 75.9167 | 0.003792 |
+| M24 reflection/specular freeze | 300 | 0.0 | 2.8750 | 1.7308 | 0.286904 | 0.000 | 74.6085 | 0.00000037 |
+| M25 opacity freeze | 300 | 0.0 | 3.6522 | 2.3203 | 0.397042 | 0.000 | 73.8319 | 0.000229 |
+| M26 quarter opacity LR | 300 | 0.0 | 3.1155 | 1.9098 | 0.327672 | 0.000 | 68.5402 | 0.00000763 |
+
+### Key Findings
+
+- Quarter opacity LR keeps activated opacity near M18: opacity mean delta `+0.007478`.
+- Rendering remains better than M20/M21/M24, but worse than M25 and below M18.
+- Chamfer and Normal MAE improve versus M25, but Chamfer remains worse than M20/M21/M24 and F-score remains zero.
+- This confirms an opacity-control tradeoff curve on `ball`, not a paper-scale result.
+
+### Claim Boundary
+
+- Optimizer schedule/downweight plumbing via config: GO.
+- Evidence for a single-scene opacity-control tradeoff: GO.
+- Full rendering fidelity recovery: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD suite: `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 12 tests.
+- Dry-run command contract: passed under `outputs/srd_gs_opacity_quarter_m26_i300_dryrun`.
+- Runtime command: passed under `outputs/srd_gs_opacity_quarter_m26_i300` after host-visible CUDA approval.
+- Summary collection: passed, 17 rows.
+- Checkpoint drift diagnosis: passed.
+- Render-regression diagnosis: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 78 tests.
+- `conda run -n ref_gs python -m py_compile tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M26 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.

@@ -133,6 +133,7 @@ A read-only M18/M20/M21 artifact diagnosis confirms the 300-iteration rendering 
 A read-only M18/M20/M21 checkpoint diagnosis shows Gaussian count is unchanged while activated opacity and reflection-feature magnitude drift upward in the 300-iteration checkpoints, making opacity/reflection-feature drift a plausible next control target.
 A bounded 300-iteration reflection/specular freeze control suppresses reflection-feature/specular-weight drift and completes the train/mesh/texture/render/eval chain, but PSNR still does not recover and activated opacity drift remains larger than M18.
 A bounded 300-iteration opacity freeze control suppresses activated-opacity drift and partially recovers PSNR/Refl-PSNR versus M20/M21/M24, but it still does not match M18 rendering and introduces a geometry tradeoff versus M20/M21/M24.
+A bounded 300-iteration quarter-opacity-LR control keeps activated opacity near M18 and improves Chamfer/Normal MAE versus full opacity freeze, but gives up part of the rendering recovery and still leaves F-score at zero.
 ```
 
 Current unsupported claims:
@@ -162,12 +163,13 @@ SRD-GS has stable multi-scene mesh/material superiority.
 13. The M23 checkpoint diagnosis shows all compared checkpoints have `100000` Gaussians, while M20/M21 opacity and reflection-feature statistics drift from M18; training loss logs are unavailable, so causality remains unproven.
 14. The M24 reflection/specular freeze control suppresses the targeted reflection-feature/specular-weight drift but does not recover PSNR; activated opacity drift remains a plausible next blocker.
 15. The M25 opacity freeze control improves PSNR/Refl-PSNR and controls opacity drift, but Chamfer worsens versus M20/M21/M24 and F-score remains zero; a partial opacity schedule is needed before broader experiments.
+16. The M26 quarter-opacity-LR control improves Chamfer and Normal MAE versus full opacity freeze, but reduces PSNR/Refl-PSNR recovery; the next blocker is choosing or summarizing an opacity-control tradeoff, not paper-scale expansion.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Test one bounded single-scene opacity schedule/downweight control, dry-run first and baseline-compatible.
+3. Summarize the bounded single-scene opacity-control tradeoff and only then decide whether one more opacity scale is justified.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If the bounded control is executed, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
@@ -218,4 +220,15 @@ Fresh verification through Milestone 18:
 - `bash -n scripts/srd_gs/*.sh`: passed.
 - `git diff --check`: passed.
 - M25 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+- `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 12 tests.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_opacity_quarter_i300.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_opacity_quarter_m26_i300 --scene_name ball --iterations 300 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed after host-visible CUDA approval.
+- `python scripts/srd_gs/collect_results.py --results_root outputs/srd_gs_opacity_quarter_m26_i300/results --output_csv outputs/srd_gs_opacity_quarter_m26_i300/tables/ball_opacity_quarter_metric_summary.csv`: passed, 17 rows.
+- `python scripts/srd_gs/diagnose_checkpoint_drift.py --case M18_render_gate_delay_i30=... --case M20_i300_render_gate_on=... --case M21_i300_render_gate_neutral=... --case M24_reflection_freeze_i300=... --case M25_opacity_freeze_i300=... --case M26_opacity_quarter_i300=... --output_dir outputs/srd_gs_opacity_quarter_m26_i300/checkpoint_drift`: passed.
+- `python scripts/srd_gs/diagnose_render_regression.py --case M18_render_gate_delay_i30=... --case M20_i300_render_gate_on=... --case M21_i300_render_gate_neutral=... --case M24_reflection_freeze_i300=... --case M25_opacity_freeze_i300=... --case M26_opacity_quarter_i300=... --output_dir outputs/srd_gs_opacity_quarter_m26_i300/render_regression`: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 78 tests.
+- `conda run -n ref_gs python -m py_compile tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M26 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.

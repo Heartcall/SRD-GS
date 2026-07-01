@@ -32,10 +32,26 @@
 - Milestone 23: Checkpoint drift diagnosis - read-only diagnosis GO / opacity-reflection drift plausible / paper-scale still blocked
 - Milestone 24: Reflection/specular freeze control - runtime GO / reflection-feature drift controlled / rendering still NO-GO / paper-scale still blocked
 - Milestone 25: Opacity freeze control - runtime GO / rendering partially recovers / geometry tradeoff and paper-scale still blocked
+- Milestone 26: Partial opacity LR control - runtime GO / mixed rendering-geometry tradeoff / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 25 confirms that freezing opacity together with the M24 reflection/specular freeze materially improves PSNR/Refl-PSNR versus M20/M21/M24 and controls opacity drift, but it still does not match M18 rendering, F-score remains zero, and Chamfer worsens versus M20/M21/M24. The next step should be one bounded single-scene opacity schedule/downweight control that tests whether partial opacity updates recover rendering without the geometry tradeoff. Keep it dry-run-first, baseline-compatible, and single-scene/single-checkpoint; do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 26 confirms that quarter opacity LR controls opacity drift near M18 and improves Chamfer/Normal MAE versus full opacity freeze, but it gives up part of M25's rendering recovery and F-score remains zero. The next step should be one bounded single-scene opacity LR sweep summary over already completed M25/M26 plus at most one additional dry-run-first opacity scale only if the claim boundary remains single-scene. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 26 Notes
+
+- Added `configs/srd_gs/full_srd_gs_branch_raster_opacity_quarter_i300.yaml`.
+- The config keeps M24 reflection/specular freeze and uses `--srd_opacity_lr_scale 0.25`.
+- Added tests for dry-run command isolation and ablation config discovery.
+- Dry-run verified that opacity/reflection/specular LR scale flags appear in `train_command.txt` and do not appear in render/texture command files.
+- Initial sandbox execution failed with `RuntimeError: No CUDA GPUs are available`; the same bounded command succeeded in the approved host-visible CUDA context.
+- Executed the bounded 300-iteration `ball` chain under `outputs/srd_gs_opacity_quarter_m26_i300`.
+- The run completed train, surface mesh extraction, specular-free texture export, render-eval pair generation, accepted-GT mesh evaluation, summary collection, checkpoint drift diagnosis, and render-regression diagnosis.
+- Manifest evidence records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=0.0`, and `gate_applied=false`.
+- Metrics: PSNR `3.1155`, Refl-PSNR `1.9098`, Chamfer `0.327672`, F-score `0.0`, Normal MAE `68.5402`, baking highlight leakage `7.6283e-06`.
+- Versus M18, activated opacity mean delta is `+0.007478`, reflection-feature absolute mean delta is `-0.010269`, and specular-weight mean delta is `+0.000001`.
+- M26 improves Chamfer and Normal MAE versus M25, but PSNR/Refl-PSNR are worse than M25 and still below M18.
+- This milestone supports an opacity LR tradeoff curve on `ball`; it does not support full rendering recovery, stable quality superiority, PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 25 Notes
 
