@@ -1058,3 +1058,86 @@ Checkpoint deltas versus M18:
 - `git diff --check`: passed.
 - M24 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 25: Opacity Freeze Control
+
+Status: runtime GO; opacity-drift control GO; rendering partial recovery GO; full recovery and paper-scale still blocked
+
+### Actions Completed
+
+- Added baseline-compatible optimizer LR scale flag `--srd_opacity_lr_scale`, defaulting to `1.0`.
+- Applied the scale only to the existing `opacity` optimizer group in `scene/gaussian_model.py`.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_opacity_freeze_i300.yaml`.
+- The config keeps the M24 reflection/specular freeze and adds `--srd_opacity_lr_scale 0.0`.
+- Added tests for optimizer default values, target optimizer-group scaling, dry-run command isolation, and config discovery.
+- Verified dry-run command files under `outputs/srd_gs_opacity_freeze_m25_i300_dryrun`.
+- Executed a bounded 300-iteration `ball` run under `outputs/srd_gs_opacity_freeze_m25_i300`.
+- Collected `outputs/srd_gs_opacity_freeze_m25_i300/tables/ball_opacity_freeze_metric_summary.csv`.
+- Ran checkpoint drift diagnosis with M18/M20/M21/M24/M25 under `outputs/srd_gs_opacity_freeze_m25_i300/checkpoint_drift`.
+- Ran render-regression diagnosis with M18/M20/M21/M24/M25 under `outputs/srd_gs_opacity_freeze_m25_i300/render_regression`.
+- Added `docs/srd_gs/25_opacity_freeze_control.md`.
+
+### Runtime Notes
+
+- The first sandbox execution attempt failed with `RuntimeError: No CUDA GPUs are available`.
+- The same bounded command succeeded after explicit host-visible CUDA approval.
+- Training stayed in `stage_a` through iteration 300.
+- The run completed train, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh evaluation.
+- Manifest records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=0.0`, and `gate_applied=false`.
+- Mesh artifact is non-empty: `131M`.
+
+### Metrics
+
+| Variant | Iter | Render gate | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay | 30 | 0.0 | 4.0842 | 2.7730 | 0.428561 | 0.000 | 86.4124 | 0.001707 |
+| M20 render gate on | 300 | 1.0 | 2.9394 | 1.5411 | 0.311117 | 0.000 | 75.4314 | 0.006588 |
+| M21 render gate neutral | 300 | 0.0 | 2.9205 | 1.5409 | 0.300529 | 0.001 | 75.9167 | 0.003792 |
+| M24 reflection/specular freeze | 300 | 0.0 | 2.8750 | 1.7308 | 0.286904 | 0.000 | 74.6085 | 0.00000037 |
+| M25 opacity/reflection/specular freeze | 300 | 0.0 | 3.6522 | 2.3203 | 0.397042 | 0.000 | 73.8319 | 0.000229 |
+
+Pairwise deltas versus M18:
+
+| Variant | PSNR delta | Refl-PSNR delta | Chamfer delta | F-score delta | Normal MAE delta | Leakage delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M25 opacity/reflection/specular freeze | -0.4320 | -0.4527 | -0.031518 | 0.000 | -12.5805 | -0.001478 |
+
+Checkpoint deltas versus M18:
+
+| Variant | Gaussian count delta | Opacity mean delta | Scale mean delta | Reflection feature abs delta | Specular weight mean delta | Branch gate mean delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M25 opacity/reflection/specular freeze | 0 | -0.072880 | +0.005825 | -0.010269 | +0.000001 | 0.000000 |
+
+### Key Findings
+
+- The opacity freeze hit its intended target: activated-opacity drift was suppressed.
+- Rendering partially recovered: PSNR/Refl-PSNR are much closer to M18 than M20/M21/M24.
+- Full rendering recovery is still NO-GO: M25 remains below M18 in PSNR/Refl-PSNR.
+- Geometry is mixed: Normal MAE improves, but Chamfer worsens versus M20/M21/M24 and F-score remains zero.
+- The next bounded control should test a partial opacity LR or delayed/ramped opacity update, not broad paper-scale expansion.
+
+### Claim Boundary
+
+- Optimizer freeze plumbing: GO.
+- Evidence that opacity dynamics contribute to the 300-iteration rendering drop: GO for bounded `ball` M25 control only.
+- Rendering partial recovery versus M20/M21/M24: GO for this bounded control only.
+- Full rendering fidelity recovery: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD suite: `python -m unittest tests.test_srd_gaussian_model_static tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 18 tests.
+- Dry-run command contract: passed under `outputs/srd_gs_opacity_freeze_m25_i300_dryrun`.
+- Runtime command: passed under `outputs/srd_gs_opacity_freeze_m25_i300` after host-visible CUDA approval.
+- Summary collection: passed, 17 rows.
+- Checkpoint drift diagnosis: passed.
+- Render-regression diagnosis: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 77 tests.
+- `conda run -n ref_gs python -m py_compile arguments/__init__.py scene/gaussian_model.py tests/test_srd_gaussian_model_static.py tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M25 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.

@@ -129,6 +129,7 @@ class OptimizationParams(ParamGroup):
         self.lambda_srd_tex = 0.01
         self.lambda_srd_sparsity = 0.005
         self.opacity_cull = 0.05
+        self.srd_opacity_lr_scale = 1.0
         self.srd_reflection_feature_lr_scale = 1.0
         self.srd_specular_weight_lr_scale = 1.0
 

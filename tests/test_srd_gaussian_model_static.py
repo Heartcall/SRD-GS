@@ -33,6 +33,7 @@ class SRDGaussianModelStaticTest(unittest.TestCase):
         OptimizationParams(parser)
         args = parser.parse_args([])
 
+        self.assertEqual(args.srd_opacity_lr_scale, 1.0)
         self.assertEqual(args.srd_reflection_feature_lr_scale, 1.0)
         self.assertEqual(args.srd_specular_weight_lr_scale, 1.0)
 
@@ -64,8 +65,10 @@ class SRDGaussianModelStaticTest(unittest.TestCase):
 
     def test_srd_optimizer_lr_scales_apply_only_to_target_groups(self):
         expected_tokens = [
+            "training_args.opacity_lr * training_args.srd_opacity_lr_scale",
             "training_args.feature_lr * training_args.srd_reflection_feature_lr_scale",
             "training_args.mask_lr * training_args.srd_specular_weight_lr_scale",
+            '"opacity"',
             '"reflection_feature"',
             '"specular_weight"',
             '"branch_gate"',
