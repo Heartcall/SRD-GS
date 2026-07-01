@@ -134,6 +134,7 @@ A read-only M18/M20/M21 checkpoint diagnosis shows Gaussian count is unchanged w
 A bounded 300-iteration reflection/specular freeze control suppresses reflection-feature/specular-weight drift and completes the train/mesh/texture/render/eval chain, but PSNR still does not recover and activated opacity drift remains larger than M18.
 A bounded 300-iteration opacity freeze control suppresses activated-opacity drift and partially recovers PSNR/Refl-PSNR versus M20/M21/M24, but it still does not match M18 rendering and introduces a geometry tradeoff versus M20/M21/M24.
 A bounded 300-iteration quarter-opacity-LR control keeps activated opacity near M18 and improves Chamfer/Normal MAE versus full opacity freeze, but gives up part of the rendering recovery and still leaves F-score at zero.
+A read-only opacity-control synthesis over completed `ball` artifacts shows M25 is best for PSNR/Refl-PSNR, M24 is best for Chamfer/leakage, and M26 is best for Normal MAE and closest activated-opacity delta to M18; this clarifies a tradeoff but does not resolve F-score or paper-scale blockers.
 ```
 
 Current unsupported claims:
@@ -164,19 +165,20 @@ SRD-GS has stable multi-scene mesh/material superiority.
 14. The M24 reflection/specular freeze control suppresses the targeted reflection-feature/specular-weight drift but does not recover PSNR; activated opacity drift remains a plausible next blocker.
 15. The M25 opacity freeze control improves PSNR/Refl-PSNR and controls opacity drift, but Chamfer worsens versus M20/M21/M24 and F-score remains zero; a partial opacity schedule is needed before broader experiments.
 16. The M26 quarter-opacity-LR control improves Chamfer and Normal MAE versus full opacity freeze, but reduces PSNR/Refl-PSNR recovery; the next blocker is choosing or summarizing an opacity-control tradeoff, not paper-scale expansion.
+17. The M27 synthesis confirms no single completed opacity-control setting resolves rendering, Chamfer, Normal MAE, and F-score together; M24-M26 keep F-score at zero and remain single-scene short-budget evidence.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Summarize the bounded single-scene opacity-control tradeoff and only then decide whether one more opacity scale is justified.
+3. Keep the next step bounded: either run one dry-run-first `ball` opacity-scale control such as `0.125`, or perform a read-only failure-panel/loss-log synthesis if additional runtime is not approved.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If the bounded control is executed, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 18:
+Fresh verification through Milestone 27:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
@@ -231,4 +233,12 @@ Fresh verification through Milestone 18:
 - `bash -n scripts/srd_gs/*.sh`: passed.
 - `git diff --check`: passed.
 - M26 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+- `python -m unittest tests.test_opacity_tradeoff_summary`: passed, 1 test.
+- `python scripts/srd_gs/summarize_opacity_tradeoff.py --case_summary outputs/srd_gs_opacity_quarter_m26_i300/render_regression/case_summary.csv --parameter_deltas outputs/srd_gs_opacity_quarter_m26_i300/checkpoint_drift/parameter_deltas.csv --output_dir outputs/srd_gs_opacity_tradeoff_m27`: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 79 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/summarize_opacity_tradeoff.py tests/test_opacity_tradeoff_summary.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M27 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.

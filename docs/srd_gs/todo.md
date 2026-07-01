@@ -33,10 +33,23 @@
 - Milestone 24: Reflection/specular freeze control - runtime GO / reflection-feature drift controlled / rendering still NO-GO / paper-scale still blocked
 - Milestone 25: Opacity freeze control - runtime GO / rendering partially recovers / geometry tradeoff and paper-scale still blocked
 - Milestone 26: Partial opacity LR control - runtime GO / mixed rendering-geometry tradeoff / paper-scale still blocked
+- Milestone 27: Opacity-control tradeoff synthesis - read-only synthesis GO / tradeoff clarified / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 26 confirms that quarter opacity LR controls opacity drift near M18 and improves Chamfer/Normal MAE versus full opacity freeze, but it gives up part of M25's rendering recovery and F-score remains zero. The next step should be one bounded single-scene opacity LR sweep summary over already completed M25/M26 plus at most one additional dry-run-first opacity scale only if the claim boundary remains single-scene. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 27 summarizes the completed single-scene opacity controls: M25 is best for PSNR/Refl-PSNR, M24 is best for Chamfer/leakage, and M26 is best for Normal MAE and closest activated-opacity delta to M18. M24-M26 all keep F-score at zero, and the tradeoff is not resolved. The next step should be one bounded M28 action: either a dry-run-first `ball` opacity-scale control such as `0.125`, or a read-only failure-panel/loss-log synthesis if additional runtime is not approved. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 27 Notes
+
+- Added `scripts/srd_gs/summarize_opacity_tradeoff.py`.
+- Added `tests/test_opacity_tradeoff_summary.py`.
+- Generated `outputs/srd_gs_opacity_tradeoff_m27/opacity_tradeoff_summary.csv`.
+- Generated `outputs/srd_gs_opacity_tradeoff_m27/opacity_tradeoff_summary.json`.
+- Generated `outputs/srd_gs_opacity_tradeoff_m27/opacity_tradeoff_summary.md`.
+- M27 is read-only: it consumes M26's existing `render_regression/case_summary.csv` and `checkpoint_drift/parameter_deltas.csv`.
+- Summary result: M25 is best for PSNR/Refl-PSNR, M24 is best for Chamfer/leakage, and M26 is best for Normal MAE and closest activated-opacity delta to M18.
+- M24-M26 all have F-score `0.0`, so stable geometry improvement remains blocked.
+- This milestone supports a bounded `ball` opacity-control tradeoff summary only. It does not support full rendering recovery, geometry superiority, PBR material accuracy, SRD-GS superiority over Ref-GS, or paper-scale claims.
 
 ## Completed Milestone 26 Notes
 
