@@ -26,10 +26,21 @@
 - Milestone 17: Branch-gate delay/ramp schedule - runtime/control plumbing GO / short-budget quality improvement NO-GO
 - Milestone 18: Render-gate delay control - bounded control GO / short-budget partial metric improvement / paper-scale still blocked
 - Milestone 19: Bounded Stage B/C render-gate-delay pilot - runtime GO / quality mixed / paper-scale still blocked
+- Milestone 20: Same-budget render-gate-delay control - runtime GO / rendering still NO-GO / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 19 confirms that the render-gate-delay branch-raster path can execute Stage B/C losses in a bounded single-scene pilot, but quality is mixed: Chamfer and Normal MAE improve over M18 while PSNR/Refl-PSNR degrade and F-score remains zero. The next step should isolate the cause by comparing the M19 accelerated Stage B/C variant against a same-budget render-gate-delay control without accelerated Stage B/C.
+Do not launch broad paper-scale experiments yet. Milestone 20 confirms that a same-budget 300-iteration control without accelerated Stage B/C has nearly the same PSNR/Refl-PSNR degradation as M19, while slightly improving Chamfer and Normal MAE. This suggests the rendering drop is not caused by accelerated Stage B/C alone. The next step should isolate rendered gate activation by running a 300-iteration control where branch-raster diagnostics stay active but rendered branch-gate modulation remains neutral at evaluation.
+
+## Completed Milestone 20 Notes
+
+- Added `configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_i300_control.yaml`.
+- Added tests that require the M20 config and verify dry-run commands keep M19 render-gate timing while omitting accelerated Stage B/C flags.
+- Executed `outputs/srd_gs_i300_control_m20` on `ball` for 300 iterations.
+- Training progress stayed in `stage_a` through iteration 300.
+- Manifest evidence records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, and `render_gate_weight=1.0`.
+- Metrics: PSNR `2.9394`, Refl-PSNR `1.5411`, Chamfer `0.311117`, F-score `0.0`, Normal MAE `75.4314`, baking highlight leakage `0.006588`.
+- Pipeline/control evidence is GO; rendering quality, F-score, and material/PBR claims remain NO-GO; paper-scale and stable quality-superiority claims remain blocked.
 
 ## Completed Milestone 19 Notes
 

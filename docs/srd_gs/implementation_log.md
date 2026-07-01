@@ -788,3 +788,49 @@ Status: Stage B/C runtime GO; quality mixed; paper-scale still blocked
 
 - `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 7 tests.
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_stagebc.yaml ... --iterations 300 --execute`: passed under `outputs/srd_gs_stagebc_m19_i300`.
+
+## Milestone 20: Same-budget Render-gate-delay Control
+
+Status: same-budget control GO; rendering quality still NO-GO; paper-scale still blocked
+
+### Actions Completed
+
+- Extended `tests/test_branch_raster_smoke_runner.py` and `tests/test_ablation_system_contract.py` for the 300-iteration control config and confirmed RED failure because the config was missing.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_i300_control.yaml`.
+- The config keeps M19 branch/render gate timing but omits `--srd_reflection_warmup 100` and manual stage flags.
+- Verified the dry-run command contract before runtime execution.
+- Executed the 300-iteration `ball` control under `outputs/srd_gs_i300_control_m20`.
+- Collected `outputs/srd_gs_i300_control_m20/tables/ball_i300_control_metric_summary.csv`.
+- Added `docs/srd_gs/20_i300_render_gate_control.md`.
+
+### Key Findings
+
+- Training progress stayed in `stage_a` through iteration 300.
+- The run completed train, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh evaluation.
+- Manifest records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=1.0`, and `gate_applied=true`.
+- Mesh artifact is non-empty: `118403176` bytes.
+- Compared with M19, PSNR/Refl-PSNR are nearly identical, while Chamfer and Normal MAE are slightly better.
+- The M19 rendering degradation is therefore not explained by accelerated Stage B/C alone.
+
+### Metrics
+
+| Variant | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Baking highlight leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay, 30 iter | 4.0842 | 2.7730 | 0.428561 | 0.000 | 86.4124 | 0.001707 |
+| M19 Stage B/C pilot, 300 iter | 2.9393 | 1.5355 | 0.316800 | 0.000 | 75.8534 | 0.005147 |
+| M20 Stage-A control, 300 iter | 2.9394 | 1.5411 | 0.311117 | 0.000 | 75.4314 | 0.006588 |
+
+### Claim Boundary
+
+- Same-budget control plumbing: GO.
+- Evidence against accelerated Stage B/C as the sole rendering-regression cause: GO for `ball` only.
+- Rendering fidelity: NO-GO.
+- F-score improvement: NO-GO.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 8 tests.
+- `python -m py_compile tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_i300_control.yaml ... --iterations 300 --execute`: passed under `outputs/srd_gs_i300_control_m20`.

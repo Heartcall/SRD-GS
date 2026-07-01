@@ -183,6 +183,47 @@ class BranchRasterSmokeRunnerTest(unittest.TestCase):
         self.assertIn("--srd_render_gate_start_iter 200", render_command)
         self.assertIn("--srd_render_gate_ramp_iters 100", render_command)
 
+    def test_i300_control_config_uses_same_gate_without_accelerated_stagebc(self):
+        script = Path("scripts/srd_gs/run_branch_raster_smoke_one_scene.sh")
+        config = Path("configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_i300_control.yaml")
+        self.assertTrue(config.exists())
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_root = Path(tmp_dir)
+            subprocess.run(
+                [
+                    "bash",
+                    str(script),
+                    "--config",
+                    str(config),
+                    "--scene_path",
+                    "/tmp/srd_scene",
+                    "--output_root",
+                    str(output_root),
+                    "--scene_name",
+                    "ball",
+                    "--iterations",
+                    "300",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            variant_dir = output_root / "results" / "ball" / "full_srd_gs_branch_raster_render_gate_delay_i300_control"
+            train_command = (variant_dir / "train_command.txt").read_text(encoding="utf-8")
+            render_command = (variant_dir / "render_eval_pairs_command.txt").read_text(encoding="utf-8")
+
+        self.assertNotIn("--srd_reflection_warmup 100", train_command)
+        self.assertNotIn("--srd_stage 2", train_command)
+        self.assertNotIn("--srd_stage 3", train_command)
+        self.assertIn("--srd_render_gate_start_iter 200", train_command)
+        self.assertIn("--srd_render_gate_ramp_iters 100", train_command)
+        self.assertNotIn("--srd_reflection_warmup 100", render_command)
+        self.assertIn("--srd_render_gate_start_iter 200", render_command)
+        self.assertIn("--srd_render_gate_ramp_iters 100", render_command)
+
 
 if __name__ == "__main__":
     unittest.main()

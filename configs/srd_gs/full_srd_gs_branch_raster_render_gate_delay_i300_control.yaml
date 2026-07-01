@@ -1,0 +1,12 @@
+name: full_srd_gs_branch_raster_render_gate_delay_i300_control
+implementation_status: bounded_ball_i300_runtime_validated_quality_mixed_paperscale_nogo
+hypothesis: A same-budget 300-iteration render-gate-delay control without accelerated Stage B/C should isolate whether M19 rendering degradation comes from the shortened Stage B/C schedule or from the longer checkpoint/render-gate activation.
+what_it_removes: Removes the accelerated `--srd_reflection_warmup 100` Stage B/C schedule while keeping the M19 branch-gate and render-gate timing.
+expected_supporting_result: Successful train/mesh/texture/render/eval chain with raster_feature_chunks diagnostics, finite metrics, non-empty mesh, render_gate_weight reaching 1.0, and clearer attribution of M19 PSNR/Refl-PSNR regression.
+refuting_result: CUDA failure, empty mesh, fallback branch policy, missing metrics, render_gate_weight not reaching 1.0, or metrics that do not separate budget/gate effects from accelerated Stage B/C effects.
+metrics_to_inspect_first: psnr,refl_psnr,chamfer_distance,f_score,normal_mae,highlight_leakage_score,branch_gate_weight,render_gate_weight
+train_args: "--enable_srd_gs --srd_rasterize_branch_maps --srd_use_branch_gate --srd_branch_gate_start_iter 10 --srd_branch_gate_ramp_iters 20 --srd_render_gate_start_iter 200 --srd_render_gate_ramp_iters 100"
+branch_gate_policy: raster_feature_chunks_i300_control_without_accelerated_stagebc
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true
