@@ -128,6 +128,7 @@ Opt-in branch-gate delay/ramp scheduling is implemented and verified through the
 Render-gate delay decouples diagnostic branch-gate rasterization from rendered specular modulation and is verified on a bounded 30-iteration `ball` run.
 The render-gate-delay branch-raster path can execute Stage B/C losses in a bounded 300-iteration `ball` pilot with non-fallback diagnostics, but the quality signal is mixed.
 A same-budget 300-iteration Stage-A control keeps M19's final rendered gate state and shows similar rendering degradation, suggesting accelerated Stage B/C is not the sole cause.
+A neutral-render-gate 300-iteration Stage-A control keeps diagnostics active and improves Chamfer/F-score/leakage over M20, but PSNR/Refl-PSNR still do not recover.
 ```
 
 Current unsupported claims:
@@ -152,13 +153,14 @@ SRD-GS has stable multi-scene mesh/material superiority.
 8. Render-gate delay improves PSNR/Refl-PSNR and Chamfer over M16/M17 branch-raster variants at 30 iterations, but F-score remains zero and normal MAE is not improved.
 9. The accelerated Stage B/C pilot improves Chamfer and Normal MAE over M18, but PSNR/Refl-PSNR degrade, F-score remains zero, and baking leakage increases.
 10. The same-budget Stage-A control closely matches M19's rendering degradation, so the next blocker is rendered gate activation or 300-iteration dynamics rather than Stage B/C acceleration alone.
+11. The neutral-render-gate control shows rendered gate activation is not the sole blocker; the remaining rendering drop likely needs artifact-level diagnosis of checkpoint dynamics, specular-weight behavior, branch diagnostics, or evaluation-mask effects.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Run a 300-iteration `ball` control with branch-raster diagnostics active but rendered branch-gate modulation neutral at evaluation.
-4. Only if the neutral-render-gate control recovers PSNR/Refl-PSNR, investigate a later or softer render-gate activation schedule before any multi-scene run.
+3. Run a read-only artifact diagnosis over M18/M20/M21 render pairs, masks, branch maps, specular maps, and baking reports before launching more training.
+4. Only after the diagnosis identifies a plausible failure mechanism, test one bounded single-scene training/control change.
 5. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
@@ -181,3 +183,5 @@ Fresh verification through Milestone 18:
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_stagebc.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_stagebc_m19_i300 --scene_name ball --iterations 300 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.
 - `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 8 tests.
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_i300_control.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_i300_control_m20 --scene_name ball --iterations 300 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.
+- `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 9 tests.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_neutral_i300.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_i300_neutral_gate_m21 --scene_name ball --iterations 300 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.

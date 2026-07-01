@@ -27,10 +27,21 @@
 - Milestone 18: Render-gate delay control - bounded control GO / short-budget partial metric improvement / paper-scale still blocked
 - Milestone 19: Bounded Stage B/C render-gate-delay pilot - runtime GO / quality mixed / paper-scale still blocked
 - Milestone 20: Same-budget render-gate-delay control - runtime GO / rendering still NO-GO / paper-scale still blocked
+- Milestone 21: Neutral render-gate 300-iteration control - runtime GO / rendering still NO-GO / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 20 confirms that a same-budget 300-iteration control without accelerated Stage B/C has nearly the same PSNR/Refl-PSNR degradation as M19, while slightly improving Chamfer and Normal MAE. This suggests the rendering drop is not caused by accelerated Stage B/C alone. The next step should isolate rendered gate activation by running a 300-iteration control where branch-raster diagnostics stay active but rendered branch-gate modulation remains neutral at evaluation.
+Do not launch broad paper-scale experiments yet. Milestone 21 confirms that keeping rendered branch-gate modulation neutral at the 300-iteration checkpoint does not recover PSNR/Refl-PSNR, although Chamfer, F-score, and baking highlight leakage improve over M20. The next step should be a read-only artifact diagnosis over M18/M20/M21 outputs to localize whether the rendering drop comes from checkpoint-length training dynamics, specular-weight behavior, branch diagnostics, or evaluation-mask effects before launching more training.
+
+## Completed Milestone 21 Notes
+
+- Added `configs/srd_gs/full_srd_gs_branch_raster_render_gate_neutral_i300.yaml`.
+- Added tests that require the M21 config and verify dry-run commands keep diagnostic branch-gate scheduling while pushing `--srd_render_gate_start_iter` beyond the 300-iteration checkpoint.
+- Executed `outputs/srd_gs_i300_neutral_gate_m21` on `ball` for 300 iterations.
+- Training progress stayed in `stage_a` through iteration 300.
+- Manifest evidence records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, and `render_gate_weight=0.0`.
+- Metrics: PSNR `2.9205`, Refl-PSNR `1.5409`, Chamfer `0.300529`, F-score `0.001`, Normal MAE `75.9167`, baking highlight leakage `0.003792`.
+- Pipeline/control evidence is GO. Rendering quality remains NO-GO. Geometry/material diagnostics are mixed and single-scene only. Paper-scale and stable quality-superiority claims remain blocked.
 
 ## Completed Milestone 20 Notes
 

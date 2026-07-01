@@ -834,3 +834,49 @@ Status: same-budget control GO; rendering quality still NO-GO; paper-scale still
 - `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 8 tests.
 - `python -m py_compile tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_i300_control.yaml ... --iterations 300 --execute`: passed under `outputs/srd_gs_i300_control_m20`.
+
+## Milestone 21: Neutral Render-gate 300-iteration Control
+
+Status: neutral render-gate control GO; rendering quality still NO-GO; paper-scale still blocked
+
+### Actions Completed
+
+- Extended `tests/test_branch_raster_smoke_runner.py` and `tests/test_ablation_system_contract.py` for the 300-iteration neutral-render-gate config and confirmed RED failure because the config was missing.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_render_gate_neutral_i300.yaml`.
+- The config keeps diagnostic branch-gate scheduling active while setting `--srd_render_gate_start_iter 100000 --srd_render_gate_ramp_iters 0`.
+- Verified the dry-run command contract before runtime execution.
+- Executed the 300-iteration `ball` neutral-render-gate control under `outputs/srd_gs_i300_neutral_gate_m21`.
+- Collected `outputs/srd_gs_i300_neutral_gate_m21/tables/ball_i300_neutral_gate_metric_summary.csv`.
+- Added `docs/srd_gs/21_i300_neutral_render_gate.md`.
+
+### Key Findings
+
+- Training progress stayed in `stage_a` through iteration 300.
+- The run completed train, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh evaluation.
+- Manifest records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=0.0`, and `gate_applied=false`.
+- Mesh artifact is non-empty: `119185444` bytes.
+- Compared with M20, Chamfer, F-score, and baking highlight leakage improve, but PSNR/Refl-PSNR do not recover and Normal MAE is slightly worse.
+- Rendered gate activation is not the sole cause of the 300-iteration rendering degradation.
+
+### Metrics
+
+| Variant | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Baking highlight leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay, 30 iter | 4.0842 | 2.7730 | 0.428561 | 0.000 | 86.4124 | 0.001707 |
+| M20 Stage-A control, render gate on, 300 iter | 2.9394 | 1.5411 | 0.311117 | 0.000 | 75.4314 | 0.006588 |
+| M21 Stage-A control, render gate neutral, 300 iter | 2.9205 | 1.5409 | 0.300529 | 0.001 | 75.9167 | 0.003792 |
+
+### Claim Boundary
+
+- Neutral render-gate control plumbing: GO.
+- Evidence against rendered gate activation as the sole rendering-regression cause: GO for `ball` only.
+- Chamfer/F-score/leakage improvement over M20: partial GO for this bounded control only.
+- Rendering fidelity: NO-GO.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 9 tests.
+- `python -m py_compile tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_neutral_i300.yaml ... --iterations 300 --execute`: passed under `outputs/srd_gs_i300_neutral_gate_m21`.
