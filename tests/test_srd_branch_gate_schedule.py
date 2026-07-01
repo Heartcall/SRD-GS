@@ -3,7 +3,7 @@ from pathlib import Path
 import unittest
 
 from arguments import ModelParams
-from utils.srd_schedule import compute_srd_branch_gate_weight
+from utils.srd_schedule import compute_srd_branch_gate_weight, compute_srd_render_gate_weight
 
 
 class SRDBranchGateScheduleTest(unittest.TestCase):
@@ -47,6 +47,45 @@ class SRDBranchGateScheduleTest(unittest.TestCase):
 
         self.assertEqual(args.srd_branch_gate_start_iter, 0)
         self.assertEqual(args.srd_branch_gate_ramp_iters, 0)
+        self.assertEqual(args.srd_render_gate_start_iter, -1)
+        self.assertEqual(args.srd_render_gate_ramp_iters, -1)
+
+    def test_render_gate_weight_defaults_to_branch_gate_schedule(self):
+        self.assertEqual(
+            compute_srd_render_gate_weight(
+                use_branch_gate=True,
+                iteration=30,
+                branch_gate_start_iter=10,
+                branch_gate_ramp_iters=20,
+                render_gate_start_iter=-1,
+                render_gate_ramp_iters=-1,
+            ),
+            1.0,
+        )
+
+    def test_render_gate_weight_can_delay_render_modulation_independently(self):
+        self.assertEqual(
+            compute_srd_render_gate_weight(
+                use_branch_gate=True,
+                iteration=30,
+                branch_gate_start_iter=10,
+                branch_gate_ramp_iters=20,
+                render_gate_start_iter=60,
+                render_gate_ramp_iters=0,
+            ),
+            0.0,
+        )
+        self.assertEqual(
+            compute_srd_render_gate_weight(
+                use_branch_gate=True,
+                iteration=60,
+                branch_gate_start_iter=10,
+                branch_gate_ramp_iters=20,
+                render_gate_start_iter=60,
+                render_gate_ramp_iters=0,
+            ),
+            1.0,
+        )
 
     def test_render_and_export_paths_use_checkpoint_iteration_for_schedule(self):
         render_source = Path("gaussian_renderer/__init__.py").read_text(encoding="utf-8")
@@ -56,7 +95,9 @@ class SRDBranchGateScheduleTest(unittest.TestCase):
         mesh_utils_source = Path("utils/mesh_utils.py").read_text(encoding="utf-8")
 
         self.assertIn("compute_srd_branch_gate_weight(", render_source)
+        self.assertIn("compute_srd_render_gate_weight(", render_source)
         self.assertIn("branch_gate_weight", render_source)
+        self.assertIn("render_gate_weight", render_source)
         self.assertIn("iteration=iteration", render_eval_source)
         self.assertIn("render_iteration=scene.loaded_iter", texture_source)
         self.assertIn("render_iteration=scene.loaded_iter", mesh_source)

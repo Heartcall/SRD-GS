@@ -701,3 +701,47 @@ Status: runtime/control plumbing GO; short-budget quality improvement NO-GO
 
 - `python -m unittest tests.test_srd_branch_gate_schedule tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 9 tests.
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_gate_ramp.yaml ... --iterations 30 --execute`: passed under `outputs/srd_gs_branch_gate_ramp_m17_i30`.
+
+## Milestone 18: Render-gate Delay Control
+
+Status: bounded control GO; short-budget partial quality improvement; paper-scale still blocked
+
+### Actions Completed
+
+- Extended `tests/test_srd_branch_gate_schedule.py` for independent render-gate scheduling and confirmed RED failure before implementation.
+- Added `utils/srd_schedule.py::compute_srd_render_gate_weight()`.
+- Added `--srd_render_gate_start_iter` and `--srd_render_gate_ramp_iters` with `-1` defaults that preserve existing behavior.
+- Stored the render-gate schedule fields in `GaussianModel`.
+- Updated `gaussian_renderer.render()` so diagnostic `branch_gate_map` uses `branch_gate_weight` while rendered `pbr_rgb` uses an independent `render_gate_weight`.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay.yaml`.
+- Executed the 30-iteration `ball` render-gate-delay run under `outputs/srd_gs_render_gate_delay_m18_i30`.
+- Collected `outputs/srd_gs_render_gate_delay_m18_i30/tables/ball_render_gate_delay_metric_summary.csv`.
+- Added `docs/srd_gs/18_render_gate_delay.md`.
+
+### Key Findings
+
+- The run completed train, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh evaluation.
+- Manifest records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=0.0`, and `gate_applied=false`.
+- This confirms branch diagnostics are active while rendered specular branch-gate modulation is disabled at iteration 30.
+- Compared with M16/M17 branch-raster variants, PSNR/Refl-PSNR and Chamfer improve, while F-score remains zero and normal MAE is not improved.
+
+### Metrics
+
+| Variant | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Baking highlight leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M16 immediate branch-raster | 4.0390 | 2.7114 | 0.435425 | 0.001 | 82.9009 | 0.001642 |
+| M17 gate-ramp branch-raster | 4.0389 | 2.7112 | 0.442081 | 0.001 | 85.6183 | 0.001714 |
+| M18 render-gate delay | 4.0842 | 2.7730 | 0.428561 | 0.000 | 86.4124 | 0.001707 |
+
+### Claim Boundary
+
+- Render-gate decoupling/control plumbing: GO.
+- Short-budget branch-raster PSNR/Refl-PSNR and Chamfer improvement over M16/M17: partial GO for `ball` only.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- `python -m unittest tests.test_srd_branch_gate_schedule tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 12 tests.
+- `python -m py_compile arguments/__init__.py scene/gaussian_model.py gaussian_renderer/__init__.py utils/srd_schedule.py tests/test_srd_branch_gate_schedule.py tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay.yaml ... --iterations 30 --execute`: passed under `outputs/srd_gs_render_gate_delay_m18_i30`.

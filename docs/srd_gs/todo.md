@@ -24,10 +24,23 @@
 - Milestone 15: Branch-raster smoke runner - bounded runtime smoke GO / paper-scale still blocked
 - Milestone 16: Single-scene three-variant comparison - bounded comparison GO / paper-scale still blocked
 - Milestone 17: Branch-gate delay/ramp schedule - runtime/control plumbing GO / short-budget quality improvement NO-GO
+- Milestone 18: Render-gate delay control - bounded control GO / short-budget partial metric improvement / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 17 confirms that a simple branch-gate delay/ramp is wired correctly but does not improve the 30-iteration `ball` branch-raster tradeoff. The next step should test a stronger bounded control, such as disabling branch-gate modulation in rendering until Stage B/C or using a longer single-scene budget where SRD losses activate.
+Do not launch broad paper-scale experiments yet. Milestone 18 confirms that decoupling diagnostic branch-gate rasterization from rendered specular modulation improves short-budget PSNR/Refl-PSNR and Chamfer relative to M16/M17 branch-raster variants, but F-score remains zero and normal MAE is not improved. The next step should use the same render-gate delay control at a longer single-scene budget where Stage B/C losses activate before considering multi-scene expansion.
+
+## Completed Milestone 18 Notes
+
+- Added `utils/srd_schedule.py::compute_srd_render_gate_weight()`.
+- Added `--srd_render_gate_start_iter` and `--srd_render_gate_ramp_iters` with backward-compatible `-1` defaults that reuse the branch-gate diagnostic schedule.
+- `gaussian_renderer.render()` now keeps diagnostic `branch_gate_map` separate from the gate used to modulate rendered specular.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay.yaml`.
+- Executed `outputs/srd_gs_render_gate_delay_m18_i30` on `ball` for 30 iterations.
+- Manifest evidence records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, and `render_gate_weight=0.0`.
+- Metrics: PSNR `4.0842`, Refl-PSNR `2.7730`, Chamfer `0.428561`, F-score `0.0`, Normal MAE `86.4124`, baking highlight leakage `0.001707`.
+- Compared with M16/M17 branch-raster variants, this improves PSNR/Refl-PSNR and Chamfer while preserving low highlight leakage, but does not improve F-score or normal MAE.
+- Paper-scale and stable quality-superiority claims remain blocked.
 
 ## Completed Milestone 17 Notes
 

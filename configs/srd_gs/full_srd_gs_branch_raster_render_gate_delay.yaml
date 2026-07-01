@@ -1,0 +1,12 @@
+name: full_srd_gs_branch_raster_render_gate_delay
+implementation_status: bounded_ball_i30_runtime_validated_partial_quality_go_paperscale_nogo
+hypothesis: Keeping branch-map raster diagnostics active while delaying only rendered branch-gate modulation should reduce early PSNR/Refl-PSNR degradation without losing non-fallback SRD diagnostics.
+what_it_removes: Removes branch-gate multiplication from rendered specular during the early 30-iteration bounded test while keeping branch/specular/transport maps rasterized.
+expected_supporting_result: Better PSNR/Refl-PSNR than immediate branch-raster and gate-ramp variants while retaining low highlight leakage and raster_feature_chunks diagnostics.
+refuting_result: Similar or worse rendering than immediate branch-raster, loss of non-fallback branch diagnostics, or no material/geometry benefit.
+metrics_to_inspect_first: psnr,refl_psnr,chamfer_distance,normal_mae,highlight_leakage_score,branch_gate_weight,render_gate_weight
+train_args: "--enable_srd_gs --srd_rasterize_branch_maps --srd_use_branch_gate --srd_branch_gate_start_iter 10 --srd_branch_gate_ramp_iters 20 --srd_render_gate_start_iter 60 --srd_render_gate_ramp_iters 0"
+branch_gate_policy: raster_feature_chunks_with_render_gate_delay
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true

@@ -12,6 +12,7 @@ class AblationSystemContractTest(unittest.TestCase):
         "full_srd_gs.yaml",
         "full_srd_gs_branch_raster.yaml",
         "full_srd_gs_branch_raster_gate_ramp.yaml",
+        "full_srd_gs_branch_raster_render_gate_delay.yaml",
         "no_reflection_branch.yaml",
         "no_branch_separation.yaml",
         "no_geo_loss.yaml",

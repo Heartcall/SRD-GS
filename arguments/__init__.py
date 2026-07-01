@@ -80,6 +80,8 @@ class ModelParams(ParamGroup):
         self.srd_rasterize_branch_maps = False
         self.srd_branch_gate_start_iter = 0
         self.srd_branch_gate_ramp_iters = 0
+        self.srd_render_gate_start_iter = -1
+        self.srd_render_gate_ramp_iters = -1
         self.srd_reflection_dim = 4
         self.srd_transport_dim = 4
 

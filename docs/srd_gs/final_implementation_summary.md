@@ -125,6 +125,7 @@ SRD-GS has an implemented and tested engineering path for surface/reflection bra
 SRD-GS branch/specular/transport maps can run through the installed fixed-width CUDA rasterizer by using base-width chunked feature passes; this reached a bounded 10-iteration `ball` smoke with test-split render pairs and accepted-GT mesh metrics.
 The three-variant `ball` comparison at 30 iterations runs end-to-end and records baseline, fallback SRD-GS, and branch-raster SRD-GS metrics in one summary table.
 Opt-in branch-gate delay/ramp scheduling is implemented and verified through the same train/render/export/eval chain.
+Render-gate delay decouples diagnostic branch-gate rasterization from rendered specular modulation and is verified on a bounded 30-iteration `ball` run.
 ```
 
 Current unsupported claims:
@@ -139,25 +140,26 @@ SRD-GS has stable multi-scene mesh/material superiority.
 
 ## Critical Blockers Before Paper Claims
 
-1. Test-split render/GT export requires checkpoints trained or regenerated with `eval=True`; existing smoke metric-chain outputs used the train split because their checkpoint config had `eval=False`.
-2. Accepted GT mesh geometry is now available for Shiny Blender Synthetic `ball` through `ball_gt_mesh.ply`, and the metric chain runs against it. The current accepted-GT metrics are still from 20-iteration smoke artifacts and are not paper-scale evidence.
+1. Test-split render/GT export requires checkpoints trained or regenerated with `eval=True`; the M16-M18 bounded runs satisfy this on `ball`, while older smoke metric-chain outputs may not.
+2. Accepted GT mesh geometry is now available for Shiny Blender Synthetic `ball` through `ball_gt_mesh.ply`, and the metric chain runs against it. The current accepted-GT metrics are still single-scene short-budget evidence, not paper-scale evidence.
 3. SRD branch-map rasterization now has an explicit feature-flagged chunked raster path and bounded `ball` smoke evidence. It still needs a longer single-scene run and multi-scene validation before paper-scale claims.
 4. Current texture/material baking is image-space only; UV atlas or mesh-bound material baking is not implemented.
 5. Ablation configs exist, but paper-scale ablation runs have not been executed.
 6. The current comparison evidence is still one scene and a short 30-iteration budget.
 7. The tested branch-gate ramp did not improve the immediate branch-raster tradeoff at 30 iterations.
+8. Render-gate delay improves PSNR/Refl-PSNR and Chamfer over M16/M17 branch-raster variants at 30 iterations, but F-score remains zero and normal MAE is not improved.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Test a stronger bounded control than simple gate ramp, such as disabling rendered gate modulation until Stage B/C.
-4. Re-run the same single-scene comparison after that change before expanding to multiple scenes.
+3. Run the render-gate delay control at a longer single-scene budget where Stage B/C losses activate.
+4. Re-run the same single-scene comparison after the longer run before expanding to multiple scenes.
 5. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 16:
+Fresh verification through Milestone 18:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
@@ -169,3 +171,5 @@ Fresh verification through Milestone 16:
 - `bash scripts/srd_gs/run_single_scene_comparison.sh --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_single_scene_comparison_m16_i30 --scene_name ball --iterations 30 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.
 - `python -m unittest tests.test_srd_branch_gate_schedule tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 9 tests.
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_gate_ramp.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_branch_gate_ramp_m17_i30 --scene_name ball --iterations 30 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.
+- `python -m unittest tests.test_srd_branch_gate_schedule tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 12 tests.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_render_gate_delay_m18_i30 --scene_name ball --iterations 30 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.
