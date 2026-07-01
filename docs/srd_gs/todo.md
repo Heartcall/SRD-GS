@@ -34,10 +34,23 @@
 - Milestone 25: Opacity freeze control - runtime GO / rendering partially recovers / geometry tradeoff and paper-scale still blocked
 - Milestone 26: Partial opacity LR control - runtime GO / mixed rendering-geometry tradeoff / paper-scale still blocked
 - Milestone 27: Opacity-control tradeoff synthesis - read-only synthesis GO / tradeoff clarified / paper-scale still blocked
+- Milestone 28: Failure/loss artifact synthesis - read-only synthesis GO / loss and failure-panel blockers explicit / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 27 summarizes the completed single-scene opacity controls: M25 is best for PSNR/Refl-PSNR, M24 is best for Chamfer/leakage, and M26 is best for Normal MAE and closest activated-opacity delta to M18. M24-M26 all keep F-score at zero, and the tradeoff is not resolved. The next step should be one bounded M28 action: either a dry-run-first `ball` opacity-scale control such as `0.125`, or a read-only failure-panel/loss-log synthesis if additional runtime is not approved. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 28 confirms that M20/M21/M24/M25/M26 have complete core train/mesh/texture/render/eval artifacts and complete referenced render-eval fields, but no loss-log artifacts and no failure-panel artifacts are available in the audited result roots. The next step should be one bounded M29 action: either add loss/failure-panel instrumentation in dry-run-first form or run one explicitly approved single-scene opacity-scale control such as `0.125` on `ball`. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 28 Notes
+
+- Added `scripts/srd_gs/summarize_failure_loss_artifacts.py`.
+- Added `tests/test_failure_loss_synthesis.py`.
+- Generated `outputs/srd_gs_failure_loss_synthesis_m28/failure_loss_artifact_matrix.csv`.
+- Generated `outputs/srd_gs_failure_loss_synthesis_m28/failure_loss_synthesis.json`.
+- Generated `outputs/srd_gs_failure_loss_synthesis_m28/failure_loss_synthesis.md`.
+- M28 is read-only: it consumes explicit M20/M21/M24/M25/M26 result roots and checks artifact existence/manifest references.
+- All five audited cases have complete core artifact chains and `18/18` referenced render fields.
+- All five audited cases have `0` detected loss-log artifacts and `0` detected failure-panel artifacts.
+- This milestone supports artifact-chain completeness and explicit blocker tracking only. It does not support root-cause proof, rendering recovery, geometry superiority, PBR material accuracy, SRD-GS superiority over Ref-GS, or paper-scale claims.
 
 ## Completed Milestone 27 Notes
 

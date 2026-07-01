@@ -1268,3 +1268,61 @@ Status: read-only synthesis GO; opacity tradeoff clarified; paper-scale still bl
 - `git diff --check`: passed.
 - M27 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 28: Failure/Loss Artifact Synthesis
+
+Status: read-only synthesis GO; core artifact chains complete; loss/failure-panel blockers explicit; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/summarize_failure_loss_artifacts.py`.
+- Added `tests/test_failure_loss_synthesis.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_failure_loss_synthesis_m28/failure_loss_artifact_matrix.csv`.
+- Generated `outputs/srd_gs_failure_loss_synthesis_m28/failure_loss_synthesis.json`.
+- Generated `outputs/srd_gs_failure_loss_synthesis_m28/failure_loss_synthesis.md`.
+- Added `docs/srd_gs/28_failure_loss_artifact_synthesis.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- The script is CPU/read-only and consumes explicit result-root paths.
+- Baseline Ref-GS behavior is untouched; no training/rendering code was modified.
+
+### Artifact Matrix
+
+| Variant | Core chain | Render fields | Loss logs | Failure panels |
+| --- | ---: | ---: | ---: | ---: |
+| M20 render gate on | true | 18/18 | 0 | 0 |
+| M21 render gate neutral | true | 18/18 | 0 | 0 |
+| M24 reflection/specular freeze | true | 18/18 | 0 | 0 |
+| M25 opacity freeze | true | 18/18 | 0 | 0 |
+| M26 quarter opacity LR | true | 18/18 | 0 | 0 |
+
+### Key Findings
+
+- M20/M21/M24/M25/M26 have complete audited train/mesh/texture/render/eval artifact chains.
+- Their referenced render-eval fields are complete for the audited two views.
+- No loss-log artifacts were detected in the audited result roots.
+- No failure-panel artifacts were detected in the audited result roots.
+- The evidence supports artifact availability tracking, not root-cause proof or paper-scale claims.
+
+### Claim Boundary
+
+- Failure/loss artifact availability synthesis over completed `ball` artifacts: GO.
+- Full rendering fidelity recovery: NO-GO.
+- Stable geometry superiority: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `python -m unittest tests.test_failure_loss_synthesis` failed before `summarize_failure_loss_artifacts.py` existed.
+- Focused TDD GREEN: `python -m unittest tests.test_failure_loss_synthesis` passed, 1 test.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 80 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/summarize_failure_loss_artifacts.py tests/test_failure_loss_synthesis.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M28 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
