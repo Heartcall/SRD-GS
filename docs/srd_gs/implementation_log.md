@@ -745,3 +745,46 @@ Status: bounded control GO; short-budget partial quality improvement; paper-scal
 - `python -m unittest tests.test_srd_branch_gate_schedule tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 12 tests.
 - `python -m py_compile arguments/__init__.py scene/gaussian_model.py gaussian_renderer/__init__.py utils/srd_schedule.py tests/test_srd_branch_gate_schedule.py tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
 - `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay.yaml ... --iterations 30 --execute`: passed under `outputs/srd_gs_render_gate_delay_m18_i30`.
+
+## Milestone 19: Bounded Stage B/C Render-gate-delay Pilot
+
+Status: Stage B/C runtime GO; quality mixed; paper-scale still blocked
+
+### Actions Completed
+
+- Extended `tests/test_branch_raster_smoke_runner.py` and `tests/test_ablation_system_contract.py` for the Stage B/C render-gate-delay config and confirmed RED failure because the config was missing.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_stagebc.yaml`.
+- The config keeps branch-raster diagnostics, uses `--srd_reflection_warmup 100`, and delays rendered gate activation with `--srd_render_gate_start_iter 200 --srd_render_gate_ramp_iters 100`.
+- Verified the dry-run command contract before runtime execution.
+- Executed the 300-iteration `ball` Stage B/C pilot under `outputs/srd_gs_stagebc_m19_i300`.
+- Collected `outputs/srd_gs_stagebc_m19_i300/tables/ball_stagebc_metric_summary.csv`.
+- Added `docs/srd_gs/19_stagebc_render_gate_delay.md`.
+
+### Key Findings
+
+- Training progress covered `stage_a`, `stage_b`, and `stage_c`; Stage C logged non-zero `tex` loss.
+- The run completed train, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh evaluation.
+- Manifest records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=1.0`, and `gate_applied=true`.
+- Mesh artifact is non-empty: `118965832` bytes.
+- Compared with M18, Chamfer and Normal MAE improve, but PSNR/Refl-PSNR degrade and F-score remains zero.
+
+### Metrics
+
+| Variant | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Baking highlight leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay, 30 iter | 4.0842 | 2.7730 | 0.428561 | 0.000 | 86.4124 | 0.001707 |
+| M19 Stage B/C pilot, 300 iter | 2.9393 | 1.5355 | 0.316800 | 0.000 | 75.8534 | 0.005147 |
+
+### Claim Boundary
+
+- Stage B/C runtime/control plumbing: GO.
+- Geometry improvement over M18 on `ball`: partial GO for this accelerated 300-iteration pilot only.
+- Rendering fidelity: NO-GO.
+- F-score improvement: NO-GO.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- `python -m unittest tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 7 tests.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_render_gate_delay_stagebc.yaml ... --iterations 300 --execute`: passed under `outputs/srd_gs_stagebc_m19_i300`.

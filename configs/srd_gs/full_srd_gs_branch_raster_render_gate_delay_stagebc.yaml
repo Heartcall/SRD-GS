@@ -1,0 +1,12 @@
+name: full_srd_gs_branch_raster_render_gate_delay_stagebc
+implementation_status: bounded_ball_i300_stagebc_runtime_validated_mixed_quality_paperscale_nogo
+hypothesis: A bounded single-scene Stage B/C activation pilot should verify that SRD reflection and material losses can run with render-gate delay without losing branch-raster diagnostics.
+what_it_removes: Removes the default long warmup from this pilot by using a short explicit SRD reflection warmup, so Stage B/C behavior can be tested before any broad experiment.
+expected_supporting_result: Successful train/mesh/texture/render/eval chain with raster_feature_chunks diagnostics, finite rendering and accepted-GT geometry metrics, non-empty mesh, and render_gate_weight reaching 1.0 at the final checkpoint.
+refuting_result: CUDA failure, empty mesh, missing test-split render pairs, fallback branch policy, missing metrics, render_gate_weight not reaching 1.0, or worse evidence that blocks longer single-scene runs.
+metrics_to_inspect_first: psnr,refl_psnr,chamfer_distance,f_score,normal_mae,highlight_leakage_score,branch_gate_weight,render_gate_weight
+train_args: "--enable_srd_gs --srd_rasterize_branch_maps --srd_use_branch_gate --srd_reflection_warmup 100 --srd_branch_gate_start_iter 10 --srd_branch_gate_ramp_iters 20 --srd_render_gate_start_iter 200 --srd_render_gate_ramp_iters 100"
+branch_gate_policy: raster_feature_chunks_with_stagebc_render_gate_delay
+mesh_mode: surface
+texture_mode: specular_free
+eval_enabled: true
