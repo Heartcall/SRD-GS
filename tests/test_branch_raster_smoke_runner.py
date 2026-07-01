@@ -264,6 +264,47 @@ class BranchRasterSmokeRunnerTest(unittest.TestCase):
         self.assertIn("--srd_render_gate_start_iter 100000", render_command)
         self.assertIn("--srd_render_gate_ramp_iters 0", render_command)
 
+    def test_i300_reflection_freeze_config_freezes_reflection_and_specular_optimizer_groups(self):
+        script = Path("scripts/srd_gs/run_branch_raster_smoke_one_scene.sh")
+        config = Path("configs/srd_gs/full_srd_gs_branch_raster_reflection_freeze_i300.yaml")
+        self.assertTrue(config.exists())
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_root = Path(tmp_dir)
+            subprocess.run(
+                [
+                    "bash",
+                    str(script),
+                    "--config",
+                    str(config),
+                    "--scene_path",
+                    "/tmp/srd_scene",
+                    "--output_root",
+                    str(output_root),
+                    "--scene_name",
+                    "ball",
+                    "--iterations",
+                    "300",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            variant_dir = output_root / "results" / "ball" / "full_srd_gs_branch_raster_reflection_freeze_i300"
+            train_command = (variant_dir / "train_command.txt").read_text(encoding="utf-8")
+            texture_command = (variant_dir / "texture_command.txt").read_text(encoding="utf-8")
+            render_command = (variant_dir / "render_eval_pairs_command.txt").read_text(encoding="utf-8")
+
+        self.assertIn("--srd_reflection_feature_lr_scale 0.0", train_command)
+        self.assertIn("--srd_specular_weight_lr_scale 0.0", train_command)
+        self.assertIn("--srd_render_gate_start_iter 100000", train_command)
+        self.assertIn("--srd_render_gate_ramp_iters 0", train_command)
+        self.assertNotIn("--srd_reflection_feature_lr_scale", render_command)
+        self.assertNotIn("--srd_specular_weight_lr_scale", render_command)
+        self.assertNotIn("--srd_reflection_warmup 100", train_command)
+
 
 if __name__ == "__main__":
     unittest.main()

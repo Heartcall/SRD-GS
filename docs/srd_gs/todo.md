@@ -30,10 +30,28 @@
 - Milestone 21: Neutral render-gate 300-iteration control - runtime GO / rendering still NO-GO / paper-scale still blocked
 - Milestone 22: Render regression artifact diagnosis - read-only diagnosis GO / root-cause still incomplete / paper-scale still blocked
 - Milestone 23: Checkpoint drift diagnosis - read-only diagnosis GO / opacity-reflection drift plausible / paper-scale still blocked
+- Milestone 24: Reflection/specular freeze control - runtime GO / reflection-feature drift controlled / rendering still NO-GO / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 23 confirms from existing checkpoints that M18/M20/M21 keep the same Gaussian count, while M20/M21 show higher activated opacity mean and higher reflection-feature absolute mean than M18. The next step should be one bounded single-scene control for the plausible opacity/reflection-feature drift mechanism. Keep it dry-run-first, baseline-compatible, and single-scene/single-checkpoint; do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 24 confirms that freezing the reflection-feature and specular-weight optimizer groups at a 300-iteration `ball` checkpoint controls the targeted reflection/specular drift, but it does not recover PSNR and it leaves larger activated-opacity drift versus M18. The next step should be one bounded single-scene opacity-drift control. Keep it dry-run-first, baseline-compatible, and single-scene/single-checkpoint; do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 24 Notes
+
+- Added optimizer learning-rate scale flags `--srd_reflection_feature_lr_scale` and `--srd_specular_weight_lr_scale`, both defaulting to `1.0` for backward compatibility.
+- Applied the scales only to SRD reflection-feature and specular-weight optimizer groups in `scene/gaussian_model.py`.
+- Extended `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh` with optional `train_only_args` so optimizer-only flags affect training without leaking into mesh, texture, render, or eval commands.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_reflection_freeze_i300.yaml`.
+- Added tests for neutral defaults, target optimizer scaling, dry-run command isolation, and ablation config discovery.
+- Dry-run verified that freeze flags appear in `train_command.txt` and do not appear in render/texture command files.
+- Executed the bounded 300-iteration `ball` chain under `outputs/srd_gs_reflection_freeze_m24_i300`.
+- The run completed train, surface mesh extraction, specular-free texture export, render-eval pair generation, accepted-GT mesh evaluation, summary collection, checkpoint drift diagnosis, and render-regression diagnosis.
+- Initial sandbox execution failed with `RuntimeError: No CUDA GPUs are available`; the same bounded command succeeded in the approved host-visible CUDA context.
+- Manifest evidence records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=0.0`, and `gate_applied=false`.
+- Metrics: PSNR `2.8750`, Refl-PSNR `1.7308`, Chamfer `0.286904`, F-score `0.0`, Normal MAE `74.6085`, baking highlight leakage `3.6667e-07`.
+- Versus M18, reflection-feature absolute mean delta is `-0.010269` and specular-weight mean delta is `+0.000001`, confirming the targeted freeze took effect.
+- Versus M18, activated opacity mean delta is `+0.166588`, larger than M20/M21, so opacity drift remains a plausible blocker.
+- This milestone supports optimizer-control plumbing and narrows the mechanism diagnosis. It does not support rendering recovery, stable quality superiority, PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 23 Notes
 

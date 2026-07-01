@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 import unittest
 
-from arguments import ModelParams
+from arguments import ModelParams, OptimizationParams
 
 
 GAUSSIAN_MODEL_SOURCE = Path("scene/gaussian_model.py")
@@ -27,6 +27,14 @@ class SRDGaussianModelStaticTest(unittest.TestCase):
         self.assertFalse(args.srd_rasterize_branch_maps)
         self.assertEqual(args.srd_reflection_dim, 4)
         self.assertEqual(args.srd_transport_dim, 4)
+
+    def test_optimizer_lr_scale_flags_exist_with_neutral_defaults(self):
+        parser = ArgumentParser()
+        OptimizationParams(parser)
+        args = parser.parse_args([])
+
+        self.assertEqual(args.srd_reflection_feature_lr_scale, 1.0)
+        self.assertEqual(args.srd_specular_weight_lr_scale, 1.0)
 
     def test_srd_parameter_names_exist(self):
         expected = [
@@ -53,6 +61,19 @@ class SRDGaussianModelStaticTest(unittest.TestCase):
         for name in expected:
             with self.subTest(name=name):
                 self.assertIn(name, self.source)
+
+    def test_srd_optimizer_lr_scales_apply_only_to_target_groups(self):
+        expected_tokens = [
+            "training_args.feature_lr * training_args.srd_reflection_feature_lr_scale",
+            "training_args.mask_lr * training_args.srd_specular_weight_lr_scale",
+            '"reflection_feature"',
+            '"specular_weight"',
+            '"branch_gate"',
+            '"transport_feature"',
+        ]
+        for token in expected_tokens:
+            with self.subTest(token=token):
+                self.assertIn(token, self.source)
 
     def test_baseline_path_is_not_forced_to_use_srd_branch(self):
         expected_tokens = [

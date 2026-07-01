@@ -42,11 +42,12 @@ fi
 
 read_config_value() {
   local key="$1"
-  grep -E "^${key}:" "$CONFIG_PATH" | head -n 1 | sed -E "s/^${key}:[[:space:]]*//; s/^\"//; s/\"$//"
+  grep -E "^${key}:" "$CONFIG_PATH" | head -n 1 | sed -E "s/^${key}:[[:space:]]*//; s/^\"//; s/\"$//" || true
 }
 
 VARIANT_NAME="$(read_config_value name)"
 TRAIN_ARGS="$(read_config_value train_args)"
+TRAIN_ONLY_ARGS="$(read_config_value train_only_args)"
 MESH_MODE="$(read_config_value mesh_mode)"
 TEXTURE_MODE="$(read_config_value texture_mode)"
 EVAL_ENABLED="$(read_config_value eval_enabled)"
@@ -71,12 +72,18 @@ if [[ -n "$TRAIN_ARGS" ]]; then
   # shellcheck disable=SC2206
   SRD_ARGS=($TRAIN_ARGS)
 fi
+TRAIN_ONLY_ARGS_ARRAY=()
+if [[ -n "$TRAIN_ONLY_ARGS" ]]; then
+  # shellcheck disable=SC2206
+  TRAIN_ONLY_ARGS_ARRAY=($TRAIN_ONLY_ARGS)
+fi
 
 TRAIN_CMD=(conda run -n ref_gs python train.py -s "$SCENE_PATH" -m "$MODEL_PATH" --iterations "$ITERATIONS")
 if [[ "$EVAL_ENABLED" == "true" ]]; then
   TRAIN_CMD+=(--eval)
 fi
 TRAIN_CMD+=("${SRD_ARGS[@]}")
+TRAIN_CMD+=("${TRAIN_ONLY_ARGS_ARRAY[@]}")
 
 MESH_CMD=(
   conda run -n ref_gs python extract_surface_mesh.py

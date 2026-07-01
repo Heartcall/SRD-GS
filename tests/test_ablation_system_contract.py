@@ -15,6 +15,7 @@ class AblationSystemContractTest(unittest.TestCase):
         "full_srd_gs_branch_raster_render_gate_delay.yaml",
         "full_srd_gs_branch_raster_render_gate_delay_i300_control.yaml",
         "full_srd_gs_branch_raster_render_gate_neutral_i300.yaml",
+        "full_srd_gs_branch_raster_reflection_freeze_i300.yaml",
         "full_srd_gs_branch_raster_render_gate_delay_stagebc.yaml",
         "no_reflection_branch.yaml",
         "no_branch_separation.yaml",

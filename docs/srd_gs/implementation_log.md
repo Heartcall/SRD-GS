@@ -981,3 +981,80 @@ Pairwise deltas versus M18:
 
 - `python -m unittest tests.test_checkpoint_drift_diagnosis`: passed, 1 test.
 - `python scripts/srd_gs/diagnose_checkpoint_drift.py --case M18_render_gate_delay_i30=... --case M20_i300_render_gate_on=... --case M21_i300_render_gate_neutral=... --output_dir outputs/srd_gs_checkpoint_drift_diag_m23`: passed.
+
+## Milestone 24: Reflection/specular Freeze Control
+
+Status: runtime GO; reflection/specular drift control GO; rendering recovery NO-GO; paper-scale still blocked
+
+### Actions Completed
+
+- Added baseline-compatible optimizer LR scale flags `--srd_reflection_feature_lr_scale` and `--srd_specular_weight_lr_scale`, both defaulting to `1.0`.
+- Applied those scales only to `reflection_feature` and `specular_weight` optimizer groups in `scene/gaussian_model.py`.
+- Extended `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh` with optional `train_only_args`.
+- Added `configs/srd_gs/full_srd_gs_branch_raster_reflection_freeze_i300.yaml`.
+- Added tests for optimizer default values, target optimizer-group scaling, dry-run command isolation, and config discovery.
+- Verified dry-run command files under `outputs/srd_gs_reflection_freeze_m24_i300_dryrun`.
+- Executed a bounded 300-iteration `ball` run under `outputs/srd_gs_reflection_freeze_m24_i300`.
+- Collected `outputs/srd_gs_reflection_freeze_m24_i300/tables/ball_reflection_freeze_metric_summary.csv`.
+- Ran checkpoint drift diagnosis with M18/M20/M21/M24 under `outputs/srd_gs_reflection_freeze_m24_i300/checkpoint_drift`.
+- Ran render-regression diagnosis with M18/M20/M21/M24 under `outputs/srd_gs_reflection_freeze_m24_i300/render_regression`.
+- Added `docs/srd_gs/24_reflection_freeze_control.md`.
+
+### Runtime Notes
+
+- The first sandbox execution attempt failed with `RuntimeError: No CUDA GPUs are available`.
+- The same bounded command succeeded after explicit host-visible CUDA approval.
+- Training stayed in `stage_a` through iteration 300.
+- The run completed train, surface mesh extraction, specular-free texture export, test-split render pairs, and accepted-GT mesh evaluation.
+- Manifest records `policy=raster_feature_chunks`, `branch_gate_weight=1.0`, `render_gate_weight=0.0`, and `gate_applied=false`.
+- Mesh artifact is non-empty: `outputs/srd_gs_reflection_freeze_m24_i300/results/ball/full_srd_gs_branch_raster_reflection_freeze_i300/mesh_surface.ply`.
+
+### Metrics
+
+| Variant | Iter | Render gate | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay | 30 | 0.0 | 4.0842 | 2.7730 | 0.428561 | 0.000 | 86.4124 | 0.001707 |
+| M20 render gate on | 300 | 1.0 | 2.9394 | 1.5411 | 0.311117 | 0.000 | 75.4314 | 0.006588 |
+| M21 render gate neutral | 300 | 0.0 | 2.9205 | 1.5409 | 0.300529 | 0.001 | 75.9167 | 0.003792 |
+| M24 reflection/specular freeze | 300 | 0.0 | 2.8750 | 1.7308 | 0.286904 | 0.000 | 74.6085 | 0.00000037 |
+
+Pairwise deltas versus M18:
+
+| Variant | PSNR delta | Refl-PSNR delta | Chamfer delta | F-score delta | Normal MAE delta | Leakage delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M24 reflection/specular freeze | -1.2092 | -1.0422 | -0.141657 | 0.000 | -11.8039 | -0.001707 |
+
+Checkpoint deltas versus M18:
+
+| Variant | Gaussian count delta | Opacity mean delta | Scale mean delta | Reflection feature abs delta | Specular weight mean delta | Branch gate mean delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M24 reflection/specular freeze | 0 | +0.166588 | +0.000988 | -0.010269 | +0.000001 | 0.000000 |
+
+### Key Findings
+
+- The optimizer freeze hit its intended target: reflection-feature drift and specular-weight drift were suppressed.
+- Rendering did not recover. PSNR remains below M20/M21 and far below M18.
+- Refl-PSNR, Chamfer, Normal MAE, and baking leakage improved relative to M20/M21, but F-score remains zero and these are still single-scene short-budget diagnostics.
+- Activated opacity mean drift is larger than M20/M21, making opacity drift the next bounded control target.
+
+### Claim Boundary
+
+- Optimizer freeze plumbing: GO.
+- Evidence that reflection/specular drift alone is not sufficient to explain the 300-iteration rendering drop: GO for bounded `ball` M24 control only.
+- Rendering fidelity recovery: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Stable mesh/material superiority: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD suite: `python -m unittest tests.test_srd_gaussian_model_static tests.test_branch_raster_smoke_runner tests.test_ablation_system_contract`: passed, 17 tests.
+- Dry-run command contract: passed under `outputs/srd_gs_reflection_freeze_m24_i300_dryrun`.
+- Runtime command: passed under `outputs/srd_gs_reflection_freeze_m24_i300` after host-visible CUDA approval.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 76 tests.
+- `conda run -n ref_gs python -m py_compile arguments/__init__.py scene/gaussian_model.py tests/test_srd_gaussian_model_static.py tests/test_branch_raster_smoke_runner.py tests/test_ablation_system_contract.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M24 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
