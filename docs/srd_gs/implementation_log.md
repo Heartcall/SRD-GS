@@ -1384,3 +1384,64 @@ Status: dry-run instrumentation GO; runtime evidence not generated; paper-scale 
 - Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_srd_loss_logging tests.test_failure_loss_instrumentation tests.test_branch_raster_smoke_runner tests.test_reflective_asset_metrics` passed, 15 tests.
 - M29 dry-run command package passed under `outputs/srd_gs_failure_loss_instrumentation_m29_dryrun`.
 - M29 instrumentation summary passed under `outputs/srd_gs_failure_loss_instrumentation_m29`.
+
+## Milestone 30: Instrumented Runtime Preflight
+
+Status: bounded preflight GO; runtime launch NO-GO in current environment; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/preflight_instrumented_runtime.py`.
+- Added `tests/test_instrumented_runtime_preflight.py`.
+- Ran a TDD RED check before the script existed.
+- Generated a bounded 30-iteration `ball` instrumented dry-run command package under `outputs/srd_gs_instrumented_runtime_m30_dryrun`.
+- Ran runtime preflight against the dry-run result root.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m30/instrumented_runtime_preflight.csv`.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m30/instrumented_runtime_preflight.json`.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m30/instrumented_runtime_preflight.md`.
+- Added `docs/srd_gs/30_instrumented_runtime_preflight.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- Direct CUDA availability through `conda run -n ref_gs python -c ...` was initially visible, but the preflight `nvidia-smi` query failed to see the training GPU from the current shell.
+- Workspace free space was `18.38` GB, below the M30 threshold of `25` GB.
+- Prohibited SRD train/render/eval/export process count was `0`.
+- Because `runtime_go=false`, the runtime chain was intentionally not launched.
+
+### Preflight Matrix
+
+| Label | Runtime GO | Contract ready | GPU index | GPU util | Workspace free GB | Process matches | Blockers |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| M30 instrumented ball i30 preflight | false | true | 2 | n/a | 18.38 | 0 | `training_gpu_not_visible`; `workspace_free_below_threshold` |
+
+### Key Findings
+
+- The M29 instrumentation contract remains ready for the M30 dry-run root.
+- Runtime launch is blocked by GPU visibility and workspace storage threshold.
+- The correct bounded outcome is preflight NO-GO, not a forced runtime launch.
+
+### Claim Boundary
+
+- Bounded runtime-readiness gate: GO.
+- Runtime launch in this environment: NO-GO.
+- Runtime loss progression evidence: NO-GO.
+- Runtime failure-case behavior: NO-GO.
+- Full rendering fidelity recovery: NO-GO.
+- Stable geometry superiority: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `tests.test_instrumented_runtime_preflight` failed before `scripts/srd_gs/preflight_instrumented_runtime.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_instrumented_runtime_preflight` passed, 3 tests.
+- M30 dry-run command package passed under `outputs/srd_gs_instrumented_runtime_m30_dryrun`.
+- M30 runtime preflight passed and wrote the three summary artifacts under `outputs/srd_gs_instrumented_runtime_preflight_m30`.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 85 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/preflight_instrumented_runtime.py tests/test_instrumented_runtime_preflight.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M30 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.

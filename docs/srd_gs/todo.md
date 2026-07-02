@@ -36,10 +36,23 @@
 - Milestone 27: Opacity-control tradeoff synthesis - read-only synthesis GO / tradeoff clarified / paper-scale still blocked
 - Milestone 28: Failure/loss artifact synthesis - read-only synthesis GO / loss and failure-panel blockers explicit / paper-scale still blocked
 - Milestone 29: Failure/loss instrumentation contract - dry-run instrumentation GO / runtime evidence not generated / paper-scale still blocked
+- Milestone 30: Instrumented runtime preflight - bounded preflight GO / runtime launch NO-GO in current environment / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 29 adds the dry-run instrumentation contract for future loss logs and failure-panel summaries, but it does not generate runtime loss curves, runtime failure cases, or new quality metrics. The next step should be one explicitly gated bounded M30 action: run a single-scene instrumented smoke/control on `ball` using the M29 contract, or perform a read-only preflight if GPU/storage/process gates are not acceptable. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 30 prepared a bounded 30-iteration instrumented `ball` command package and ran runtime preflight. The instrumentation contract is ready, but runtime launch is NO-GO because GPU visibility failed in the current shell and workspace free space is below the 25G preflight threshold. The next step should be one bounded M31 action: rerun the M30 preflight when GPU/storage gates are acceptable, and only then launch exactly one single-scene instrumented `ball` run. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 30 Notes
+
+- Added `scripts/srd_gs/preflight_instrumented_runtime.py`.
+- Added `tests/test_instrumented_runtime_preflight.py`.
+- Generated `outputs/srd_gs_instrumented_runtime_m30_dryrun/` as a 30-iteration `ball` dry-run command package.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m30/instrumented_runtime_preflight.csv`.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m30/instrumented_runtime_preflight.json`.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m30/instrumented_runtime_preflight.md`.
+- Summary result: instrumentation contract ready `true`, process matches `0`, workspace free `18.38` GB, blockers `training_gpu_not_visible` and `workspace_free_below_threshold`, runtime GO `false`.
+- No train/render/mesh/texture/eval runtime was launched.
+- This milestone supports bounded runtime-readiness gating only. It does not support runtime loss progression, runtime failure-case behavior, rendering recovery, geometry superiority, PBR material accuracy, SRD-GS superiority over Ref-GS, or paper-scale claims.
 
 ## Completed Milestone 29 Notes
 
