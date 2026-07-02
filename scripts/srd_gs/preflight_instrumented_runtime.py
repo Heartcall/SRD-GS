@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -60,6 +61,46 @@ def collect_gpu_rows():
     return parse_nvidia_smi_gpu_rows(text)
 
 
+def build_torch_probe_command(env_root=None):
+    env_root = Path(env_root or os.environ.get("CONDA_ENV_PREFIX", "/home/liuly/anaconda3/envs/ref_gs"))
+    env_python = env_root / "bin" / "python"
+    probe = "import torch; print(torch.cuda.is_available()); print(torch.cuda.device_count())"
+    if env_python.exists():
+        return [str(env_python), "-c", probe]
+    return ["conda", "run", "-n", "ref_gs", "python", "-c", probe]
+
+
+def build_conda_torch_probe_command():
+    probe = "import torch; print(torch.cuda.is_available()); print(torch.cuda.device_count())"
+    return ["conda", "run", "-n", "ref_gs", "python", "-c", probe]
+
+
+def parse_torch_probe_output(text):
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if len(lines) < 2:
+        return None, None
+    try:
+        return lines[0] == "True", int(lines[1])
+    except ValueError:
+        return None, None
+
+
+def collect_torch_cuda_probe(env_root=None):
+    primary_command = build_torch_probe_command(env_root)
+    torch_cuda_available, torch_device_count = parse_torch_probe_output(_run_command(primary_command))
+    if torch_cuda_available:
+        return torch_cuda_available, torch_device_count
+
+    fallback_command = build_conda_torch_probe_command()
+    if primary_command == fallback_command:
+        return torch_cuda_available, torch_device_count
+
+    fallback_cuda_available, fallback_device_count = parse_torch_probe_output(_run_command(fallback_command))
+    if fallback_cuda_available:
+        return fallback_cuda_available, fallback_device_count
+    return torch_cuda_available, torch_device_count
+
+
 def collect_process_matches():
     text = _run_command(["pgrep", "-af", PROCESS_PATTERN])
     return [line for line in text.splitlines() if line.strip()]
@@ -93,6 +134,8 @@ def summarize_preflight(
     label,
     result_root,
     gpu_rows,
+    torch_cuda_available,
+    torch_device_count,
     training_gpu_index,
     min_workspace_free_gb,
     workspace_free_gb,
@@ -106,7 +149,10 @@ def summarize_preflight(
     contract_ready = instrumentation_contract_ready(result_root)
     if not contract_ready:
         blockers.append("instrumentation_contract_not_ready")
-    if gpu_row is None:
+    torch_training_gpu_visible = bool(torch_cuda_available) and torch_device_count is not None and torch_device_count > training_gpu_index
+    if gpu_row is None and torch_training_gpu_visible:
+        blockers.append("gpu_utilization_unavailable")
+    elif gpu_row is None:
         blockers.append("training_gpu_not_visible")
     elif gpu_row["utilization_percent"] > max_gpu_utilization_percent:
         blockers.append("training_gpu_busy")
@@ -125,6 +171,9 @@ def summarize_preflight(
         "paper_scale_gate": "NO-GO",
         "supports_paper_claim": False,
         "instrumentation_contract_ready": contract_ready,
+        "torch_cuda_available": torch_cuda_available,
+        "torch_device_count": torch_device_count,
+        "torch_training_gpu_visible": torch_training_gpu_visible,
         "training_gpu_index": training_gpu_index,
         "training_gpu_memory_used_mb": None if gpu_row is None else gpu_row["memory_used_mb"],
         "training_gpu_utilization_percent": None if gpu_row is None else gpu_row["utilization_percent"],
@@ -182,7 +231,7 @@ def write_outputs(output_dir, summary):
 
     json_path.write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
     lines = [
-        "# Milestone 30 instrumented runtime preflight",
+        "# SRD-GS instrumented runtime preflight",
         "",
         f"Runtime GO: {summary['runtime_go']}",
         "Paper-scale gate: NO-GO",
@@ -191,6 +240,9 @@ def write_outputs(output_dir, summary):
         "## Gates",
         "",
         f"- Instrumentation contract ready: {summary['instrumentation_contract_ready']}",
+        f"- Torch CUDA available: {summary['torch_cuda_available']}",
+        f"- Torch device count: {summary['torch_device_count']}",
+        f"- Torch training GPU visible: {summary['torch_training_gpu_visible']}",
         f"- Training GPU index: {summary['training_gpu_index']}",
         f"- Training GPU utilization: {summary['training_gpu_utilization_percent']}",
         f"- Workspace free GB: {summary['workspace_free_gb']:.2f}",
@@ -223,6 +275,8 @@ def parse_args():
     parser.add_argument("--min_workspace_free_gb", type=float, default=25.0)
     parser.add_argument("--gpu_rows_text", default="")
     parser.add_argument("--workspace_free_gb", type=float, default=None)
+    parser.add_argument("--torch_cuda_available", choices=["true", "false"], default=None)
+    parser.add_argument("--torch_device_count", type=int, default=None)
     parser.add_argument("--skip_process_scan", action="store_true", default=False)
     return parser.parse_args()
 
@@ -233,11 +287,18 @@ def main():
     free_gb = args.workspace_free_gb
     if free_gb is None:
         free_gb = workspace_free_gb(args.workspace_path)
+    if args.torch_cuda_available is None or args.torch_device_count is None:
+        torch_cuda_available, torch_device_count = collect_torch_cuda_probe()
+    else:
+        torch_cuda_available = args.torch_cuda_available == "true"
+        torch_device_count = args.torch_device_count
     process_matches = [] if args.skip_process_scan else collect_process_matches()
     summary = summarize_preflight(
         label=args.label,
         result_root=args.result_root,
         gpu_rows=gpu_rows,
+        torch_cuda_available=torch_cuda_available,
+        torch_device_count=torch_device_count,
         training_gpu_index=args.training_gpu_index,
         min_workspace_free_gb=args.min_workspace_free_gb,
         workspace_free_gb=free_gb,

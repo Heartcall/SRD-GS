@@ -138,6 +138,8 @@ A read-only opacity-control synthesis over completed `ball` artifacts shows M25 
 A read-only failure/loss artifact synthesis confirms M20/M21/M24/M25/M26 have complete audited core artifact chains and render-eval field references, but no detected loss logs or failure-panel artifacts; those remain explicit blockers for root-cause and claim-bearing analysis.
 A dry-run failure/loss instrumentation contract now passes a train-only SRD loss CSV path through the bounded runner and makes eval outputs write failure-summary artifacts; this removes an instrumentation blocker for future bounded runs but does not generate runtime loss curves or quality evidence.
 A bounded M30 runtime preflight prepares a 30-iteration instrumented `ball` command package and blocks launch when GPU visibility/storage gates are not acceptable; this supports readiness gating only, not runtime quality evidence.
+A bounded M31 CUDA-preflight refinement records Torch CUDA visibility explicitly and confirms storage/process gates pass, but runtime launch remains blocked because the `ref_gs` runtime cannot see CUDA devices.
+A bounded M32 single-scene 30-iteration `ball` instrumented run completes the train/mesh/texture/render-eval/accepted-GT-eval chain and produces `loss_log.csv`, `failure_summary.md`, and a 17-row metric summary, but F-score remains zero and several metrics remain unavailable.
 ```
 
 Current unsupported claims:
@@ -172,19 +174,21 @@ SRD-GS has stable multi-scene mesh/material superiority.
 18. The M28 artifact synthesis confirms the completed result roots are auditable, but loss progression and failure-panel evidence are absent; the opacity/rendering tradeoff root cause remains unproven.
 19. The M29 instrumentation contract makes future bounded runs capable of writing result-root `loss_log.csv` and `failure_case_panels/failure_summary.md`, but runtime loss/failure evidence has not yet been generated.
 20. The M30 preflight confirms the bounded instrumented command package is ready, but runtime launch is blocked in the current environment by GPU visibility and workspace free-space gates.
+21. The M31 refined preflight confirms workspace/process gates pass, but the `ref_gs` runtime reports CUDA unavailable and zero CUDA devices, so the bounded instrumented run remains blocked.
+22. The M32 bounded runtime removes the missing loss/failure-artifact blocker for one short `ball` run, but the resulting evidence remains non-comparative, short-budget, and quality-limited: F-score is `0.0`, SSIM is negative, and LPIPS/material/runtime metrics remain unavailable.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Keep the next step bounded: rerun the M30 preflight when GPU visibility and storage gates are acceptable, then launch exactly one single-scene instrumented smoke/control on `ball` only if `runtime_go=true`.
+3. Keep the next step bounded: perform a read/diagnostic synthesis of M32 loss progression, failure-summary unavailable metrics, render-eval manifest, and metrics against prior short-budget controls before deciding whether another one-scene control is justified.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
-5. If the bounded control is executed, keep it to `ball` and one short checkpoint before any broader claims.
+5. If another bounded control is executed later, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 29:
+Fresh verification through Milestone 32:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
@@ -267,4 +271,24 @@ Fresh verification through Milestone 29:
 - `bash -n scripts/srd_gs/*.sh`: passed.
 - `git diff --check`: passed.
 - M30 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+- `conda run -n ref_gs python -m unittest tests.test_instrumented_runtime_preflight`: passed, 5 tests.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_opacity_quarter_i300.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_cuda_preflight_refine_m31_dryrun --scene_name ball --iterations 30 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000`: passed as dry-run.
+- `python scripts/srd_gs/preflight_instrumented_runtime.py --result_root outputs/srd_gs_cuda_preflight_refine_m31_dryrun/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --label M31_cuda_preflight_refine --output_dir outputs/srd_gs_cuda_preflight_refine_m31 --training_gpu_index 2 --max_gpu_utilization_percent 50 --workspace_path . --min_workspace_free_gb 25`: passed and returned `runtime_go=false`.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 87 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/preflight_instrumented_runtime.py tests/test_instrumented_runtime_preflight.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M31 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+- `conda run -n ref_gs python -m unittest tests.test_instrumented_runtime_preflight`: passed, 6 tests.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_opacity_quarter_i300.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_instrumented_runtime_m32_dryrun --scene_name ball --iterations 30 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000`: passed as dry-run.
+- `conda run -n ref_gs python scripts/srd_gs/preflight_instrumented_runtime.py --result_root outputs/srd_gs_instrumented_runtime_m32_dryrun/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --label M32_conda_run_preflight_probe --output_dir outputs/srd_gs_instrumented_runtime_preflight_m32_conda_probe --training_gpu_index 2 --max_gpu_utilization_percent 50 --workspace_path . --min_workspace_free_gb 25`: passed and returned `runtime_go=true`.
+- `bash scripts/srd_gs/run_branch_raster_smoke_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster_opacity_quarter_i300.yaml --scene_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_root outputs/srd_gs_instrumented_runtime_m32_i30 --scene_name ball --iterations 30 --max_mesh_views 4 --depth_trunc 10.0 --max_texture_views 2 --max_eval_views 2 --geometry_sample_count 1000 --execute`: passed.
+- `python scripts/srd_gs/collect_results.py --results_root outputs/srd_gs_instrumented_runtime_m32_i30/results --output_csv outputs/srd_gs_instrumented_runtime_m32_i30/tables/ball_instrumented_i30_metric_summary.csv`: passed, 17 rows.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 88 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/preflight_instrumented_runtime.py tests/test_instrumented_runtime_preflight.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M32 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.

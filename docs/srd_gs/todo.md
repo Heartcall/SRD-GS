@@ -37,10 +37,41 @@
 - Milestone 28: Failure/loss artifact synthesis - read-only synthesis GO / loss and failure-panel blockers explicit / paper-scale still blocked
 - Milestone 29: Failure/loss instrumentation contract - dry-run instrumentation GO / runtime evidence not generated / paper-scale still blocked
 - Milestone 30: Instrumented runtime preflight - bounded preflight GO / runtime launch NO-GO in current environment / paper-scale still blocked
+- Milestone 31: CUDA preflight refinement - bounded diagnostic GO / runtime launch NO-GO in current environment / paper-scale still blocked
+- Milestone 32: Instrumented runtime i30 - bounded single-scene runtime GO / runtime loss and failure-summary artifacts generated / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 30 prepared a bounded 30-iteration instrumented `ball` command package and ran runtime preflight. The instrumentation contract is ready, but runtime launch is NO-GO because GPU visibility failed in the current shell and workspace free space is below the 25G preflight threshold. The next step should be one bounded M31 action: rerun the M30 preflight when GPU/storage gates are acceptable, and only then launch exactly one single-scene instrumented `ball` run. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 32 repaired the immediate CUDA gate ambiguity by requiring the claim-bearing preflight to run in a host-visible `conda run -n ref_gs` context, then executed exactly one 30-iteration instrumented `ball` chain. Runtime loss and failure-summary artifacts now exist, but the evidence remains one scene, one checkpoint, and short-budget. F-score is still `0.0`, SSIM is negative, multiple metrics remain unavailable, and there is no same-budget baseline comparison in this milestone. The next step should be one bounded M33 diagnostic/synthesis action: compare M32's loss progression, failure-summary unavailable metrics, render-eval manifest, and metrics against prior short-budget controls before deciding whether another single-scene control is justified. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 32 Notes
+
+- Added a regression test for direct env-python CUDA false negatives with `conda run -n ref_gs` fallback.
+- Updated `scripts/srd_gs/preflight_instrumented_runtime.py` to parse Torch probe output defensively and fall back to `conda run -n ref_gs` when direct env-python probing reports CUDA unavailable.
+- Generated `outputs/srd_gs_instrumented_runtime_m32_dryrun/` as a 30-iteration `ball` dry-run command package.
+- Generated host-visible preflight artifacts under `outputs/srd_gs_instrumented_runtime_preflight_m32_conda_probe/`.
+- Host-visible preflight summary: instrumentation contract ready `true`, Torch CUDA available `true`, Torch device count `8`, training GPU 2 utilization `0`, workspace free `29.98` GB, process matches `0`, blockers `none`, warnings `workspace_storage_tight`, runtime GO `true`.
+- Executed exactly one bounded 30-iteration `ball` runtime chain under `outputs/srd_gs_instrumented_runtime_m32_i30/`.
+- Generated `loss_log.csv` with three rows at iterations 10, 20, and 30.
+- Generated `eval_with_gt_mesh/failure_case_panels/failure_summary.md`.
+- Generated `tables/ball_instrumented_i30_metric_summary.csv` with 17 rows.
+- Key metrics: PSNR `4.342511`, Refl-PSNR `2.938904`, Chamfer `0.487437`, F-score `0.0`, Normal MAE `87.332283`, texture baking highlight leakage `0.000975`.
+- Unsupported/failed metrics remain explicit: LPIPS/refl-LPIPS, GT depth, eval-level highlight leakage mask, GT albedo, GT roughness, material consistency, training time, peak memory, and render FPS.
+- This milestone supports bounded runtime instrumentation evidence only. It does not support SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, PBR material accuracy, or paper-scale claims.
+
+## Completed Milestone 31 Notes
+
+- Updated `scripts/srd_gs/preflight_instrumented_runtime.py` to collect Torch CUDA visibility through the explicit `ref_gs` interpreter when available.
+- Added preflight fields for `torch_cuda_available`, `torch_device_count`, and `torch_training_gpu_visible`.
+- Refined blocker classification to distinguish `gpu_utilization_unavailable` from `training_gpu_not_visible`.
+- Extended `tests/test_instrumented_runtime_preflight.py` for the refined CUDA visibility behavior.
+- Generated `outputs/srd_gs_cuda_preflight_refine_m31_dryrun/` as a 30-iteration `ball` dry-run command package.
+- Generated `outputs/srd_gs_cuda_preflight_refine_m31/instrumented_runtime_preflight.csv`.
+- Generated `outputs/srd_gs_cuda_preflight_refine_m31/instrumented_runtime_preflight.json`.
+- Generated `outputs/srd_gs_cuda_preflight_refine_m31/instrumented_runtime_preflight.md`.
+- Summary result: instrumentation contract ready `true`, workspace free `30.18` GB, process matches `0`, Torch CUDA available `false`, Torch device count `0`, blocker `training_gpu_not_visible`, runtime GO `false`.
+- No train/render/mesh/texture/eval runtime was launched.
+- This milestone supports bounded preflight diagnostic correctness only. It does not support runtime loss progression, runtime failure-case behavior, rendering recovery, geometry superiority, PBR material accuracy, SRD-GS superiority over Ref-GS, or paper-scale claims.
 
 ## Completed Milestone 30 Notes
 

@@ -1445,3 +1445,162 @@ Status: bounded preflight GO; runtime launch NO-GO in current environment; paper
 - `git diff --check`: passed.
 - M30 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 31: CUDA Preflight Refinement
+
+Status: bounded preflight diagnostic GO; runtime launch NO-GO in current environment; paper-scale still blocked
+
+### Actions Completed
+
+- Updated `scripts/srd_gs/preflight_instrumented_runtime.py` to prefer the explicit `ref_gs` interpreter for Torch CUDA probes.
+- Added preflight fields for Torch CUDA availability, Torch device count, and hardcoded training-GPU visibility.
+- Refined blocker classification so Torch-visible but `nvidia-smi`-unavailable states are reported as `gpu_utilization_unavailable`, while true runtime invisibility remains `training_gpu_not_visible`.
+- Extended `tests/test_instrumented_runtime_preflight.py`.
+- Ran a TDD RED check before the new helper existed.
+- Generated a bounded 30-iteration `ball` instrumented dry-run command package under `outputs/srd_gs_cuda_preflight_refine_m31_dryrun`.
+- Ran refined runtime preflight against the dry-run result root.
+- Generated `outputs/srd_gs_cuda_preflight_refine_m31/instrumented_runtime_preflight.csv`.
+- Generated `outputs/srd_gs_cuda_preflight_refine_m31/instrumented_runtime_preflight.json`.
+- Generated `outputs/srd_gs_cuda_preflight_refine_m31/instrumented_runtime_preflight.md`.
+- Added `docs/srd_gs/31_cuda_preflight_refinement.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- Workspace free space was `30.18` GB, above the M31 threshold of `25` GB.
+- Prohibited SRD train/render/eval/export process count was `0`.
+- The `ref_gs` runtime reported `torch.cuda.is_available() == False` and `torch.cuda.device_count() == 0`.
+- Because `runtime_go=false`, the runtime chain was intentionally not launched.
+
+### Preflight Matrix
+
+| Label | Runtime GO | Contract ready | Torch CUDA | Torch devices | Training GPU visible | Workspace free GB | Process matches | Blockers |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| M31 CUDA preflight refine | false | true | false | 0 | false | 30.18 | 0 | `training_gpu_not_visible` |
+
+### Key Findings
+
+- The M29/M30 instrumentation contract remains ready for the M31 dry-run root.
+- Storage and process gates pass.
+- Runtime launch remains blocked because CUDA is not visible to the `ref_gs` runtime.
+- The correct bounded outcome is refined preflight NO-GO, not a forced runtime launch.
+
+### Claim Boundary
+
+- Bounded CUDA-preflight diagnostic refinement: GO.
+- Runtime launch in this environment: NO-GO.
+- Runtime loss progression evidence: NO-GO.
+- Runtime failure-case behavior: NO-GO.
+- Full rendering fidelity recovery: NO-GO.
+- Stable geometry superiority: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `build_torch_probe_command` and the refined Torch-visible/nvidia-unavailable preflight state were absent before implementation.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_instrumented_runtime_preflight` passed, 5 tests.
+- M31 dry-run command package passed under `outputs/srd_gs_cuda_preflight_refine_m31_dryrun`.
+- M31 runtime preflight passed and wrote the three summary artifacts under `outputs/srd_gs_cuda_preflight_refine_m31`.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 87 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/preflight_instrumented_runtime.py tests/test_instrumented_runtime_preflight.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M31 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 32: Instrumented Runtime i30
+
+Status: bounded single-scene runtime GO; runtime loss/failure artifacts generated; paper-scale still blocked
+
+### Actions Completed
+
+- Added a regression test for the CUDA preflight false-negative path where direct env-python probing reports CUDA unavailable while a host-visible `conda run -n ref_gs` probe can see CUDA.
+- Updated `scripts/srd_gs/preflight_instrumented_runtime.py` to parse Torch probe output defensively and fall back to `conda run -n ref_gs` when direct env-python probing reports CUDA unavailable.
+- Generated a bounded 30-iteration `ball` instrumented dry-run command package under `outputs/srd_gs_instrumented_runtime_m32_dryrun`.
+- Ran a host-visible preflight with `conda run -n ref_gs python scripts/srd_gs/preflight_instrumented_runtime.py`.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m32_conda_probe/instrumented_runtime_preflight.csv`.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m32_conda_probe/instrumented_runtime_preflight.json`.
+- Generated `outputs/srd_gs_instrumented_runtime_preflight_m32_conda_probe/instrumented_runtime_preflight.md`.
+- Executed exactly one bounded 30-iteration `ball` runtime chain under `outputs/srd_gs_instrumented_runtime_m32_i30`.
+- Generated runtime `loss_log.csv` with rows at iterations 10, 20, and 30.
+- Generated `eval_with_gt_mesh/failure_case_panels/failure_summary.md`.
+- Generated `outputs/srd_gs_instrumented_runtime_m32_i30/tables/ball_instrumented_i30_metric_summary.csv`.
+- Added `docs/srd_gs/32_instrumented_runtime_i30.md`.
+
+### Runtime Notes
+
+- The claim-bearing preflight must be interpreted in the host-visible `conda run -n ref_gs` context. A plain `python` invocation can still produce sandbox false negatives for CUDA.
+- Host-visible preflight returned `runtime_go=true`.
+- No broad or multi-scene run was launched.
+- The runtime chain completed train, surface mesh extraction, specular-free texture export, render-eval pair generation, accepted-GT mesh evaluation, and summary collection.
+
+### Preflight Matrix
+
+| Label | Runtime GO | Contract ready | Torch CUDA | Torch devices | Training GPU visible | GPU util | Workspace free GB | Process matches | Blockers | Warnings |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| M32 conda-run preflight probe | true | true | true | 8 | true | 0 | 29.98 | 0 | none | `workspace_storage_tight` |
+
+### Runtime Evidence
+
+| Metric | Value |
+| --- | ---: |
+| loss-log rows | 3 |
+| final logged stage | `stage_a` |
+| final logged total loss | 0.564937 |
+| final logged photometric loss | 0.208746 |
+| final logged geometry loss | 0.047309 |
+| final logged surface alpha mean | 0.457094 |
+| final logged Gaussian count | 100000 |
+| render-eval frames | 2 |
+| render branch-map policy | `raster_feature_chunks` |
+| branch gate weight | 1.0 |
+| render gate weight | 0.0 |
+
+### Key Metrics
+
+| Metric | Value |
+| --- | ---: |
+| PSNR | 4.342511 |
+| SSIM | -0.298195 |
+| Refl-PSNR | 2.938904 |
+| Refl-SSIM | -0.245972 |
+| Chamfer distance | 0.487437 |
+| F-score | 0.0 |
+| Normal MAE | 87.332283 |
+| Texture baking highlight leakage | 0.000975 |
+
+### Key Findings
+
+- M32 generates the runtime loss/failure artifacts that M28-M31 identified as missing.
+- The run remains short-budget and single-scene only.
+- F-score remains `0.0`, SSIM is negative, and multiple metrics remain unavailable.
+- The result does not establish quality improvement over Ref-GS or over prior SRD-GS controls.
+
+### Claim Boundary
+
+- Bounded instrumentation/runtime evidence: GO.
+- One-scene short-budget metrics: available but not claim-bearing for superiority.
+- Runtime loss progression: available for iterations 10/20/30 only.
+- Runtime failure-summary artifact: available.
+- Stable geometry superiority: NO-GO.
+- Rendering recovery: NO-GO.
+- PBR/material accuracy: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: direct env-python false-negative fallback behavior was absent before implementation.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_instrumented_runtime_preflight` passed, 6 tests.
+- M32 dry-run command package passed under `outputs/srd_gs_instrumented_runtime_m32_dryrun`.
+- Host-visible M32 preflight passed and returned `runtime_go=true`.
+- M32 runtime chain passed under `outputs/srd_gs_instrumented_runtime_m32_i30`.
+- M32 summary table wrote 17 rows.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 88 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/preflight_instrumented_runtime.py tests/test_instrumented_runtime_preflight.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M32 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
