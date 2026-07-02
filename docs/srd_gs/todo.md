@@ -41,10 +41,22 @@
 - Milestone 32: Instrumented runtime i30 - bounded single-scene runtime GO / runtime loss and failure-summary artifacts generated / paper-scale still blocked
 - Milestone 33: Instrumented runtime diagnostic synthesis - read-only synthesis GO / mixed M32 diagnostic position / paper-scale still blocked
 - Milestone 34: Diagnostic direction decision - read-only decision GO / eval-material artifact plumbing selected / paper-scale still blocked
+- Milestone 35: Eval/material artifact plumbing audit - read-only artifact-plumbing GO / one export-diagnostic bridge candidate found / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 34 selects `eval_material_artifact_plumbing` as the next bounded direction because M33 shows ten unavailable metrics, persistent F-score/eval context blockers, and a render/geometry tradeoff. Stage B/C activation and opacity schedule remain deferred runtime directions. The next step should be one bounded M35 action that implements eval/material artifact plumbing in read-only or dry-run-first form. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 35 reduces the ten M32/M33 unavailable metrics into artifact requirement classes. The only immediate plumbing candidate is `texture_material/highlight_leakage_score`, because texture export already produced `pbr_textures_specular_free/baking_report.json` and `highlight_leakage_mask.png`. The next step should be one bounded M36 action that implements a read-only/dry-run-first highlight-leakage export diagnostic bridge into eval/material summaries, explicitly labeled as an export diagnostic and not as GT PBR material accuracy. Stage B/C activation, opacity scheduling, LPIPS dependency installation, accepted GT material/depth metrics, and runtime cost metrics remain deferred. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 35 Notes
+
+- Added `scripts/srd_gs/audit_eval_material_artifacts_m35.py`.
+- Added `tests/test_eval_material_artifact_plumbing.py`.
+- Generated `outputs/srd_gs_eval_material_plumbing_m35/eval_material_artifact_requirements.csv`.
+- Generated `outputs/srd_gs_eval_material_plumbing_m35/eval_material_artifact_plan.json`.
+- Generated `outputs/srd_gs_eval_material_plumbing_m35/eval_material_artifact_plan.md`.
+- M35 is read-only: it consumes M32 metric/failure/manifest/texture artifacts and does not launch training, rendering, mesh extraction, texture export, or evaluation.
+- Summary result: ten unavailable metrics remain explicit; one metric is a plumbing candidate (`texture_material/highlight_leakage_score`), two are blocked by missing LPIPS dependency, three by missing accepted GT artifacts, one by missing material-view manifest, and three by missing runtime logs.
+- This milestone supports artifact-requirement classification only. It does not support SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 34 Notes
 

@@ -1722,3 +1722,58 @@ Status: read-only decision GO; eval/material artifact plumbing selected; paper-s
 - `git diff --check`: passed.
 - M34 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 35: Eval/material Artifact Plumbing Audit
+
+Status: read-only artifact-plumbing GO; one export-diagnostic bridge candidate found; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/audit_eval_material_artifacts_m35.py`.
+- Added `tests/test_eval_material_artifact_plumbing.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_eval_material_plumbing_m35/eval_material_artifact_requirements.csv`.
+- Generated `outputs/srd_gs_eval_material_plumbing_m35/eval_material_artifact_plan.json`.
+- Generated `outputs/srd_gs_eval_material_plumbing_m35/eval_material_artifact_plan.md`.
+- Added `docs/srd_gs/35_eval_material_artifact_plumbing.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- The script is CPU/read-only and consumes existing M32 metric/failure/manifest/texture artifacts.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+
+### Artifact Requirement Summary
+
+| Status | Count | Metrics |
+| --- | ---: | --- |
+| `plumbing_candidate` | 1 | `texture_material/highlight_leakage_score` |
+| `blocked_missing_dependency` | 2 | `rendering/lpips`, `reflective_region/refl_lpips` |
+| `blocked_missing_gt` | 3 | `geometry/depth_error`, `texture_material/albedo_error`, `texture_material/roughness_error` |
+| `blocked_missing_material_view_manifest` | 1 | `texture_material/material_consistency` |
+| `blocked_missing_runtime_log` | 3 | `runtime/training_time`, `runtime/peak_memory`, `runtime/render_fps` |
+
+### Key Findings
+
+- M35 audits all ten unavailable M32 metrics.
+- Existing texture export artifacts make `texture_material/highlight_leakage_score` a future eval-summary plumbing candidate.
+- That candidate is only an export diagnostic bridge; it is not GT PBR material accuracy.
+- LPIPS/refl-LPIPS remain blocked by missing optional dependency.
+- Depth/albedo/roughness metrics remain blocked by missing accepted GT artifacts.
+- Training time, peak memory, and render FPS remain blocked by missing runtime logs.
+
+### Claim Boundary
+
+- Artifact requirement and blocker classification for existing unavailable metrics: GO.
+- Highlight-leakage export-diagnostic bridge as next bounded target: GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- GT PBR material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `python -m unittest tests.test_eval_material_artifact_plumbing` failed before `audit_eval_material_artifacts_m35.py` existed.
+- Focused TDD GREEN: `python -m unittest tests.test_eval_material_artifact_plumbing` passed, 1 test.
+- M35 audit command passed and wrote the three output artifacts under `outputs/srd_gs_eval_material_plumbing_m35`.
+- Final validation commands are recorded in the Milestone 35 completion response.
