@@ -39,10 +39,27 @@
 - Milestone 30: Instrumented runtime preflight - bounded preflight GO / runtime launch NO-GO in current environment / paper-scale still blocked
 - Milestone 31: CUDA preflight refinement - bounded diagnostic GO / runtime launch NO-GO in current environment / paper-scale still blocked
 - Milestone 32: Instrumented runtime i30 - bounded single-scene runtime GO / runtime loss and failure-summary artifacts generated / paper-scale still blocked
+- Milestone 33: Instrumented runtime diagnostic synthesis - read-only synthesis GO / mixed M32 diagnostic position / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 32 repaired the immediate CUDA gate ambiguity by requiring the claim-bearing preflight to run in a host-visible `conda run -n ref_gs` context, then executed exactly one 30-iteration instrumented `ball` chain. Runtime loss and failure-summary artifacts now exist, but the evidence remains one scene, one checkpoint, and short-budget. F-score is still `0.0`, SSIM is negative, multiple metrics remain unavailable, and there is no same-budget baseline comparison in this milestone. The next step should be one bounded M33 diagnostic/synthesis action: compare M32's loss progression, failure-summary unavailable metrics, render-eval manifest, and metrics against prior short-budget controls before deciding whether another single-scene control is justified. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 33 compares M32's loss progression, unavailable metrics, render-eval manifest, and metrics against prior short-budget controls. M32 ranks best in PSNR/Refl-PSNR in this diagnostic table, but ranks worst in Chamfer/Normal MAE, keeps F-score at `0.0`, has non-monotonic three-row total loss, and still has ten unavailable metrics. The next step should be one bounded M34 action that chooses a single diagnostic direction: Stage B/C activation, opacity schedule, or eval/material artifact plumbing. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 33 Notes
+
+- Added `scripts/srd_gs/synthesize_instrumented_runtime_m33.py`.
+- Added `tests/test_instrumented_runtime_synthesis.py`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m32_metric_comparison.csv`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m32_loss_progression_summary.csv`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m32_unavailable_metrics.csv`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m32_manifest_summary.csv`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m33_synthesis_summary.json`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m33_synthesis_report.md`.
+- M33 is read-only: it consumes existing M32 artifacts and prior M26 render-regression summary artifacts.
+- Summary result: M32 ranks `1` for PSNR/Refl-PSNR and `7` for Chamfer/Normal MAE among compared rows; F-score remains `0.0`.
+- M32 loss logging has three rows at iterations `10/20/30`, final stage `stage_a`, final total loss `0.564937`, and non-monotonic total loss progression.
+- M32 failure summary still reports ten unavailable metrics.
+- This milestone supports diagnostic synthesis only. It does not support SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 32 Notes
 

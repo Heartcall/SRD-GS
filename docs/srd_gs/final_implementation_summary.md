@@ -140,6 +140,7 @@ A dry-run failure/loss instrumentation contract now passes a train-only SRD loss
 A bounded M30 runtime preflight prepares a 30-iteration instrumented `ball` command package and blocks launch when GPU visibility/storage gates are not acceptable; this supports readiness gating only, not runtime quality evidence.
 A bounded M31 CUDA-preflight refinement records Torch CUDA visibility explicitly and confirms storage/process gates pass, but runtime launch remains blocked because the `ref_gs` runtime cannot see CUDA devices.
 A bounded M32 single-scene 30-iteration `ball` instrumented run completes the train/mesh/texture/render-eval/accepted-GT-eval chain and produces `loss_log.csv`, `failure_summary.md`, and a 17-row metric summary, but F-score remains zero and several metrics remain unavailable.
+A read-only M33 diagnostic synthesis positions M32 against prior short-budget controls: PSNR/Refl-PSNR rank best in the diagnostic table, but Chamfer/Normal MAE rank worst, F-score remains zero, loss is non-monotonic over three rows, and ten metrics remain unavailable.
 ```
 
 Current unsupported claims:
@@ -176,19 +177,20 @@ SRD-GS has stable multi-scene mesh/material superiority.
 20. The M30 preflight confirms the bounded instrumented command package is ready, but runtime launch is blocked in the current environment by GPU visibility and workspace free-space gates.
 21. The M31 refined preflight confirms workspace/process gates pass, but the `ref_gs` runtime reports CUDA unavailable and zero CUDA devices, so the bounded instrumented run remains blocked.
 22. The M32 bounded runtime removes the missing loss/failure-artifact blocker for one short `ball` run, but the resulting evidence remains non-comparative, short-budget, and quality-limited: F-score is `0.0`, SSIM is negative, and LPIPS/material/runtime metrics remain unavailable.
+23. The M33 diagnostic synthesis confirms M32's rendering metric improvement is paired with worse geometry metrics and persistent unavailable metrics; the next step is a bounded diagnostic choice, not paper-scale expansion.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Keep the next step bounded: perform a read/diagnostic synthesis of M32 loss progression, failure-summary unavailable metrics, render-eval manifest, and metrics against prior short-budget controls before deciding whether another one-scene control is justified.
+3. Keep the next step bounded: choose one diagnostic direction from Stage B/C activation, opacity schedule, or eval/material artifact plumbing before any additional one-scene runtime.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If another bounded control is executed later, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 32:
+Fresh verification through Milestone 33:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
@@ -291,4 +293,12 @@ Fresh verification through Milestone 32:
 - `bash -n scripts/srd_gs/*.sh`: passed.
 - `git diff --check`: passed.
 - M32 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+- `python -m unittest tests.test_instrumented_runtime_synthesis`: passed, 1 test.
+- `python scripts/srd_gs/synthesize_instrumented_runtime_m33.py --prior_case_summary outputs/srd_gs_opacity_quarter_m26_i300/render_regression/case_summary.csv --m32_metrics outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --m32_loss_log outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/loss_log.csv --m32_manifest outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/render_eval_pairs/render_eval_manifest.json --m32_failure_summary outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/failure_case_panels/failure_summary.md --output_dir outputs/srd_gs_m32_diagnostic_synthesis_m33`: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 89 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/synthesize_instrumented_runtime_m33.py tests/test_instrumented_runtime_synthesis.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M33 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.

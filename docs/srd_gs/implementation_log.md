@@ -1604,3 +1604,67 @@ Status: bounded single-scene runtime GO; runtime loss/failure artifacts generate
 - `git diff --check`: passed.
 - M32 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 33: Instrumented Runtime Diagnostic Synthesis
+
+Status: read-only synthesis GO; M32 diagnostic position clarified; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/synthesize_instrumented_runtime_m33.py`.
+- Added `tests/test_instrumented_runtime_synthesis.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m32_metric_comparison.csv`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m32_loss_progression_summary.csv`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m32_unavailable_metrics.csv`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m32_manifest_summary.csv`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m33_synthesis_summary.json`.
+- Generated `outputs/srd_gs_m32_diagnostic_synthesis_m33/m33_synthesis_report.md`.
+- Added `docs/srd_gs/33_instrumented_runtime_diagnostic_synthesis.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- The script is CPU/read-only and consumes existing M32 and prior-diagnosis artifacts.
+- Baseline Ref-GS behavior is untouched; no training/rendering code was modified.
+
+### Metrics
+
+| Variant | PSNR | Refl-PSNR | Chamfer | F-score | Normal MAE | Leakage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| M18 render-gate delay | 4.0842 | 2.7730 | 0.428561 | 0.000 | 86.4124 | 0.001707 |
+| M20 render gate on | 2.9394 | 1.5411 | 0.311117 | 0.000 | 75.4314 | 0.006588 |
+| M21 render gate neutral | 2.9205 | 1.5409 | 0.300529 | 0.001 | 75.9167 | 0.003792 |
+| M24 reflection/specular freeze | 2.8750 | 1.7308 | 0.286904 | 0.000 | 74.6085 | 0.00000037 |
+| M25 opacity freeze | 3.6522 | 2.3203 | 0.397042 | 0.000 | 73.8319 | 0.000229 |
+| M26 quarter opacity LR | 3.1155 | 1.9098 | 0.327672 | 0.000 | 68.5402 | 0.00000763 |
+| M32 instrumented i30 | 4.3425 | 2.9389 | 0.487437 | 0.000 | 87.3323 | n/a |
+
+### Key Findings
+
+- M32 ranks first for PSNR/Refl-PSNR in the compared short-budget rows.
+- M32 ranks seventh for Chamfer and Normal MAE in the compared short-budget rows.
+- M32 F-score remains `0.0`.
+- M32 total loss is not monotonic across the three logged rows.
+- M32 render-eval manifest has two frames, `raster_feature_chunks`, branch gate `1.0`, and render gate `0.0`.
+- M32 still has ten unavailable metrics.
+
+### Claim Boundary
+
+- M32 diagnostic synthesis over existing `ball` artifacts: GO.
+- Full rendering fidelity recovery: NO-GO.
+- Stable geometry superiority: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `python -m unittest tests.test_instrumented_runtime_synthesis` failed before `synthesize_instrumented_runtime_m33.py` existed.
+- Focused TDD GREEN: `python -m unittest tests.test_instrumented_runtime_synthesis` passed, 1 test.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 89 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/synthesize_instrumented_runtime_m33.py tests/test_instrumented_runtime_synthesis.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M33 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
