@@ -1668,3 +1668,57 @@ Status: read-only synthesis GO; M32 diagnostic position clarified; paper-scale s
 - `git diff --check`: passed.
 - M33 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 34: Diagnostic Direction Decision
+
+Status: read-only decision GO; eval/material artifact plumbing selected; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/decide_diagnostic_direction_m34.py`.
+- Added `tests/test_diagnostic_direction_decision.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_diagnostic_direction_m34/diagnostic_direction_matrix.csv`.
+- Generated `outputs/srd_gs_diagnostic_direction_m34/diagnostic_direction_decision.json`.
+- Generated `outputs/srd_gs_diagnostic_direction_m34/diagnostic_direction_decision.md`.
+- Added `docs/srd_gs/34_diagnostic_direction_decision.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- The script is CPU/read-only and consumes existing M33 synthesis artifacts.
+- Baseline Ref-GS behavior is untouched; no training/rendering code was modified.
+
+### Decision Matrix
+
+| Direction | Score | Scope | Reasons | Blockers |
+| --- | ---: | --- | --- | --- |
+| eval/material artifact plumbing | 6 | read-only or dry-run-first | 10 unavailable metrics; quality tradeoff needs metric plumbing; F-score needs eval context | does not test training dynamics |
+| opacity schedule | 3 | single-scene runtime or dry-run | render/geometry tradeoff; F-score blocker | requires runtime; may repeat M25/M26 tradeoff |
+| Stage B/C activation | 3 | single-scene runtime or dry-run | geometry blocker; short/unstable loss signal | requires runtime; does not reduce unavailable metrics first |
+
+### Key Findings
+
+- The next bounded direction should be `eval_material_artifact_plumbing`.
+- This direction addresses the clearest M33 blocker: ten unavailable metrics.
+- Stage B/C activation and opacity schedule remain deferred because they require runtime and do not first reduce metric availability blockers.
+
+### Claim Boundary
+
+- Bounded direction selection from existing `ball` diagnostics: GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `python -m unittest tests.test_diagnostic_direction_decision` failed before `decide_diagnostic_direction_m34.py` existed.
+- Focused TDD GREEN: `python -m unittest tests.test_diagnostic_direction_decision` passed, 1 test.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 90 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/decide_diagnostic_direction_m34.py tests/test_diagnostic_direction_decision.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M34 artifact existence checks: passed.
+- Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.

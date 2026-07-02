@@ -40,10 +40,23 @@
 - Milestone 31: CUDA preflight refinement - bounded diagnostic GO / runtime launch NO-GO in current environment / paper-scale still blocked
 - Milestone 32: Instrumented runtime i30 - bounded single-scene runtime GO / runtime loss and failure-summary artifacts generated / paper-scale still blocked
 - Milestone 33: Instrumented runtime diagnostic synthesis - read-only synthesis GO / mixed M32 diagnostic position / paper-scale still blocked
+- Milestone 34: Diagnostic direction decision - read-only decision GO / eval-material artifact plumbing selected / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 33 compares M32's loss progression, unavailable metrics, render-eval manifest, and metrics against prior short-budget controls. M32 ranks best in PSNR/Refl-PSNR in this diagnostic table, but ranks worst in Chamfer/Normal MAE, keeps F-score at `0.0`, has non-monotonic three-row total loss, and still has ten unavailable metrics. The next step should be one bounded M34 action that chooses a single diagnostic direction: Stage B/C activation, opacity schedule, or eval/material artifact plumbing. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 34 selects `eval_material_artifact_plumbing` as the next bounded direction because M33 shows ten unavailable metrics, persistent F-score/eval context blockers, and a render/geometry tradeoff. Stage B/C activation and opacity schedule remain deferred runtime directions. The next step should be one bounded M35 action that implements eval/material artifact plumbing in read-only or dry-run-first form. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 34 Notes
+
+- Added `scripts/srd_gs/decide_diagnostic_direction_m34.py`.
+- Added `tests/test_diagnostic_direction_decision.py`.
+- Generated `outputs/srd_gs_diagnostic_direction_m34/diagnostic_direction_matrix.csv`.
+- Generated `outputs/srd_gs_diagnostic_direction_m34/diagnostic_direction_decision.json`.
+- Generated `outputs/srd_gs_diagnostic_direction_m34/diagnostic_direction_decision.md`.
+- M34 is read-only: it consumes M33 synthesis summary and does not launch training, rendering, mesh extraction, texture export, or evaluation.
+- Recommendation: `eval_material_artifact_plumbing`.
+- Deferred directions: `opacity_schedule` and `stage_bc_activation`.
+- This milestone supports bounded direction selection only. It does not support SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 33 Notes
 
