@@ -74,6 +74,7 @@ class ReflectiveAssetMetricsTest(unittest.TestCase):
             self.assertTrue(Path(outputs["metrics_csv"]).exists())
             self.assertTrue(Path(outputs["qualitative_panels"]).is_dir())
             self.assertTrue(Path(outputs["failure_case_panels"]).is_dir())
+            self.assertTrue((Path(outputs["failure_case_panels"]) / "failure_summary.md").exists())
             self.assertTrue(Path(outputs["reflective_mask"]).exists())
 
             payload = json.loads(Path(outputs["metrics_json"]).read_text(encoding="utf-8"))

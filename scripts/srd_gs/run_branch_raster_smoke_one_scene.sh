@@ -64,7 +64,7 @@ EVAL_DIR="$RESULT_PATH/eval_with_gt_mesh"
 MESH_PATH="$RESULT_PATH/mesh_${MESH_MODE}.ply"
 TEXTURE_DIR="$RESULT_PATH/pbr_textures_${TEXTURE_MODE}"
 
-mkdir -p "$RESULT_PATH" "$PAIR_DIR" "$EVAL_DIR"
+mkdir -p "$RESULT_PATH" "$PAIR_DIR" "$EVAL_DIR" "$EVAL_DIR/failure_case_panels"
 export LD_LIBRARY_PATH="$CONDA_ENV_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 SRD_ARGS=()
@@ -84,6 +84,7 @@ if [[ "$EVAL_ENABLED" == "true" ]]; then
 fi
 TRAIN_CMD+=("${SRD_ARGS[@]}")
 TRAIN_CMD+=("${TRAIN_ONLY_ARGS_ARRAY[@]}")
+TRAIN_CMD+=(--srd_loss_log_path "$RESULT_PATH/loss_log.csv")
 
 MESH_CMD=(
   conda run -n ref_gs python extract_surface_mesh.py

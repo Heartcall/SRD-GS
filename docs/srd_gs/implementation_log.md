@@ -1326,3 +1326,61 @@ Status: read-only synthesis GO; core artifact chains complete; loss/failure-pane
 - `git diff --check`: passed.
 - M28 artifact existence checks: passed.
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
+
+## Milestone 29: Failure/Loss Instrumentation Contract
+
+Status: dry-run instrumentation GO; runtime evidence not generated; paper-scale still blocked
+
+### Actions Completed
+
+- Added opt-in SRD loss CSV logging helpers in `train.py`.
+- Added `srd_loss_log_path` to loading parameters with an empty default for baseline compatibility.
+- Updated `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh` to pass `--srd_loss_log_path <result_root>/loss_log.csv` only to the training command.
+- Updated the bounded runner to predeclare `eval_with_gt_mesh/failure_case_panels/` in dry-run packages.
+- Updated `utils/metric_utils.py` so eval metric output writes `failure_case_panels/failure_summary.md`.
+- Updated `scripts/srd_gs/summarize_failure_loss_artifacts.py` so future audits detect `failure_case_panels/*` and `eval_with_gt_mesh/failure_case_panels/*`.
+- Added `scripts/srd_gs/inspect_failure_loss_instrumentation.py`.
+- Added `tests/test_srd_loss_logging.py` and `tests/test_failure_loss_instrumentation.py`.
+- Extended runner and metric-output tests for the M29 contract.
+- Generated `outputs/srd_gs_failure_loss_instrumentation_m29_dryrun/`.
+- Generated `outputs/srd_gs_failure_loss_instrumentation_m29/failure_loss_instrumentation.csv`.
+- Generated `outputs/srd_gs_failure_loss_instrumentation_m29/failure_loss_instrumentation.json`.
+- Generated `outputs/srd_gs_failure_loss_instrumentation_m29/failure_loss_instrumentation.md`.
+- Added `docs/srd_gs/29_failure_loss_instrumentation.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- M29 is a dry-run command-contract milestone.
+- Baseline Ref-GS behavior is preserved by default because `srd_loss_log_path` defaults to empty and the runner passes it only for the bounded SRD command package.
+
+### Instrumentation Matrix
+
+| Label | Train command | Loss log in train | Loss flag leaks | Failure-panel dir | Contract ready |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| M29 opacity-quarter dry-run | true | true | false | true | true |
+
+### Key Findings
+
+- Future bounded runs can write `loss_log.csv` into the audited result root.
+- Loss-log instrumentation is isolated to training and does not affect mesh, texture, render-pair, or eval commands.
+- Eval outputs now include a concrete failure-summary artifact path.
+- This is instrumentation readiness only; no runtime loss curves or new quality metrics were generated.
+
+### Claim Boundary
+
+- Dry-run failure/loss instrumentation contract: GO.
+- Runtime loss progression evidence: NO-GO.
+- Runtime failure-case analysis: NO-GO.
+- Full rendering fidelity recovery: NO-GO.
+- Stable geometry superiority: NO-GO.
+- Complete root-cause diagnosis: NO-GO.
+- PBR/material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: missing loss logger, missing inspector, missing runner loss-log path, and missing failure summary were observed before implementation.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_srd_loss_logging tests.test_failure_loss_instrumentation tests.test_branch_raster_smoke_runner tests.test_reflective_asset_metrics` passed, 15 tests.
+- M29 dry-run command package passed under `outputs/srd_gs_failure_loss_instrumentation_m29_dryrun`.
+- M29 instrumentation summary passed under `outputs/srd_gs_failure_loss_instrumentation_m29`.

@@ -1,3 +1,4 @@
+import csv
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
@@ -62,9 +63,85 @@ def _zero_like_loss(reference):
     return reference.sum() * 0.0
 
 
+SRD_LOSS_LOG_FIELDS = [
+    "iteration",
+    "stage",
+    "total_loss",
+    "loss_photo",
+    "loss_geo",
+    "loss_sep",
+    "loss_ref",
+    "loss_mat",
+    "loss_tex",
+    "loss_sparsity",
+    "specular_energy",
+    "branch_gate_mean",
+    "surface_alpha_mean",
+    "gaussian_count",
+]
+
+
+def _scalar_value(value):
+    if hasattr(value, "detach"):
+        value = value.detach()
+    if hasattr(value, "item"):
+        value = value.item()
+    return float(value)
+
+
+def build_srd_loss_log_row(
+    iteration,
+    stage,
+    total_loss,
+    loss_photo,
+    loss_geo,
+    loss_sep,
+    loss_ref,
+    loss_mat,
+    loss_tex,
+    loss_sparsity,
+    specular_energy,
+    branch_gate_mean,
+    surface_alpha_mean,
+    gaussian_count,
+):
+    return {
+        "iteration": int(iteration),
+        "stage": stage,
+        "total_loss": _scalar_value(total_loss),
+        "loss_photo": _scalar_value(loss_photo),
+        "loss_geo": _scalar_value(loss_geo),
+        "loss_sep": _scalar_value(loss_sep),
+        "loss_ref": _scalar_value(loss_ref),
+        "loss_mat": _scalar_value(loss_mat),
+        "loss_tex": _scalar_value(loss_tex),
+        "loss_sparsity": _scalar_value(loss_sparsity),
+        "specular_energy": _scalar_value(specular_energy),
+        "branch_gate_mean": _scalar_value(branch_gate_mean),
+        "surface_alpha_mean": _scalar_value(surface_alpha_mean),
+        "gaussian_count": int(gaussian_count),
+    }
+
+
+def append_srd_loss_log_row(path, row):
+    if not path:
+        return
+    path = os.fspath(path)
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    needs_header = not os.path.exists(path) or os.path.getsize(path) == 0
+    with open(path, "a", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=SRD_LOSS_LOG_FIELDS)
+        if needs_header:
+            writer.writeheader()
+        writer.writerow({field: row.get(field, "") for field in SRD_LOSS_LOG_FIELDS})
+
+
 def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint):
     first_iter = 0
     tb_writer = prepare_output_and_logger(dataset)
+    srd_loss_log_path = getattr(dataset, "srd_loss_log_path", "")
     gaussians = GaussianModel(dataset.sh_degree, dataset)
     
     scene = Scene(dataset, gaussians, resolution_scales=[1.0])
@@ -215,6 +292,26 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 tb_writer.add_scalar("train/branch_gate_mean", branch_gate_mean.item(), iteration)
                 tb_writer.add_scalar("train/surface_alpha_mean", surface_alpha_mean.item(), iteration)
 
+            if srd_loss_log_path and (iteration % 10 == 0 or iteration == opt.iterations):
+                append_srd_loss_log_row(
+                    srd_loss_log_path,
+                    build_srd_loss_log_row(
+                        iteration=iteration,
+                        stage=srd_stage,
+                        total_loss=total_loss,
+                        loss_photo=loss_photo,
+                        loss_geo=loss_geo,
+                        loss_sep=loss_sep,
+                        loss_ref=loss_ref,
+                        loss_mat=loss_mat,
+                        loss_tex=loss_tex,
+                        loss_sparsity=loss_sparsity,
+                        specular_energy=specular_energy,
+                        branch_gate_mean=branch_gate_mean,
+                        surface_alpha_mean=surface_alpha_mean,
+                        gaussian_count=len(gaussians.get_xyz),
+                    ),
+                )
 
             if iteration % 10 == 0:
                 loss_dict = {

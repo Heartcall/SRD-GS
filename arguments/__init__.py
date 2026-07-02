@@ -84,6 +84,7 @@ class ModelParams(ParamGroup):
         self.srd_render_gate_ramp_iters = -1
         self.srd_reflection_dim = 4
         self.srd_transport_dim = 4
+        self.srd_loss_log_path = ""
 
         super().__init__(parser, "Loading Parameters", sentinel)
 

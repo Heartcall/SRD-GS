@@ -263,6 +263,41 @@ def save_reflective_mask(mask, path):
     imageio.imwrite(path, (mask * 255.0 + 0.5).astype(np.uint8))
 
 
+def write_failure_summary(metrics, path):
+    unavailable = [metric for metric in metrics if metric.get("value") is None]
+    lines = [
+        "# SRD-GS Failure Summary",
+        "",
+        "This artifact records metric availability and failure-panel source evidence.",
+        "",
+        "## Unavailable Metrics",
+        "",
+    ]
+    if unavailable:
+        for metric in unavailable:
+            lines.append(
+                "- {category}/{name}: {reason}".format(
+                    category=metric.get("category"),
+                    name=metric.get("name"),
+                    reason=metric.get("not_available_reason") or "not_available",
+                )
+            )
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Claim Boundary",
+            "",
+            "- This file is an instrumentation artifact, not a paper-scale quality claim.",
+            "- Inspect the referenced metrics before promoting any conclusion.",
+            "",
+        ]
+    )
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+
+
 def write_metrics_outputs(metrics, output_dir, reflective_mask=None, mask_source=None):
     os.makedirs(output_dir, exist_ok=True)
     qualitative_dir = os.path.join(output_dir, "qualitative_panels")
@@ -277,6 +312,7 @@ def write_metrics_outputs(metrics, output_dir, reflective_mask=None, mask_source
 
     metrics_json = os.path.join(output_dir, "metrics.json")
     metrics_csv = os.path.join(output_dir, "metrics.csv")
+    failure_summary = os.path.join(failure_dir, "failure_summary.md")
     payload = {
         "metrics": metrics,
         "reflective_mask": {
@@ -292,10 +328,12 @@ def write_metrics_outputs(metrics, output_dir, reflective_mask=None, mask_source
         writer.writeheader()
         for metric in metrics:
             writer.writerow({field: metric.get(field) for field in fieldnames})
+    write_failure_summary(metrics, failure_summary)
     return {
         "metrics_json": metrics_json,
         "metrics_csv": metrics_csv,
         "qualitative_panels": qualitative_dir,
         "failure_case_panels": failure_dir,
+        "failure_summary": failure_summary,
         "reflective_mask": reflective_mask_path,
     }

@@ -34,6 +34,8 @@ LOSS_LOG_PATTERNS = [
 FAILURE_PANEL_PATTERNS = [
     "failure_cases/*",
     "failure_panels/*",
+    "failure_case_panels/*",
+    "eval_with_gt_mesh/failure_case_panels/*",
     "qualitative_panels/*failure*",
 ]
 

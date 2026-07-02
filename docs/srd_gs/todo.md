@@ -35,10 +35,25 @@
 - Milestone 26: Partial opacity LR control - runtime GO / mixed rendering-geometry tradeoff / paper-scale still blocked
 - Milestone 27: Opacity-control tradeoff synthesis - read-only synthesis GO / tradeoff clarified / paper-scale still blocked
 - Milestone 28: Failure/loss artifact synthesis - read-only synthesis GO / loss and failure-panel blockers explicit / paper-scale still blocked
+- Milestone 29: Failure/loss instrumentation contract - dry-run instrumentation GO / runtime evidence not generated / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 28 confirms that M20/M21/M24/M25/M26 have complete core train/mesh/texture/render/eval artifacts and complete referenced render-eval fields, but no loss-log artifacts and no failure-panel artifacts are available in the audited result roots. The next step should be one bounded M29 action: either add loss/failure-panel instrumentation in dry-run-first form or run one explicitly approved single-scene opacity-scale control such as `0.125` on `ball`. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 29 adds the dry-run instrumentation contract for future loss logs and failure-panel summaries, but it does not generate runtime loss curves, runtime failure cases, or new quality metrics. The next step should be one explicitly gated bounded M30 action: run a single-scene instrumented smoke/control on `ball` using the M29 contract, or perform a read-only preflight if GPU/storage/process gates are not acceptable. Do not broaden into multi-scene paper-scale experiments.
+
+## Completed Milestone 29 Notes
+
+- Added opt-in `train.py` SRD loss CSV logging helpers and `--srd_loss_log_path`, defaulting to empty for baseline compatibility.
+- Updated `scripts/srd_gs/run_branch_raster_smoke_one_scene.sh` to pass `--srd_loss_log_path <result_root>/loss_log.csv` only to training.
+- Updated eval metric output to write `failure_case_panels/failure_summary.md` and updated M28 artifact scanning to detect failure-case panel paths.
+- Added `scripts/srd_gs/inspect_failure_loss_instrumentation.py`.
+- Added tests for loss CSV logging, dry-run instrumentation inspection, runner command isolation, and failure-summary output.
+- Generated `outputs/srd_gs_failure_loss_instrumentation_m29_dryrun/` as a dry-run command package only.
+- Generated `outputs/srd_gs_failure_loss_instrumentation_m29/failure_loss_instrumentation.csv`.
+- Generated `outputs/srd_gs_failure_loss_instrumentation_m29/failure_loss_instrumentation.json`.
+- Generated `outputs/srd_gs_failure_loss_instrumentation_m29/failure_loss_instrumentation.md`.
+- Summary result: train command available `true`, loss log in train command `true`, loss flag leaks `false`, failure-panel dir expected `true`, contract ready `true`.
+- This milestone supports dry-run instrumentation readiness only. It does not support runtime loss progression, root-cause proof, rendering recovery, geometry superiority, PBR material accuracy, SRD-GS superiority over Ref-GS, or paper-scale claims.
 
 ## Completed Milestone 28 Notes
 
