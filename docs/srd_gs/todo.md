@@ -43,10 +43,22 @@
 - Milestone 34: Diagnostic direction decision - read-only decision GO / eval-material artifact plumbing selected / paper-scale still blocked
 - Milestone 35: Eval/material artifact plumbing audit - read-only artifact-plumbing GO / one export-diagnostic bridge candidate found / paper-scale still blocked
 - Milestone 36: Highlight-leakage export diagnostic bridge - read-only export-diagnostic bridge GO / GT material accuracy still blocked / paper-scale still blocked
+- Milestone 37: LPIPS / Refl-LPIPS dependency gate - read-only dependency gate GO / LPIPS compute not run / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 36 surfaces `texture_material_export_diagnostic/highlight_leakage_score` from existing texture-export artifacts while preserving the original unavailable `texture_material/highlight_leakage_score` row. The next step should be one bounded M37 decision/action over a remaining unavailable-metric contract: LPIPS dependency gating, accepted GT depth/material artifact protocol, material-view manifest definition, or runtime-cost logging. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred until metric-contract blockers are reduced. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 37 confirms that LPIPS/Refl-LPIPS dependencies and M32 render-eval artifacts are ready for a future bounded compute pass, but it did not compute or write LPIPS values. The next step should be one bounded M38 action. If LPIPS compute is selected, make it dry-run-first and write separate augmented outputs without overwriting M32 source metrics. Accepted GT depth/material artifacts, material-view manifest, runtime-cost logs, Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 37 Notes
+
+- Added `scripts/srd_gs/gate_lpips_dependency_m37.py`.
+- Added `tests/test_lpips_dependency_gate.py`.
+- Generated `outputs/srd_gs_lpips_dependency_gate_m37/lpips_dependency_gate.csv`.
+- Generated `outputs/srd_gs_lpips_dependency_gate_m37/lpips_dependency_gate.json`.
+- Generated `outputs/srd_gs_lpips_dependency_gate_m37/lpips_dependency_gate.md`.
+- M37 is read-only: it consumes M32 eval/material metrics and render-eval artifacts, probes the `ref_gs` LPIPS dependency, and does not launch training, rendering, mesh extraction, texture export, or evaluation.
+- Summary result: `rendering/lpips` and `reflective_region/refl_lpips` are both `ready_for_bounded_compute`; `metrics_computed=false`; source metrics remain unchanged and unavailable.
+- This milestone supports dependency/artifact readiness only. It does not support LPIPS quality values, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 36 Notes
 

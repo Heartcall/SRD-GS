@@ -1836,3 +1836,60 @@ Status: read-only export-diagnostic bridge GO; GT material accuracy still blocke
 - `git diff --check`: passed.
 - M36 artifact existence checks: passed.
 - Prohibited process scan for train/render/eval/export scripts: no residual processes.
+
+## Milestone 37: LPIPS / Refl-LPIPS Dependency Gate
+
+Status: read-only dependency gate GO; LPIPS compute not run; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/gate_lpips_dependency_m37.py`.
+- Added `tests/test_lpips_dependency_gate.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_lpips_dependency_gate_m37/lpips_dependency_gate.csv`.
+- Generated `outputs/srd_gs_lpips_dependency_gate_m37/lpips_dependency_gate.json`.
+- Generated `outputs/srd_gs_lpips_dependency_gate_m37/lpips_dependency_gate.md`.
+- Added `docs/srd_gs/37_lpips_dependency_gate.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- The script is CPU/read-only and consumes existing M32 eval/material metrics and render-eval artifacts.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- LPIPS model initialization emitted torchvision deprecation warnings, but the gate completed and `model_init_available=true`.
+
+### Key Gate Results
+
+| Metric | Status | Import available | Model init available | Render pairs | Reflective mask |
+| --- | --- | --- | --- | --- | --- |
+| `rendering/lpips` | `ready_for_bounded_compute` | true | true | true | true |
+| `reflective_region/refl_lpips` | `ready_for_bounded_compute` | true | true | true | true |
+
+### Key Findings
+
+- `lpips` is importable from `/home/liuly/anaconda3/envs/ref_gs/lib/python3.7/site-packages/lpips/__init__.py`.
+- Torch is importable with version `1.12.1`.
+- LPIPS model initialization succeeds.
+- M32 pred/GT RGB render pairs and reflective masks are present.
+- No LPIPS or Refl-LPIPS values were computed; source M32 metrics still contain `lpips_not_available`.
+
+### Claim Boundary
+
+- LPIPS/Refl-LPIPS dependency and artifact readiness: GO.
+- LPIPS/Refl-LPIPS metric values: NO-GO in this milestone.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_lpips_dependency_gate` failed before `gate_lpips_dependency_m37.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_lpips_dependency_gate` passed, 1 test.
+- M37 gate command passed and wrote three output artifacts under `outputs/srd_gs_lpips_dependency_gate_m37`.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 93 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/gate_lpips_dependency_m37.py tests/test_lpips_dependency_gate.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M37 artifact existence checks: passed.
+- Prohibited process scan for train/render/eval/export scripts: no residual processes.
