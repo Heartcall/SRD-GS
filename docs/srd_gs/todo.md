@@ -44,10 +44,27 @@
 - Milestone 35: Eval/material artifact plumbing audit - read-only artifact-plumbing GO / one export-diagnostic bridge candidate found / paper-scale still blocked
 - Milestone 36: Highlight-leakage export diagnostic bridge - read-only export-diagnostic bridge GO / GT material accuracy still blocked / paper-scale still blocked
 - Milestone 37: LPIPS / Refl-LPIPS dependency gate - read-only dependency gate GO / LPIPS compute not run / paper-scale still blocked
+- Milestone 38: LPIPS augmented metrics - bounded compute plumbing GO / source metrics preserved / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 37 confirms that LPIPS/Refl-LPIPS dependencies and M32 render-eval artifacts are ready for a future bounded compute pass, but it did not compute or write LPIPS values. The next step should be one bounded M38 action. If LPIPS compute is selected, make it dry-run-first and write separate augmented outputs without overwriting M32 source metrics. Accepted GT depth/material artifacts, material-view manifest, runtime-cost logs, Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 38 computes LPIPS/Refl-LPIPS only for the existing two-frame M32 `ball` artifact set and writes separate augmented outputs without overwriting source M32 metrics. The next step should be one bounded M39 action. A reasonable next step is a read-only diagnostic synthesis that incorporates M38 augmented LPIPS values with M33/M36/M37 evidence and keeps all quality limitations explicit. Accepted GT depth/material artifacts, material-view manifest, runtime-cost logs, Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 38 Notes
+
+- Added `scripts/srd_gs/compute_lpips_augmented_metrics_m38.py`.
+- Added `tests/test_lpips_compute_plumbing.py`.
+- Generated `outputs/srd_gs_lpips_compute_m38_dryrun/lpips_compute_plan.csv`.
+- Generated `outputs/srd_gs_lpips_compute_m38_dryrun/lpips_compute_plan.json`.
+- Generated `outputs/srd_gs_lpips_compute_m38_dryrun/lpips_compute_plan.md`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_frame_metrics.csv`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_augmented_metrics.csv`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_augmented_metrics.json`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_compute_summary.json`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_compute_summary.md`.
+- M38 is bounded to existing M32 render-eval artifacts: it does not launch training, rendering, mesh extraction, texture export, broad evaluation, or multi-scene experiments.
+- Summary result: LPIPS `0.9455429017543793`; Refl-LPIPS `0.8390642702579498`; source metrics overwritten `false`.
+- This milestone supports bounded LPIPS metric plumbing only. It does not support SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 37 Notes
 

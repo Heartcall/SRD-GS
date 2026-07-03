@@ -1893,3 +1893,69 @@ Status: read-only dependency gate GO; LPIPS compute not run; paper-scale still b
 - `git diff --check`: passed.
 - M37 artifact existence checks: passed.
 - Prohibited process scan for train/render/eval/export scripts: no residual processes.
+
+## Milestone 38: LPIPS Augmented Metrics
+
+Status: bounded LPIPS compute plumbing GO; source metrics preserved; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/compute_lpips_augmented_metrics_m38.py`.
+- Added `tests/test_lpips_compute_plumbing.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_lpips_compute_m38_dryrun/lpips_compute_plan.csv`.
+- Generated `outputs/srd_gs_lpips_compute_m38_dryrun/lpips_compute_plan.json`.
+- Generated `outputs/srd_gs_lpips_compute_m38_dryrun/lpips_compute_plan.md`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_frame_metrics.csv`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_augmented_metrics.csv`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_augmented_metrics.json`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_compute_summary.json`.
+- Generated `outputs/srd_gs_lpips_compute_m38/lpips_compute_summary.md`.
+- Added `docs/srd_gs/38_lpips_augmented_metrics.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only with respect to source artifacts and consumes existing M32 render-eval pairs plus the M37 dependency gate.
+- Source M32 metrics are untouched and still contain `lpips_not_available`.
+- LPIPS model initialization emitted torchvision deprecation warnings, but computation completed.
+
+### Key Metrics
+
+| Metric | Value |
+| --- | ---: |
+| Frames | 2 |
+| LPIPS | 0.9455429017543793 |
+| Refl-LPIPS | 0.8390642702579498 |
+| Source unavailable LPIPS rows | 2 |
+| Source metrics overwritten | false |
+
+### Key Findings
+
+- M38 computes bounded LPIPS/Refl-LPIPS values for the existing M32 two-frame `ball` artifact set.
+- The values are written only to `outputs/srd_gs_lpips_compute_m38`.
+- Source M32 `metrics.csv` and `metrics.json` remain unchanged.
+- The high LPIPS/Refl-LPIPS values do not support rendering recovery or SRD-GS superiority.
+- F-score zero, weak geometry metrics, unavailable GT material/depth metrics, missing material-view manifest, and missing runtime-cost logs remain blockers.
+
+### Claim Boundary
+
+- Bounded LPIPS/Refl-LPIPS metric plumbing: GO.
+- Rendering recovery: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- GT PBR material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_lpips_compute_plumbing` failed before `compute_lpips_augmented_metrics_m38.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_lpips_compute_plumbing` passed, 1 test.
+- M38 dry-run command passed and wrote three artifacts under `outputs/srd_gs_lpips_compute_m38_dryrun`.
+- M38 compute command passed and wrote five artifacts under `outputs/srd_gs_lpips_compute_m38`.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 94 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/compute_lpips_augmented_metrics_m38.py tests/test_lpips_compute_plumbing.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M38 artifact existence checks: passed.
+- Prohibited process scan for train/render/eval/export scripts: no residual processes.

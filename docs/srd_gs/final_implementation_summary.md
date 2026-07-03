@@ -145,6 +145,7 @@ A read-only M34 direction decision selects eval/material artifact plumbing as th
 A read-only M35 eval/material artifact plumbing audit maps the ten unavailable M32 metrics to blocker classes and identifies one future plumbing candidate: surfacing texture-export highlight-leakage artifacts as an explicitly labeled export diagnostic, not as GT PBR material accuracy.
 A read-only M36 highlight-leakage bridge surfaces `texture_material_export_diagnostic/highlight_leakage_score=0.000975149334408` from existing texture-export artifacts while preserving the original unavailable `texture_material/highlight_leakage_score` row; this is export-diagnostic reporting only, not GT PBR material accuracy.
 A read-only M37 LPIPS dependency gate confirms `lpips` and torch are importable in `ref_gs`, LPIPS model initialization succeeds, and M32 render pairs plus reflective masks are present for future bounded LPIPS/Refl-LPIPS computation; no LPIPS values were computed and source metrics remain unavailable.
+A bounded M38 LPIPS compute plumbing pass writes separate augmented LPIPS/Refl-LPIPS values for the existing M32 two-frame `ball` artifact set (`LPIPS=0.9455429017543793`, `Refl-LPIPS=0.8390642702579498`) while preserving source M32 metrics; these values do not support rendering recovery or paper-scale claims.
 ```
 
 Current unsupported claims:
@@ -186,19 +187,20 @@ SRD-GS has stable multi-scene mesh/material superiority.
 25. The M35 eval/material artifact audit confirms that nine of ten unavailable metrics remain blocked by missing dependencies, accepted GT artifacts, material-view manifests, or runtime logs. The only immediate plumbing candidate is highlight-leakage export diagnostics, which must not be promoted to GT material accuracy.
 26. The M36 highlight-leakage bridge reduces one reporting/plumbing blocker by adding a separate export-diagnostic row, but LPIPS/refl-LPIPS, accepted GT depth/material errors, material consistency, and runtime-cost metrics remain blocked. Paper-scale and GT material-accuracy claims remain NO-GO.
 27. The M37 dependency gate removes the current LPIPS dependency-readiness blocker for one bounded future compute pass, but LPIPS/Refl-LPIPS values remain uncomputed and source M32 rows still carry `lpips_not_available`. Paper-scale and rendering-recovery claims remain NO-GO.
+28. The M38 LPIPS compute plumbing pass removes the immediate LPIPS computation blocker for the existing M32 two-frame artifact set, but the resulting high LPIPS/Refl-LPIPS values reinforce that rendering recovery is not established. The values are single-scene, short-budget, non-comparative diagnostics and do not alter the paper-scale NO-GO gate.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Keep the next step bounded: if LPIPS compute is selected for M38, run it dry-run-first and write separate augmented outputs without overwriting source M32 metrics; otherwise choose one remaining unavailable-metric contract.
+3. Keep the next step bounded: synthesize M38 augmented LPIPS values with existing M33/M36/M37 evidence, or choose one remaining unavailable-metric contract such as accepted GT depth/material artifacts, material-view manifest, or runtime-cost logging.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If another bounded control is executed later, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 37:
+Fresh verification through Milestone 38:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
@@ -335,4 +337,13 @@ Fresh verification through Milestone 37:
 - `bash -n scripts/srd_gs/*.sh`: passed.
 - `git diff --check`: passed.
 - M37 artifact existence checks: passed.
+- Prohibited process scan for train/render/eval/export scripts: no residual processes.
+- `conda run -n ref_gs python -m unittest tests.test_lpips_compute_plumbing`: passed, 1 test.
+- `conda run -n ref_gs python scripts/srd_gs/compute_lpips_augmented_metrics_m38.py --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --metrics_json outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.json --manifest outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/render_eval_pairs/render_eval_manifest.json --eval_pairs_dir outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/render_eval_pairs --gate_json outputs/srd_gs_lpips_dependency_gate_m37/lpips_dependency_gate.json --output_dir outputs/srd_gs_lpips_compute_m38_dryrun --dry_run`: passed.
+- `conda run -n ref_gs python scripts/srd_gs/compute_lpips_augmented_metrics_m38.py --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --metrics_json outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.json --manifest outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/render_eval_pairs/render_eval_manifest.json --eval_pairs_dir outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/render_eval_pairs --gate_json outputs/srd_gs_lpips_dependency_gate_m37/lpips_dependency_gate.json --output_dir outputs/srd_gs_lpips_compute_m38 --device cpu`: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 94 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/compute_lpips_augmented_metrics_m38.py tests/test_lpips_compute_plumbing.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M38 artifact existence checks: passed.
 - Prohibited process scan for train/render/eval/export scripts: no residual processes.
