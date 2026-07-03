@@ -47,10 +47,24 @@
 - Milestone 38: LPIPS augmented metrics - bounded compute plumbing GO / source metrics preserved / paper-scale still blocked
 - Milestone 39: LPIPS augmented diagnostic synthesis - read-only diagnostic synthesis GO / quality interpretation mixed / paper-scale still blocked
 - Milestone 40: Material-view manifest contract - read-only manifest contract GO / material consistency still not computed / paper-scale still blocked
+- Milestone 41: Material-consistency diagnostic - bounded diagnostic GO / GT material accuracy still blocked / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 40 defines a material-view manifest for the existing M32 two-frame `ball` render-eval artifacts, but it does not compute material consistency or validate GT PBR material accuracy. The next step should be one bounded M41 action. A reasonable next step is a read-only/dry-run-first material-consistency diagnostic computation from the M40 manifest, keeping it separate from GT material accuracy. Accepted GT depth/material protocol or runtime-cost logging remain valid alternatives. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 41 computes a bounded image-space material-consistency diagnostic from the M40 manifest and keeps it separate from GT PBR material accuracy. The next step should be one bounded M42 action. A reasonable next step is to choose one remaining contract: accepted GT depth/material artifact protocol or runtime-cost logging. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 41 Notes
+
+- Added `scripts/srd_gs/compute_material_consistency_m41.py`.
+- Added `tests/test_material_consistency_diagnostic.py`.
+- Generated `outputs/srd_gs_material_consistency_m41/material_consistency_pairwise.csv`.
+- Generated `outputs/srd_gs_material_consistency_m41/material_consistency_diagnostic.csv`.
+- Generated `outputs/srd_gs_material_consistency_m41/material_consistency_summary.json`.
+- Generated `outputs/srd_gs_material_consistency_m41/eval_material_augmented_metrics.csv`.
+- Generated `outputs/srd_gs_material_consistency_m41/material_consistency_report.md`.
+- M41 is bounded and read-only with respect to source artifacts: it consumes M40 material-view manifest and M32 metrics, and does not launch training, rendering, mesh extraction, texture export, broad evaluation, or multi-scene experiments.
+- Summary result: `texture_material_diagnostic/material_consistency_mae=0.0427745468915`, `diffuse_rgb_mae=0.0433174259961`, `roughness_map_mae=0.0422316677868`, pair count `1`, source metrics overwritten `false`.
+- This milestone supports a bounded image-space material-consistency diagnostic only. It does not support GT PBR material accuracy, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, or paper-scale claims.
 
 ## Completed Milestone 40 Notes
 

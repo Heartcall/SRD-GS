@@ -148,6 +148,7 @@ A read-only M37 LPIPS dependency gate confirms `lpips` and torch are importable 
 A bounded M38 LPIPS compute plumbing pass writes separate augmented LPIPS/Refl-LPIPS values for the existing M32 two-frame `ball` artifact set (`LPIPS=0.9455429017543793`, `Refl-LPIPS=0.8390642702579498`) while preserving source M32 metrics; these values do not support rendering recovery or paper-scale claims.
 A read-only M39 diagnostic synthesis integrates M38 LPIPS/Refl-LPIPS values with M33/M36/M37 evidence and keeps the quality interpretation mixed: LPIPS/Refl-LPIPS are high, F-score remains zero, M32 Chamfer/Normal MAE ranks are weak, and paper-scale claims remain NO-GO.
 A read-only M40 material-view manifest contract defines two complete material views from existing M32 render-eval artifacts and marks the contract ready for future material-consistency computation, while keeping `material_consistency_computed=false` and source metrics untouched.
+A bounded M41 material-consistency diagnostic computes `texture_material_diagnostic/material_consistency_mae=0.0427745468915` from the M40 two-view manifest while preserving source M32 metrics; this is a bounded image-space diagnostic, not GT PBR material accuracy.
 ```
 
 Current unsupported claims:
@@ -192,19 +193,20 @@ SRD-GS has stable multi-scene mesh/material superiority.
 28. The M38 LPIPS compute plumbing pass removes the immediate LPIPS computation blocker for the existing M32 two-frame artifact set, but the resulting high LPIPS/Refl-LPIPS values reinforce that rendering recovery is not established. The values are single-scene, short-budget, non-comparative diagnostics and do not alter the paper-scale NO-GO gate.
 29. The M39 diagnostic synthesis improves evidence traceability but does not upgrade claims: M32 PSNR/Refl-PSNR ranks `1/1`, Chamfer/Normal MAE ranks `7/7`, LPIPS is `0.9455429017543793`, Refl-LPIPS is `0.8390642702579498`, and F-score remains `0.0`.
 30. The M40 material-view manifest contract removes only the missing-manifest prerequisite for future material-consistency computation on the existing M32 two-frame artifact set. Material consistency values, accepted GT material/depth metrics, runtime-cost logs, and paper-scale claims remain blocked.
+31. The M41 material-consistency diagnostic removes the immediate image-space diagnostic computation blocker for the M40 two-view manifest, but it does not validate GT material accuracy. Accepted GT depth/material artifacts, runtime-cost logs, F-score zero, high LPIPS/Refl-LPIPS, and paper-scale claims remain blocked.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Keep the next step bounded: compute a material-consistency diagnostic from the M40 manifest, or choose accepted GT depth/material protocol or runtime-cost logging as the single next contract.
+3. Keep the next step bounded: choose accepted GT depth/material protocol or runtime-cost logging as the single next contract.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If another bounded control is executed later, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 40:
+Fresh verification through Milestone 41:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
@@ -361,3 +363,5 @@ Fresh verification through Milestone 40:
 - Prohibited SRD-GS process scan for train/render/eval/export scripts: no residual processes.
 - `python -m unittest tests.test_material_view_manifest_contract`: passed, 1 test.
 - `conda run -n ref_gs python scripts/srd_gs/build_material_view_manifest_m40.py --manifest outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/render_eval_pairs/render_eval_manifest.json --eval_pairs_dir outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/render_eval_pairs --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --output_dir outputs/srd_gs_material_view_manifest_m40`: passed.
+- `python -m unittest tests.test_material_consistency_diagnostic`: passed, 1 test.
+- `conda run -n ref_gs python scripts/srd_gs/compute_material_consistency_m41.py --material_view_manifest outputs/srd_gs_material_view_manifest_m40/material_view_manifest.json --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --output_dir outputs/srd_gs_material_consistency_m41`: passed.

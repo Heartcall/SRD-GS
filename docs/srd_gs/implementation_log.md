@@ -2079,3 +2079,60 @@ Status: read-only material-view manifest GO; material consistency still not comp
 - Focused TDD GREEN: `python -m unittest tests.test_material_view_manifest_contract` passed, 1 test.
 - M40 manifest command passed and wrote four output artifacts under `outputs/srd_gs_material_view_manifest_m40`.
 - Final validation commands are recorded in the Milestone 40 completion response.
+
+## Milestone 41: Material-consistency Diagnostic
+
+Status: bounded material-consistency diagnostic GO; GT material accuracy still blocked; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/compute_material_consistency_m41.py`.
+- Added `tests/test_material_consistency_diagnostic.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_material_consistency_m41/material_consistency_pairwise.csv`.
+- Generated `outputs/srd_gs_material_consistency_m41/material_consistency_diagnostic.csv`.
+- Generated `outputs/srd_gs_material_consistency_m41/material_consistency_summary.json`.
+- Generated `outputs/srd_gs_material_consistency_m41/eval_material_augmented_metrics.csv`.
+- Generated `outputs/srd_gs_material_consistency_m41/material_consistency_report.md`.
+- Added `docs/srd_gs/41_material_consistency_diagnostic.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only with respect to source artifacts and consumes existing M40 material-view manifest plus M32 metrics.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- Source M32 metrics are not overwritten.
+
+### Key Metrics
+
+| Metric | Value |
+| --- | ---: |
+| Material views | 2 |
+| Pair count | 1 |
+| `texture_material_diagnostic/material_consistency_mae` | 0.0427745468915 |
+| `texture_material_diagnostic/diffuse_rgb_mae` | 0.0433174259961 |
+| `texture_material_diagnostic/roughness_map_mae` | 0.0422316677868 |
+| Source metrics overwritten | false |
+
+### Key Findings
+
+- M41 computes a bounded image-space material-consistency diagnostic from the M40 manifest.
+- The diagnostic is namespaced as `texture_material_diagnostic`, not as accepted GT material accuracy.
+- The source `texture_material/material_consistency` metric remains visible and unavailable in the augmented output.
+- Accepted GT depth/material artifacts and runtime-cost logs remain blocked.
+
+### Claim Boundary
+
+- Bounded image-space material-consistency diagnostic for existing M40 views: GO.
+- GT PBR material accuracy: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `python -m unittest tests.test_material_consistency_diagnostic` failed before `compute_material_consistency_m41.py` existed.
+- Focused TDD GREEN: `python -m unittest tests.test_material_consistency_diagnostic` passed, 1 test.
+- M41 diagnostic command passed and wrote five output artifacts under `outputs/srd_gs_material_consistency_m41`.
+- Final validation commands are recorded in the Milestone 41 completion response.
