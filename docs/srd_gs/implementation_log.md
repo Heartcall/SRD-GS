@@ -2136,3 +2136,57 @@ Status: bounded material-consistency diagnostic GO; GT material accuracy still b
 - Focused TDD GREEN: `python -m unittest tests.test_material_consistency_diagnostic` passed, 1 test.
 - M41 diagnostic command passed and wrote five output artifacts under `outputs/srd_gs_material_consistency_m41`.
 - Final validation commands are recorded in the Milestone 41 completion response.
+
+## Milestone 42: Accepted-GT Depth/material Protocol Audit
+
+Status: read-only GT-protocol audit GO; depth/material GT still missing; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/audit_gt_depth_material_protocol_m42.py`.
+- Added `tests/test_gt_depth_material_protocol.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_gt_depth_material_protocol_m42/gt_depth_material_protocol.csv`.
+- Generated `outputs/srd_gs_gt_depth_material_protocol_m42/gt_depth_material_candidates.csv`.
+- Generated `outputs/srd_gs_gt_depth_material_protocol_m42/gt_depth_material_protocol.json`.
+- Generated `outputs/srd_gs_gt_depth_material_protocol_m42/gt_depth_material_protocol.md`.
+- Added `docs/srd_gs/42_gt_depth_material_protocol_audit.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only and consumes the current `ball` source path, M32 result root, and M32 metrics.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- No depth/albedo/roughness metrics were computed.
+
+### Key Results
+
+| Metric | Status | GT candidates | Prediction artifact |
+| --- | --- | ---: | --- |
+| `geometry/depth_error` | `blocked_missing_accepted_gt` | 0 | true |
+| `texture_material/albedo_error` | `blocked_missing_accepted_gt` | 0 | true |
+| `texture_material/roughness_error` | `blocked_missing_accepted_gt` | 0 | true |
+
+### Key Findings
+
+- Prediction-side artifacts are present for future depth/albedo/roughness metrics.
+- No accepted GT depth, albedo, or roughness candidates were found under `/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball`.
+- The audited source path includes normal/alpha-style files, but these do not satisfy the depth/material GT protocol.
+- Accepted GT depth/material metrics remain blocked.
+
+### Claim Boundary
+
+- Accepted-GT candidate inventory and readiness classification: GO.
+- Depth/albedo/roughness metric values: NO-GO.
+- GT PBR material accuracy: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `python -m unittest tests.test_gt_depth_material_protocol` failed before `audit_gt_depth_material_protocol_m42.py` existed.
+- Focused TDD GREEN: `python -m unittest tests.test_gt_depth_material_protocol` passed, 1 test.
+- M42 audit command passed and wrote four output artifacts under `outputs/srd_gs_gt_depth_material_protocol_m42`.
+- Final validation commands are recorded in the Milestone 42 completion response.

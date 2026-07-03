@@ -48,10 +48,23 @@
 - Milestone 39: LPIPS augmented diagnostic synthesis - read-only diagnostic synthesis GO / quality interpretation mixed / paper-scale still blocked
 - Milestone 40: Material-view manifest contract - read-only manifest contract GO / material consistency still not computed / paper-scale still blocked
 - Milestone 41: Material-consistency diagnostic - bounded diagnostic GO / GT material accuracy still blocked / paper-scale still blocked
+- Milestone 42: Accepted-GT depth/material protocol audit - read-only GT-protocol audit GO / depth-material GT still missing / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 41 computes a bounded image-space material-consistency diagnostic from the M40 manifest and keeps it separate from GT PBR material accuracy. The next step should be one bounded M42 action. A reasonable next step is to choose one remaining contract: accepted GT depth/material artifact protocol or runtime-cost logging. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 42 audits accepted GT depth/material protocol readiness and finds zero depth/albedo/roughness GT candidates under the current `ball` source path, while prediction artifacts are present. The next step should be one bounded M43 action. A reasonable next step is runtime-cost logging contract plumbing, because accepted GT depth/material metrics remain blocked by missing source artifacts. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 42 Notes
+
+- Added `scripts/srd_gs/audit_gt_depth_material_protocol_m42.py`.
+- Added `tests/test_gt_depth_material_protocol.py`.
+- Generated `outputs/srd_gs_gt_depth_material_protocol_m42/gt_depth_material_protocol.csv`.
+- Generated `outputs/srd_gs_gt_depth_material_protocol_m42/gt_depth_material_candidates.csv`.
+- Generated `outputs/srd_gs_gt_depth_material_protocol_m42/gt_depth_material_protocol.json`.
+- Generated `outputs/srd_gs_gt_depth_material_protocol_m42/gt_depth_material_protocol.md`.
+- M42 is read-only: it consumes the current `ball` source path, M32 result root, and M32 metrics, and does not launch training, rendering, mesh extraction, texture export, broad evaluation, or multi-scene experiments.
+- Summary result: `geometry/depth_error`, `texture_material/albedo_error`, and `texture_material/roughness_error` all have prediction artifacts available but remain `blocked_missing_accepted_gt`; GT candidate count is `0`; metrics computed `false`.
+- This milestone supports accepted-GT candidate inventory and readiness classification only. It does not support depth/material metric values, GT PBR material accuracy, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, or paper-scale claims.
 
 ## Completed Milestone 41 Notes
 
