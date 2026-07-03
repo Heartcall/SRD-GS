@@ -46,10 +46,23 @@
 - Milestone 37: LPIPS / Refl-LPIPS dependency gate - read-only dependency gate GO / LPIPS compute not run / paper-scale still blocked
 - Milestone 38: LPIPS augmented metrics - bounded compute plumbing GO / source metrics preserved / paper-scale still blocked
 - Milestone 39: LPIPS augmented diagnostic synthesis - read-only diagnostic synthesis GO / quality interpretation mixed / paper-scale still blocked
+- Milestone 40: Material-view manifest contract - read-only manifest contract GO / material consistency still not computed / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 39 integrates M38 LPIPS/Refl-LPIPS values with M33/M36/M37 evidence and keeps the quality interpretation mixed and paper-scale gate NO-GO. The next step should be one bounded M40 action. A reasonable next step is to choose one remaining unavailable-metric contract: accepted GT depth/material artifact protocol, material-view manifest definition, or runtime-cost logging. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 40 defines a material-view manifest for the existing M32 two-frame `ball` render-eval artifacts, but it does not compute material consistency or validate GT PBR material accuracy. The next step should be one bounded M41 action. A reasonable next step is a read-only/dry-run-first material-consistency diagnostic computation from the M40 manifest, keeping it separate from GT material accuracy. Accepted GT depth/material protocol or runtime-cost logging remain valid alternatives. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 40 Notes
+
+- Added `scripts/srd_gs/build_material_view_manifest_m40.py`.
+- Added `tests/test_material_view_manifest_contract.py`.
+- Generated `outputs/srd_gs_material_view_manifest_m40/material_view_manifest.json`.
+- Generated `outputs/srd_gs_material_view_manifest_m40/material_view_manifest.csv`.
+- Generated `outputs/srd_gs_material_view_manifest_m40/material_view_contract_summary.json`.
+- Generated `outputs/srd_gs_material_view_manifest_m40/material_view_contract_report.md`.
+- M40 is read-only: it consumes M32 render-eval manifest/artifacts and metrics, and does not launch training, rendering, mesh extraction, texture export, broad evaluation, or multi-scene experiments.
+- Summary result: two complete material views are available and `contract_status=ready_for_future_material_consistency_compute`; `material_consistency_computed=false`; source metrics are not overwritten.
+- This milestone supports material-view manifest readiness only. It does not support material-consistency values, GT PBR material accuracy, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, or paper-scale claims.
 
 ## Completed Milestone 39 Notes
 

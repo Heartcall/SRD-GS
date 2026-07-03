@@ -2022,3 +2022,60 @@ Status: read-only diagnostic synthesis GO; quality interpretation still mixed; p
 - `git diff --check`: passed.
 - M39 artifact existence checks: passed.
 - Prohibited SRD-GS process scan for train/render/eval/export scripts: no residual processes.
+
+## Milestone 40: Material-view Manifest Contract
+
+Status: read-only material-view manifest GO; material consistency still not computed; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/build_material_view_manifest_m40.py`.
+- Added `tests/test_material_view_manifest_contract.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_material_view_manifest_m40/material_view_manifest.json`.
+- Generated `outputs/srd_gs_material_view_manifest_m40/material_view_manifest.csv`.
+- Generated `outputs/srd_gs_material_view_manifest_m40/material_view_contract_summary.json`.
+- Generated `outputs/srd_gs_material_view_manifest_m40/material_view_contract_report.md`.
+- Added `docs/srd_gs/40_material_view_manifest_contract.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only and consumes existing M32 render-eval manifest/artifacts plus M32 metrics.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- Source M32 metrics are not overwritten.
+
+### Key Results
+
+| Field | Value |
+| --- | --- |
+| Contract status | `ready_for_future_material_consistency_compute` |
+| Complete material views | `2` |
+| Total manifest frames | `2` |
+| Source material-consistency reason | `need_at_least_two_material_views` |
+| Material consistency computed | `false` |
+| Source metrics overwritten | `false` |
+
+### Key Findings
+
+- Existing M32 render-eval artifacts can define a material-view manifest for future bounded material-consistency computation.
+- Both frames have required `diffuse_rgb` and `roughness_map` artifacts.
+- M40 removes the missing material-view-manifest contract for the existing M32 artifact set only.
+- M40 does not compute material consistency, validate GT PBR material accuracy, or improve the rendering/geometry claim boundary.
+
+### Claim Boundary
+
+- Material-view manifest readiness for existing M32 artifacts: GO.
+- Material consistency value: NO-GO.
+- GT PBR material accuracy: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `python -m unittest tests.test_material_view_manifest_contract` failed before `build_material_view_manifest_m40.py` existed.
+- Focused TDD GREEN: `python -m unittest tests.test_material_view_manifest_contract` passed, 1 test.
+- M40 manifest command passed and wrote four output artifacts under `outputs/srd_gs_material_view_manifest_m40`.
+- Final validation commands are recorded in the Milestone 40 completion response.
