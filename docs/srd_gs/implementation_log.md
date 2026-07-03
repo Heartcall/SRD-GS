@@ -1777,3 +1777,62 @@ Status: read-only artifact-plumbing GO; one export-diagnostic bridge candidate f
 - Focused TDD GREEN: `python -m unittest tests.test_eval_material_artifact_plumbing` passed, 1 test.
 - M35 audit command passed and wrote the three output artifacts under `outputs/srd_gs_eval_material_plumbing_m35`.
 - Final validation commands are recorded in the Milestone 35 completion response.
+
+## Milestone 36: Highlight-leakage Export Diagnostic Bridge
+
+Status: read-only export-diagnostic bridge GO; GT material accuracy still blocked; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/bridge_highlight_leakage_diagnostic_m36.py`.
+- Added `tests/test_highlight_leakage_diagnostic_bridge.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/highlight_leakage_diagnostic_summary.csv`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/highlight_leakage_diagnostic_summary.json`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/highlight_leakage_diagnostic_summary.md`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/eval_material_augmented_metrics.csv`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/eval_material_augmented_metrics.json`.
+- Added `docs/srd_gs/36_highlight_leakage_diagnostic_bridge.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, or eval process was launched.
+- The script is CPU/read-only and consumes existing M32 eval/material and texture-export artifacts plus the M35 plan.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+
+### Key Metrics
+
+| Metric | Value |
+| --- | ---: |
+| Source unavailable metric count | 10 |
+| Bridged export diagnostics | 1 |
+| Remaining metric blockers | 9 |
+| `texture_material_export_diagnostic/highlight_leakage_score` | 0.000975149334408 |
+
+### Key Findings
+
+- M36 surfaces texture-export highlight leakage in an eval/material summary namespace as `texture_material_export_diagnostic/highlight_leakage_score`.
+- The original unavailable `texture_material/highlight_leakage_score` row remains visible and is not overwritten.
+- The bridged value is an export diagnostic only, not accepted GT PBR material accuracy.
+- LPIPS/refl-LPIPS, accepted GT depth/material errors, material consistency, and runtime-cost metrics remain blocked.
+
+### Claim Boundary
+
+- Highlight-leakage export-diagnostic reporting: GO.
+- GT PBR material accuracy: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_highlight_leakage_diagnostic_bridge` failed before `bridge_highlight_leakage_diagnostic_m36.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_highlight_leakage_diagnostic_bridge` passed, 1 test.
+- M36 bridge command passed and wrote five output artifacts under `outputs/srd_gs_highlight_leakage_bridge_m36`.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 92 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/bridge_highlight_leakage_diagnostic_m36.py tests/test_highlight_leakage_diagnostic_bridge.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M36 artifact existence checks: passed.
+- Prohibited process scan for train/render/eval/export scripts: no residual processes.

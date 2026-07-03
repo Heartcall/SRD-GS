@@ -143,6 +143,7 @@ A bounded M32 single-scene 30-iteration `ball` instrumented run completes the tr
 A read-only M33 diagnostic synthesis positions M32 against prior short-budget controls: PSNR/Refl-PSNR rank best in the diagnostic table, but Chamfer/Normal MAE rank worst, F-score remains zero, loss is non-monotonic over three rows, and ten metrics remain unavailable.
 A read-only M34 direction decision selects eval/material artifact plumbing as the next bounded direction because unavailable metrics and evaluation-context blockers dominate the current evidence gap; Stage B/C activation and opacity schedule remain deferred runtime directions.
 A read-only M35 eval/material artifact plumbing audit maps the ten unavailable M32 metrics to blocker classes and identifies one future plumbing candidate: surfacing texture-export highlight-leakage artifacts as an explicitly labeled export diagnostic, not as GT PBR material accuracy.
+A read-only M36 highlight-leakage bridge surfaces `texture_material_export_diagnostic/highlight_leakage_score=0.000975149334408` from existing texture-export artifacts while preserving the original unavailable `texture_material/highlight_leakage_score` row; this is export-diagnostic reporting only, not GT PBR material accuracy.
 ```
 
 Current unsupported claims:
@@ -182,19 +183,20 @@ SRD-GS has stable multi-scene mesh/material superiority.
 23. The M33 diagnostic synthesis confirms M32's rendering metric improvement is paired with worse geometry metrics and persistent unavailable metrics; the next step is a bounded diagnostic choice, not paper-scale expansion.
 24. The M34 direction decision narrows the next step to eval/material artifact plumbing; it does not provide new runtime evidence or quality improvement.
 25. The M35 eval/material artifact audit confirms that nine of ten unavailable metrics remain blocked by missing dependencies, accepted GT artifacts, material-view manifests, or runtime logs. The only immediate plumbing candidate is highlight-leakage export diagnostics, which must not be promoted to GT material accuracy.
+26. The M36 highlight-leakage bridge reduces one reporting/plumbing blocker by adding a separate export-diagnostic row, but LPIPS/refl-LPIPS, accepted GT depth/material errors, material consistency, and runtime-cost metrics remain blocked. Paper-scale and GT material-accuracy claims remain NO-GO.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Keep the next step bounded: implement a read-only/dry-run-first highlight-leakage export diagnostic bridge into eval/material summaries before any additional one-scene runtime.
+3. Keep the next step bounded: choose one remaining unavailable-metric contract for M37, such as LPIPS dependency gating, accepted GT depth/material artifact protocol, material-view manifest definition, or runtime-cost logging.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If another bounded control is executed later, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 35:
+Fresh verification through Milestone 36:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
@@ -316,3 +318,11 @@ Fresh verification through Milestone 35:
 - Prohibited process scan for train/mesh/texture/render/eval scripts: no residual processes.
 - `python -m unittest tests.test_eval_material_artifact_plumbing`: passed, 1 test.
 - `python scripts/srd_gs/audit_eval_material_artifacts_m35.py --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --failure_summary outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/failure_case_panels/failure_summary.md --manifest outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/render_eval_pairs/render_eval_manifest.json --result_root outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --source_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --output_dir outputs/srd_gs_eval_material_plumbing_m35`: passed.
+- `conda run -n ref_gs python -m unittest tests.test_highlight_leakage_diagnostic_bridge`: passed, 1 test.
+- `conda run -n ref_gs python scripts/srd_gs/bridge_highlight_leakage_diagnostic_m36.py --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --metrics_json outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.json --failure_summary outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/failure_case_panels/failure_summary.md --m35_plan outputs/srd_gs_eval_material_plumbing_m35/eval_material_artifact_plan.json --texture_dir outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/pbr_textures_specular_free --output_dir outputs/srd_gs_highlight_leakage_bridge_m36`: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 92 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/bridge_highlight_leakage_diagnostic_m36.py tests/test_highlight_leakage_diagnostic_bridge.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M36 artifact existence checks: passed.
+- Prohibited process scan for train/render/eval/export scripts: no residual processes.

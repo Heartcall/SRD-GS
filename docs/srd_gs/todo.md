@@ -42,10 +42,24 @@
 - Milestone 33: Instrumented runtime diagnostic synthesis - read-only synthesis GO / mixed M32 diagnostic position / paper-scale still blocked
 - Milestone 34: Diagnostic direction decision - read-only decision GO / eval-material artifact plumbing selected / paper-scale still blocked
 - Milestone 35: Eval/material artifact plumbing audit - read-only artifact-plumbing GO / one export-diagnostic bridge candidate found / paper-scale still blocked
+- Milestone 36: Highlight-leakage export diagnostic bridge - read-only export-diagnostic bridge GO / GT material accuracy still blocked / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 35 reduces the ten M32/M33 unavailable metrics into artifact requirement classes. The only immediate plumbing candidate is `texture_material/highlight_leakage_score`, because texture export already produced `pbr_textures_specular_free/baking_report.json` and `highlight_leakage_mask.png`. The next step should be one bounded M36 action that implements a read-only/dry-run-first highlight-leakage export diagnostic bridge into eval/material summaries, explicitly labeled as an export diagnostic and not as GT PBR material accuracy. Stage B/C activation, opacity scheduling, LPIPS dependency installation, accepted GT material/depth metrics, and runtime cost metrics remain deferred. Do not broaden into multi-scene paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 36 surfaces `texture_material_export_diagnostic/highlight_leakage_score` from existing texture-export artifacts while preserving the original unavailable `texture_material/highlight_leakage_score` row. The next step should be one bounded M37 decision/action over a remaining unavailable-metric contract: LPIPS dependency gating, accepted GT depth/material artifact protocol, material-view manifest definition, or runtime-cost logging. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred until metric-contract blockers are reduced. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 36 Notes
+
+- Added `scripts/srd_gs/bridge_highlight_leakage_diagnostic_m36.py`.
+- Added `tests/test_highlight_leakage_diagnostic_bridge.py`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/highlight_leakage_diagnostic_summary.csv`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/highlight_leakage_diagnostic_summary.json`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/highlight_leakage_diagnostic_summary.md`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/eval_material_augmented_metrics.csv`.
+- Generated `outputs/srd_gs_highlight_leakage_bridge_m36/eval_material_augmented_metrics.json`.
+- M36 is read-only: it consumes M32 eval/material and texture-export artifacts plus the M35 plan, and does not launch training, rendering, mesh extraction, texture export, or evaluation.
+- Summary result: source unavailable metric count remains `10`; one separate export diagnostic is bridged; remaining metric blockers are `9`.
+- This milestone supports export-diagnostic reporting only. It does not support SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 35 Notes
 
