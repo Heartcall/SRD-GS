@@ -45,10 +45,23 @@
 - Milestone 36: Highlight-leakage export diagnostic bridge - read-only export-diagnostic bridge GO / GT material accuracy still blocked / paper-scale still blocked
 - Milestone 37: LPIPS / Refl-LPIPS dependency gate - read-only dependency gate GO / LPIPS compute not run / paper-scale still blocked
 - Milestone 38: LPIPS augmented metrics - bounded compute plumbing GO / source metrics preserved / paper-scale still blocked
+- Milestone 39: LPIPS augmented diagnostic synthesis - read-only diagnostic synthesis GO / quality interpretation mixed / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 38 computes LPIPS/Refl-LPIPS only for the existing two-frame M32 `ball` artifact set and writes separate augmented outputs without overwriting source M32 metrics. The next step should be one bounded M39 action. A reasonable next step is a read-only diagnostic synthesis that incorporates M38 augmented LPIPS values with M33/M36/M37 evidence and keeps all quality limitations explicit. Accepted GT depth/material artifacts, material-view manifest, runtime-cost logs, Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 39 integrates M38 LPIPS/Refl-LPIPS values with M33/M36/M37 evidence and keeps the quality interpretation mixed and paper-scale gate NO-GO. The next step should be one bounded M40 action. A reasonable next step is to choose one remaining unavailable-metric contract: accepted GT depth/material artifact protocol, material-view manifest definition, or runtime-cost logging. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 39 Notes
+
+- Added `scripts/srd_gs/synthesize_lpips_augmented_diagnostics_m39.py`.
+- Added `tests/test_lpips_augmented_diagnostic_synthesis.py`.
+- Generated `outputs/srd_gs_lpips_augmented_diagnostic_m39/lpips_augmented_diagnostic_summary.csv`.
+- Generated `outputs/srd_gs_lpips_augmented_diagnostic_m39/lpips_augmented_diagnostic_summary.json`.
+- Generated `outputs/srd_gs_lpips_augmented_diagnostic_m39/lpips_augmented_diagnostic_report.md`.
+- Generated `outputs/srd_gs_lpips_augmented_diagnostic_m39/m39_metric_position.csv`.
+- M39 is read-only: it consumes M33/M36/M37/M38 summary artifacts and does not launch training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene experiments.
+- Summary result: LPIPS `0.9455429017543793`; Refl-LPIPS `0.8390642702579498`; highlight leakage export diagnostic `0.000975149334408`; F-score `0.0`; M32 PSNR/Refl-PSNR ranks `1/1`; M32 Chamfer/Normal MAE ranks `7/7`.
+- This milestone supports bounded diagnostic synthesis and metric-availability reporting only. It does not support SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 38 Notes
 

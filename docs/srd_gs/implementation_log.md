@@ -1959,3 +1959,66 @@ Status: bounded LPIPS compute plumbing GO; source metrics preserved; paper-scale
 - `git diff --check`: passed.
 - M38 artifact existence checks: passed.
 - Prohibited process scan for train/render/eval/export scripts: no residual processes.
+
+## Milestone 39: LPIPS Augmented Diagnostic Synthesis
+
+Status: read-only diagnostic synthesis GO; quality interpretation still mixed; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/synthesize_lpips_augmented_diagnostics_m39.py`.
+- Added `tests/test_lpips_augmented_diagnostic_synthesis.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_lpips_augmented_diagnostic_m39/lpips_augmented_diagnostic_summary.csv`.
+- Generated `outputs/srd_gs_lpips_augmented_diagnostic_m39/lpips_augmented_diagnostic_summary.json`.
+- Generated `outputs/srd_gs_lpips_augmented_diagnostic_m39/lpips_augmented_diagnostic_report.md`.
+- Generated `outputs/srd_gs_lpips_augmented_diagnostic_m39/m39_metric_position.csv`.
+- Added `docs/srd_gs/39_lpips_augmented_diagnostic_synthesis.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only and consumes existing M33/M36/M37/M38 artifacts.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- Source M32 and M38 metrics are not overwritten.
+
+### Key Metrics
+
+| Metric | Value |
+| --- | ---: |
+| LPIPS | 0.9455429017543793 |
+| Refl-LPIPS | 0.8390642702579498 |
+| Highlight leakage export diagnostic | 0.000975149334408 |
+| F-score | 0.0 |
+| M32 PSNR/Refl-PSNR ranks | 1 / 1 |
+| M32 Chamfer/Normal MAE ranks | 7 / 7 |
+
+### Key Findings
+
+- M39 integrates M38 LPIPS values with M33/M36/M37 evidence in a separate output directory.
+- Metric availability is improved for LPIPS/Refl-LPIPS, but the high bounded LPIPS/Refl-LPIPS values do not support rendering recovery.
+- M32 remains mixed in the short-budget diagnostic table: PSNR/Refl-PSNR rank first, while Chamfer/Normal MAE rank worst and F-score remains zero.
+- M36 highlight leakage remains an export diagnostic, not accepted GT PBR material accuracy.
+- Accepted GT depth/material artifacts, material-view manifest, runtime-cost logs, stable geometry evidence, and paper-scale validation remain blocked.
+
+### Claim Boundary
+
+- Bounded read-only diagnostic synthesis: GO.
+- Metric-availability reporting for existing M32/M38 artifacts: GO.
+- Rendering recovery: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- GT PBR material accuracy: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_lpips_augmented_diagnostic_synthesis` failed before `synthesize_lpips_augmented_diagnostics_m39.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_lpips_augmented_diagnostic_synthesis` passed, 1 test.
+- M39 synthesis command passed and wrote four output artifacts under `outputs/srd_gs_lpips_augmented_diagnostic_m39`.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 95 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/synthesize_lpips_augmented_diagnostics_m39.py tests/test_lpips_augmented_diagnostic_synthesis.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M39 artifact existence checks: passed.
+- Prohibited SRD-GS process scan for train/render/eval/export scripts: no residual processes.
