@@ -49,10 +49,23 @@
 - Milestone 40: Material-view manifest contract - read-only manifest contract GO / material consistency still not computed / paper-scale still blocked
 - Milestone 41: Material-consistency diagnostic - bounded diagnostic GO / GT material accuracy still blocked / paper-scale still blocked
 - Milestone 42: Accepted-GT depth/material protocol audit - read-only GT-protocol audit GO / depth-material GT still missing / paper-scale still blocked
+- Milestone 43: Runtime-cost logging contract - read-only runtime-cost contract GO / runtime-cost values still unavailable / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 42 audits accepted GT depth/material protocol readiness and finds zero depth/albedo/roughness GT candidates under the current `ball` source path, while prediction artifacts are present. The next step should be one bounded M43 action. A reasonable next step is runtime-cost logging contract plumbing, because accepted GT depth/material metrics remain blocked by missing source artifacts. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 43 defines runtime-cost logging contracts for training time, peak memory, and render FPS, but it does not collect runtime-cost values. The next step should be one bounded M44 action. A reasonable next step is dry-run wrapper validation for runtime-cost logging, or one short bounded runtime-cost collection only after preflight gates pass. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 43 Notes
+
+- Added `scripts/srd_gs/define_runtime_cost_logging_m43.py`.
+- Added `tests/test_runtime_cost_logging_contract.py`.
+- Generated `outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_logging_contract.csv`.
+- Generated `outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_logging_contract.json`.
+- Generated `outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_logging_contract.md`.
+- Generated `outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_manifest_template.json`.
+- M43 is read-only: it consumes M32 command artifacts and metrics, and does not launch training, rendering, mesh extraction, texture export, broad evaluation, or multi-scene experiments.
+- Summary result: `runtime/training_time`, `runtime/peak_memory`, and `runtime/render_fps` all have source command files available and status `contract_defined_needs_future_runtime`; logs currently available `0`; metrics computed `false`.
+- This milestone supports runtime-cost logging contract definition only. It does not support runtime-cost metric values, runtime efficiency claims, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 42 Notes
 

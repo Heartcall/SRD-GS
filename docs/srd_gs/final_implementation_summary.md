@@ -150,6 +150,7 @@ A read-only M39 diagnostic synthesis integrates M38 LPIPS/Refl-LPIPS values with
 A read-only M40 material-view manifest contract defines two complete material views from existing M32 render-eval artifacts and marks the contract ready for future material-consistency computation, while keeping `material_consistency_computed=false` and source metrics untouched.
 A bounded M41 material-consistency diagnostic computes `texture_material_diagnostic/material_consistency_mae=0.0427745468915` from the M40 two-view manifest while preserving source M32 metrics; this is a bounded image-space diagnostic, not GT PBR material accuracy.
 A read-only M42 accepted-GT depth/material protocol audit finds prediction artifacts are available for depth, albedo, and roughness, but zero accepted GT depth/albedo/roughness candidates are present under the audited `ball` source path; depth/material metric values remain unavailable.
+A read-only M43 runtime-cost logging contract defines future log paths for `runtime/training_time`, `runtime/peak_memory`, and `runtime/render_fps` from existing M32 command artifacts; runtime-cost values remain unavailable until a future bounded collection run.
 ```
 
 Current unsupported claims:
@@ -196,19 +197,20 @@ SRD-GS has stable multi-scene mesh/material superiority.
 30. The M40 material-view manifest contract removes only the missing-manifest prerequisite for future material-consistency computation on the existing M32 two-frame artifact set. Material consistency values, accepted GT material/depth metrics, runtime-cost logs, and paper-scale claims remain blocked.
 31. The M41 material-consistency diagnostic removes the immediate image-space diagnostic computation blocker for the M40 two-view manifest, but it does not validate GT material accuracy. Accepted GT depth/material artifacts, runtime-cost logs, F-score zero, high LPIPS/Refl-LPIPS, and paper-scale claims remain blocked.
 32. The M42 accepted-GT depth/material audit confirms prediction artifacts are not the blocker for depth/albedo/roughness metrics, but source-side accepted GT depth/material artifacts are absent for `ball`; metric values and GT material accuracy remain blocked.
+33. The M43 runtime-cost logging contract defines how to collect training time, peak memory, and render FPS in a future bounded run, but no runtime-cost logs or values exist yet. Runtime efficiency claims remain blocked.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Keep the next step bounded: runtime-cost logging contract plumbing is the next practical remaining metric contract unless accepted GT depth/material artifacts are added.
+3. Keep the next step bounded: validate runtime-cost logging in dry-run form, or collect one short bounded runtime-cost run only after preflight gates pass.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If another bounded control is executed later, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 42:
+Fresh verification through Milestone 43:
 
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
@@ -369,3 +371,5 @@ Fresh verification through Milestone 42:
 - `conda run -n ref_gs python scripts/srd_gs/compute_material_consistency_m41.py --material_view_manifest outputs/srd_gs_material_view_manifest_m40/material_view_manifest.json --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --output_dir outputs/srd_gs_material_consistency_m41`: passed.
 - `python -m unittest tests.test_gt_depth_material_protocol`: passed, 1 test.
 - `conda run -n ref_gs python scripts/srd_gs/audit_gt_depth_material_protocol_m42.py --source_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" --result_root outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --output_dir outputs/srd_gs_gt_depth_material_protocol_m42`: passed.
+- `python -m unittest tests.test_runtime_cost_logging_contract`: passed, 1 test.
+- `conda run -n ref_gs python scripts/srd_gs/define_runtime_cost_logging_m43.py --result_root outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --metrics_csv outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300/eval_with_gt_mesh/metrics.csv --output_dir outputs/srd_gs_runtime_cost_logging_m43`: passed.

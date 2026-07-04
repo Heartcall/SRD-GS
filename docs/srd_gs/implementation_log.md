@@ -2190,3 +2190,56 @@ Status: read-only GT-protocol audit GO; depth/material GT still missing; paper-s
 - Focused TDD GREEN: `python -m unittest tests.test_gt_depth_material_protocol` passed, 1 test.
 - M42 audit command passed and wrote four output artifacts under `outputs/srd_gs_gt_depth_material_protocol_m42`.
 - Final validation commands are recorded in the Milestone 42 completion response.
+
+## Milestone 43: Runtime-cost Logging Contract
+
+Status: read-only runtime-cost contract GO; runtime-cost values still unavailable; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/define_runtime_cost_logging_m43.py`.
+- Added `tests/test_runtime_cost_logging_contract.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_logging_contract.csv`.
+- Generated `outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_logging_contract.json`.
+- Generated `outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_logging_contract.md`.
+- Generated `outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_manifest_template.json`.
+- Added `docs/srd_gs/43_runtime_cost_logging_contract.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only and consumes existing M32 command artifacts plus M32 metrics.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- No runtime-cost values were computed.
+
+### Key Results
+
+| Metric | Status | Source command | Required log |
+| --- | --- | --- | --- |
+| `runtime/training_time` | `contract_defined_needs_future_runtime` | true | `runtime_cost/train_timing.json` |
+| `runtime/peak_memory` | `contract_defined_needs_future_runtime` | true | `runtime_cost/gpu_memory_trace.csv` |
+| `runtime/render_fps` | `contract_defined_needs_future_runtime` | true | `runtime_cost/render_timing.json` |
+
+### Key Findings
+
+- Existing M32 train/render command files are sufficient to define runtime-cost logging contracts.
+- No runtime-cost logs are currently present.
+- M43 reduces the runtime-cost blocker to explicit future log paths, but does not produce runtime-cost metrics.
+
+### Claim Boundary
+
+- Runtime-cost logging contract definition: GO.
+- Runtime-cost metric values: NO-GO.
+- Runtime efficiency claims: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `python -m unittest tests.test_runtime_cost_logging_contract` failed before `define_runtime_cost_logging_m43.py` existed.
+- Focused TDD GREEN: `python -m unittest tests.test_runtime_cost_logging_contract` passed, 1 test.
+- M43 contract command passed and wrote four output artifacts under `outputs/srd_gs_runtime_cost_logging_m43`.
+- Final validation commands are recorded in the Milestone 43 completion response.
