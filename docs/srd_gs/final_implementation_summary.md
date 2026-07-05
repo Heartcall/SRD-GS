@@ -151,6 +151,7 @@ A read-only M40 material-view manifest contract defines two complete material vi
 A bounded M41 material-consistency diagnostic computes `texture_material_diagnostic/material_consistency_mae=0.0427745468915` from the M40 two-view manifest while preserving source M32 metrics; this is a bounded image-space diagnostic, not GT PBR material accuracy.
 A read-only M42 accepted-GT depth/material protocol audit finds prediction artifacts are available for depth, albedo, and roughness, but zero accepted GT depth/albedo/roughness candidates are present under the audited `ball` source path; depth/material metric values remain unavailable.
 A read-only M43 runtime-cost logging contract defines future log paths for `runtime/training_time`, `runtime/peak_memory`, and `runtime/render_fps` from existing M32 command artifacts; runtime-cost values remain unavailable until a future bounded collection run.
+A dry-run M44 runtime-cost wrapper validation converts the M43 manifest into wrapper-readiness plans for `runtime/training_time`, `runtime/peak_memory`, and `runtime/render_fps`; all three source command artifacts are present, but runtime-cost logs and values remain unavailable.
 ```
 
 Current unsupported claims:
@@ -198,20 +199,29 @@ SRD-GS has stable multi-scene mesh/material superiority.
 31. The M41 material-consistency diagnostic removes the immediate image-space diagnostic computation blocker for the M40 two-view manifest, but it does not validate GT material accuracy. Accepted GT depth/material artifacts, runtime-cost logs, F-score zero, high LPIPS/Refl-LPIPS, and paper-scale claims remain blocked.
 32. The M42 accepted-GT depth/material audit confirms prediction artifacts are not the blocker for depth/albedo/roughness metrics, but source-side accepted GT depth/material artifacts are absent for `ball`; metric values and GT material accuracy remain blocked.
 33. The M43 runtime-cost logging contract defines how to collect training time, peak memory, and render FPS in a future bounded run, but no runtime-cost logs or values exist yet. Runtime efficiency claims remain blocked.
+34. The M44 runtime-cost wrapper validation confirms the dry-run wrapper plan is ready for all three runtime-cost targets, but it still does not launch a collection run or produce runtime-cost values. Runtime efficiency claims remain blocked.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Keep the next step bounded: validate runtime-cost logging in dry-run form, or collect one short bounded runtime-cost run only after preflight gates pass.
+3. Keep the next step bounded: add a runtime-cost parser only if logs appear, or collect exactly one short bounded runtime-cost run only after preflight gates pass.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If another bounded control is executed later, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 43:
+Fresh verification through Milestone 44:
 
+- `conda run -n ref_gs python -m unittest tests.test_runtime_cost_wrapper_validation`: passed, 1 test.
+- `conda run -n ref_gs python scripts/srd_gs/validate_runtime_cost_wrapper_m44.py --contract_json outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_logging_contract.json --manifest_template outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_manifest_template.json --output_dir outputs/srd_gs_runtime_cost_wrapper_m44`: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 100 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/validate_runtime_cost_wrapper_m44.py tests/test_runtime_cost_wrapper_validation.py`: passed.
+- `bash -n scripts/srd_gs/*.sh`: passed.
+- `git diff --check`: passed.
+- M44 artifact existence checks: passed.
+- Prohibited process scan for SRD-GS train/render/eval/export scripts: no residual processes.
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
 - `scripts/srd_gs/run_one_scene.sh --config configs/srd_gs/full_srd_gs_branch_raster.yaml --source_path /tmp/srd_dummy_scene --output_root /tmp/srd_branch_raster_dryrun --scene_name dummy --iterations 10`: passed as dry-run.

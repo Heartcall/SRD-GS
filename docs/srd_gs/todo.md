@@ -50,10 +50,22 @@
 - Milestone 41: Material-consistency diagnostic - bounded diagnostic GO / GT material accuracy still blocked / paper-scale still blocked
 - Milestone 42: Accepted-GT depth/material protocol audit - read-only GT-protocol audit GO / depth-material GT still missing / paper-scale still blocked
 - Milestone 43: Runtime-cost logging contract - read-only runtime-cost contract GO / runtime-cost values still unavailable / paper-scale still blocked
+- Milestone 44: Runtime-cost wrapper validation - dry-run wrapper validation GO / runtime-cost values still unavailable / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 43 defines runtime-cost logging contracts for training time, peak memory, and render FPS, but it does not collect runtime-cost values. The next step should be one bounded M44 action. A reasonable next step is dry-run wrapper validation for runtime-cost logging, or one short bounded runtime-cost collection only after preflight gates pass. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 44 validates dry-run wrapper readiness for runtime-cost logging, but it does not collect runtime-cost logs or values. The next step should be one bounded M45 action. A reasonable next step is a runtime-cost parser for existing logs if logs appear, or exactly one short preflight-gated runtime-cost collection before parsing values. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 44 Notes
+
+- Added `scripts/srd_gs/validate_runtime_cost_wrapper_m44.py`.
+- Added `tests/test_runtime_cost_wrapper_validation.py`.
+- Generated `outputs/srd_gs_runtime_cost_wrapper_m44/runtime_cost_wrapper_plan.csv`.
+- Generated `outputs/srd_gs_runtime_cost_wrapper_m44/runtime_cost_wrapper_plan.json`.
+- Generated `outputs/srd_gs_runtime_cost_wrapper_m44/runtime_cost_wrapper_plan.md`.
+- M44 is dry-run/read-only: it consumes M43 runtime-cost contract artifacts and does not launch training, rendering, mesh extraction, texture export, broad evaluation, or multi-scene experiments.
+- Summary result: `runtime/training_time`, `runtime/peak_memory`, and `runtime/render_fps` all have source command artifacts available and status `wrapper_plan_ready`; logs currently available `0`; metrics computed `false`.
+- This milestone supports dry-run wrapper readiness validation only. It does not support runtime-cost metric values, runtime efficiency claims, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 43 Notes
 

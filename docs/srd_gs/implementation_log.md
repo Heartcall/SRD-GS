@@ -2243,3 +2243,55 @@ Status: read-only runtime-cost contract GO; runtime-cost values still unavailabl
 - Focused TDD GREEN: `python -m unittest tests.test_runtime_cost_logging_contract` passed, 1 test.
 - M43 contract command passed and wrote four output artifacts under `outputs/srd_gs_runtime_cost_logging_m43`.
 - Final validation commands are recorded in the Milestone 43 completion response.
+
+## Milestone 44: Runtime-cost Wrapper Validation
+
+Status: dry-run runtime-cost wrapper validation GO; runtime-cost values still unavailable; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/validate_runtime_cost_wrapper_m44.py`.
+- Added `tests/test_runtime_cost_wrapper_validation.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_runtime_cost_wrapper_m44/runtime_cost_wrapper_plan.csv`.
+- Generated `outputs/srd_gs_runtime_cost_wrapper_m44/runtime_cost_wrapper_plan.json`.
+- Generated `outputs/srd_gs_runtime_cost_wrapper_m44/runtime_cost_wrapper_plan.md`.
+- Added `docs/srd_gs/44_runtime_cost_wrapper_validation.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only and consumes existing M43 runtime-cost contract artifacts.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- No runtime-cost values were computed.
+
+### Key Results
+
+| Metric | Status | Source command | Required log available |
+| --- | --- | --- | --- |
+| `runtime/training_time` | `wrapper_plan_ready` | true | false |
+| `runtime/peak_memory` | `wrapper_plan_ready` | true | false |
+| `runtime/render_fps` | `wrapper_plan_ready` | true | false |
+
+### Key Findings
+
+- The M43 runtime-cost manifest can be converted into a dry-run wrapper plan.
+- Existing train and render-eval-pairs command files are present for all three runtime-cost targets.
+- No runtime-cost logs are currently present, so runtime-cost metric values remain unavailable.
+
+### Claim Boundary
+
+- Dry-run runtime-cost wrapper readiness validation: GO.
+- Runtime-cost metric values: NO-GO.
+- Runtime efficiency claims: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_wrapper_validation` failed before `validate_runtime_cost_wrapper_m44.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_wrapper_validation` passed, 1 test.
+- M44 wrapper-validation command passed and wrote three output artifacts under `outputs/srd_gs_runtime_cost_wrapper_m44`.
+- Final validation commands are recorded in the Milestone 44 completion response.
