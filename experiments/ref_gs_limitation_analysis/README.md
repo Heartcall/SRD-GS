@@ -78,6 +78,91 @@ To intentionally run a 2-iteration sanity on the default `Shiny Blender Syntheti
 RUN_TRAIN=1 bash experiments/ref_gs_limitation_analysis/run_small_sanity.sh
 ```
 
+For the stronger component pipeline sanity, use:
+
+```bash
+bash experiments/ref_gs_limitation_analysis/run_component_sanity.sh
+RUN_TRAIN=1 SANITY_ITER=2 bash experiments/ref_gs_limitation_analysis/run_component_sanity.sh
+```
+
+The component sanity runs `env_check.sh`, optionally trains for exactly
+`SANITY_ITER`, exports one test view with `export_pbr_views.py`, and evaluates
+available PBR/render paths with `evaluate_pbr.py`.
+
+## Environment Check
+
+```bash
+bash experiments/ref_gs_limitation_analysis/env_check.sh
+```
+
+Output:
+
+- `sanity_logs/env_check.txt`
+
+The script records failures such as sandbox-hidden `nvidia-smi` without aborting.
+
+## PBR / Component Export
+
+```bash
+python experiments/ref_gs_limitation_analysis/export_pbr_views.py \
+  --source_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball" \
+  --model_path output/ref_gs_limitation_sanity/ball_iter2 \
+  --checkpoint output/ref_gs_limitation_sanity/ball_iter2/chkpnt2.pth \
+  --split test \
+  --max_views 3 \
+  --out_dir experiments/ref_gs_limitation_analysis/exports/ball_iter2
+```
+
+Use `--dry-run` to validate paths without constructing CUDA modules. The exporter
+writes `manifest.json` and records missing keys instead of fabricating buffers.
+Current stock `render` returns `pbr_rgb`, alpha, normal, and depth, but not
+`render`, albedo, roughness, or specular component images.
+
+## PBR Evaluation
+
+```bash
+python experiments/ref_gs_limitation_analysis/evaluate_pbr.py \
+  --export_dir experiments/ref_gs_limitation_analysis/exports/ball_iter2 \
+  --out experiments/ref_gs_limitation_analysis/metrics/ball_iter2_pbr_eval
+```
+
+Outputs:
+
+- `per_view_metrics.csv`
+- `summary_metrics.json`
+- `summary_metrics.md`
+
+Missing inputs are written as `NA`.
+
+## Geometry Evaluation
+
+```bash
+python experiments/ref_gs_limitation_analysis/evaluate_geometry.py \
+  --pred predicted_mesh.ply \
+  --gt "/data/liuly/dataset/3DGS/GlossySyntheticConverted/bell_blender/eval_pts.ply" \
+  --out experiments/ref_gs_limitation_analysis/metrics/geometry_bell \
+  --num_samples 200000 \
+  --thresholds 0.001 0.002 0.005 0.01
+```
+
+The evaluator supports PLY mesh/point inputs, Chamfer-L1 style symmetric nearest
+neighbor distance, F-score thresholds, point counts, and bbox stats. Missing
+inputs produce `NA` outputs.
+
+## Real-Scene Environment Sphere Coverage
+
+```bash
+python experiments/ref_gs_limitation_analysis/check_env_sphere_coverage.py \
+  --source_path "/data/liuly/dataset/3DGS/Shiny Blender Real/gardenspheres" \
+  --center -0.2270 1.9700 1.7740 \
+  --radius 0.974 \
+  --xyz_axis 2 1 0 \
+  --out experiments/ref_gs_limitation_analysis/metrics/gardenspheres_env_default_coverage
+```
+
+This does not train. It measures point-cloud coverage under radius, center, and
+axis perturbations.
+
 To choose a different script or scene:
 
 ```bash

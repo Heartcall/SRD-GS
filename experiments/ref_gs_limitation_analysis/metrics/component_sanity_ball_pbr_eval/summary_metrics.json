@@ -1,0 +1,29 @@
+{
+  "notes": [],
+  "targets": {
+    "albedo": {
+      "lpips": "NA",
+      "mae": "NA",
+      "psnr": "NA",
+      "ssim": "NA",
+      "total_views": 1,
+      "valid_views": 0
+    },
+    "pbr_rgb": {
+      "lpips": 0.89443039894104,
+      "mae": 0.3772422969341278,
+      "psnr": 7.12458595995151,
+      "ssim": 0.5685837268829346,
+      "total_views": 1,
+      "valid_views": 1
+    },
+    "render": {
+      "lpips": "NA",
+      "mae": "NA",
+      "psnr": "NA",
+      "ssim": "NA",
+      "total_views": 1,
+      "valid_views": 0
+    }
+  }
+}

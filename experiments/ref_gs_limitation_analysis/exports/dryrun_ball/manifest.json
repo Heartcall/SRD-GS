@@ -1,0 +1,30 @@
+{
+  "checkpoint": null,
+  "checks": {
+    "checkpoint_exists": null,
+    "model_path_exists": false,
+    "source_exists": true
+  },
+  "dry_run": true,
+  "errors": [],
+  "exported_keys": [],
+  "max_views": 1,
+  "missing_keys": [
+    "gt",
+    "pbr_rgb",
+    "render",
+    "albedo",
+    "roughness",
+    "spec",
+    "normal",
+    "depth",
+    "alpha",
+    "ref_w",
+    "out_w"
+  ],
+  "model_path": "output/ref_gs_limitation_sanity/ball_iter2",
+  "render_func": "ref",
+  "source_path": "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball",
+  "split": "test",
+  "views": []
+}

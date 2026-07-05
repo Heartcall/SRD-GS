@@ -1,0 +1,15 @@
+{
+  "notes": [
+    "export_manifest_is_dry_run"
+  ],
+  "targets": {
+    "pbr_rgb": {
+      "lpips": "NA",
+      "mae": "NA",
+      "psnr": "NA",
+      "ssim": "NA",
+      "total_views": 1,
+      "valid_views": 0
+    }
+  }
+}

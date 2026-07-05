@@ -1,0 +1,19 @@
+{
+  "dry_run": true,
+  "gt": "/data/liuly/dataset/3DGS/GlossySyntheticConverted/bell_blender/eval_pts.ply",
+  "gt_exists": true,
+  "gt_stats": {},
+  "metrics": {},
+  "num_samples": 200000,
+  "pred": "missing_pred.ply",
+  "pred_exists": false,
+  "pred_stats": {},
+  "reason": "paths checked only",
+  "status": "dry_run",
+  "thresholds": [
+    0.001,
+    0.002,
+    0.005,
+    0.01
+  ]
+}

@@ -260,3 +260,17 @@ python experiments/ref_gs_limitation_analysis/visualize_outputs.py \
 - [Code] Mesh metrics need an evaluator not present in this checkout.
 - [Environment] Restricted-shell `nvidia-smi` failed, but host-level `nvidia-smi` succeeded. Training decisions should use a host-visible CUDA check.
 - [Environment] `run_small_sanity.sh` produced a Matplotlib cache warning because the default user config directory is not writable; this is not a Ref-GS failure.
+
+## 9. Follow-Up Pipeline Status
+
+Updated on 2026-07-05.
+
+- [Code] Added `env_check.sh` for auditable environment logs.
+- [Code] Added `export_pbr_views.py` for checkpoint-based PBR/component export. It currently exports `pbr_rgb`, `gt`, `alpha`, `normal`, and `depth` on the stock `render` path; `render`, `albedo`, `roughness`, `spec`, `ref_w`, and `out_w` are recorded as missing when the renderer does not return them.
+- [Code] Added `evaluate_pbr.py` for `pbr_rgb` vs `gt`, `render` vs `gt`, and diagnostic `albedo` vs `gt` metrics with safe `NA` handling.
+- [Code] Added `evaluate_geometry.py` for PLY geometry Chamfer/F-score/bbox metrics once a predicted PLY exists.
+- [Code] Added `check_env_sphere_coverage.py` for real-scene environment sphere coverage and perturbation checks without training.
+- [Code] Added `run_component_sanity.sh` for env check -> optional 2-iteration train -> export -> PBR eval.
+- [Dataset] `gardenspheres` with user-provided `center=(0,0,0), radius=1.0` covers 0/136151 COLMAP points. The `train.sh` default `center=(-0.227, 1.970, 1.774), radius=0.974` covers 24546/136151 points (0.1803), showing the coverage script can expose sensitivity to hand settings.
+- [Hypothesis] The 2-iteration `ball` sanity is only an entrypoint check, not a quality result. Its PBR metrics are not evidence for or against Ref-GS quality.
+- [Code] Remaining implementation gaps: stock renderer does not return albedo/roughness/spec as manifest-level tensors, mesh extraction still needs a CLI wrapper, and no-Sph-Mip/no-factorization/no-deferred ablations still need explicit flags.

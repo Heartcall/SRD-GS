@@ -1,0 +1,49 @@
+{
+  "checkpoint": "output/ref_gs_limitation_sanity/ball_iter2/chkpnt2.pth",
+  "checkpoint_iteration": 2,
+  "dry_run": false,
+  "errors": [],
+  "exported_keys": [
+    "alpha",
+    "depth",
+    "gt",
+    "normal",
+    "pbr_rgb"
+  ],
+  "max_views": 1,
+  "missing_keys": [
+    "albedo",
+    "out_w",
+    "ref_w",
+    "render",
+    "roughness",
+    "spec"
+  ],
+  "model_path": "output/ref_gs_limitation_sanity/ball_iter2",
+  "num_views": 1,
+  "render_func": "ref",
+  "source_path": "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball",
+  "split": "test",
+  "views": [
+    {
+      "errors": [],
+      "files": {
+        "alpha": "experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/alpha.png",
+        "depth": "experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/depth.png",
+        "gt": "experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/gt.png",
+        "normal": "experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/normal.png",
+        "pbr_rgb": "experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/pbr_rgb.png"
+      },
+      "image_name": "r_0",
+      "index": 0,
+      "missing": [
+        "render",
+        "albedo",
+        "roughness",
+        "spec",
+        "ref_w",
+        "out_w"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "base_coverage": {
+    "inside_count": 24546,
+    "inside_fraction": 0.18028512460429963,
+    "max_distance": 5.649945117189093,
+    "mean_distance": 1.5703901896370036,
+    "min_distance": 0.020983113405802997,
+    "num_points": 136151,
+    "outside_count": 111605
+  },
+  "bbox": {
+    "bbox_center": [
+      -0.6665313243865967,
+      2.777814418077469,
+      1.639535367488861
+    ],
+    "bbox_diag": 11.419599686064249,
+    "bbox_max": [
+      3.1889662742614746,
+      5.968808174133301,
+      4.388082504272461
+    ],
+    "bbox_min": [
+      -4.522028923034668,
+      -0.41317933797836304,
+      -1.1090117692947388
+    ],
+    "radius_over_bbox_diag": 0.08529195652879211,
+    "sphere_center": [
+      -0.227,
+      1.97,
+      1.774
+    ],
+    "sphere_radius": 0.974
+  },
+  "center": [
+    -0.227,
+    1.97,
+    1.774
+  ],
+  "num_cases": 16,
+  "point_source": "/data/liuly/dataset/3DGS/Shiny Blender Real/gardenspheres/sparse/0/points3D.ply",
+  "radius": 0.974,
+  "reason": "",
+  "source_path": "/data/liuly/dataset/3DGS/Shiny Blender Real/gardenspheres",
+  "status": "ok",
+  "xyz_axis": [
+    2.0,
+    1.0,
+    0.0
+  ]
+}

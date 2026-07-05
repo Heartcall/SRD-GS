@@ -1,0 +1,12 @@
+/home/liuly/anaconda3/envs/ref_gs/lib/python3.7/site-packages/torch/functional.py:478: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1659484809535/work/aten/src/ATen/native/TensorShape.cpp:2894.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+SphMipEncoding ### level: 9   size: 512
+Found transforms_train.json file, assuming Blender data set!
+Reading Training Transforms
+Reading Test Transforms
+Generating random point cloud (100000)...
+resolution_scales [1.0]
+Loading Training Cameras
+Loading Test Cameras
+Number of points at initialisation :  100000
+Wrote experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/manifest.json

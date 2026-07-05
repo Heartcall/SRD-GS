@@ -1,0 +1,203 @@
+# Ref-GS limitation env check
+Sun Jul  5 18:48:36 CST 2026
+
+## conda activation
+sourced /home/liuly/anaconda3/etc/profile.d/conda.sh
+conda_activate_exit=0
+
+## pwd
+/home/liuly/Surface_Reconstruction/Glossy/SRD-GS-ref
+exit=0
+
+## git status --short
+ M experiments/ref_gs_limitation_analysis/README.md
+ M experiments/ref_gs_limitation_analysis/experiment_matrix.csv
+ M experiments/ref_gs_limitation_analysis/experiment_matrix.json
+ M experiments/ref_gs_limitation_analysis/experiment_matrix.md
+ M experiments/ref_gs_limitation_analysis/limitation_report.md
+ M experiments/ref_gs_limitation_analysis/make_experiment_matrix.py
+?? experiments/ref_gs_limitation_analysis/check_env_sphere_coverage.py
+?? experiments/ref_gs_limitation_analysis/env_check.sh
+?? experiments/ref_gs_limitation_analysis/evaluate_geometry.py
+?? experiments/ref_gs_limitation_analysis/evaluate_pbr.py
+?? experiments/ref_gs_limitation_analysis/export_pbr_views.py
+?? experiments/ref_gs_limitation_analysis/exports/
+?? experiments/ref_gs_limitation_analysis/followup_report.md
+?? experiments/ref_gs_limitation_analysis/metrics/
+?? experiments/ref_gs_limitation_analysis/run_component_sanity.sh
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_eval.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_export.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_summary.md
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_train.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/env_check.txt
+?? output/
+exit=0
+
+## git rev-parse HEAD
+7d58e22730d7df665141ede1fd0b9b6cd39bf016
+exit=0
+
+## conda info --envs
+
+# conda environments:
+#
+base                   /home/liuly/anaconda3
+3dgs_dr                /home/liuly/anaconda3/envs/3dgs_dr
+MaterialRefGS          /home/liuly/anaconda3/envs/MaterialRefGS
+envgs                  /home/liuly/anaconda3/envs/envgs
+gs2m                   /home/liuly/anaconda3/envs/gs2m
+irgs                   /home/liuly/anaconda3/envs/irgs
+milo                   /home/liuly/anaconda3/envs/milo
+polgs                  /home/liuly/anaconda3/envs/polgs
+ref-gaussian           /home/liuly/anaconda3/envs/ref-gaussian
+ref_gs               * /home/liuly/anaconda3/envs/ref_gs
+refdgs                 /home/liuly/anaconda3/envs/refdgs
+tc-meshgs              /home/liuly/anaconda3/envs/tc-meshgs
+
+exit=0
+
+## which python
+/home/liuly/anaconda3/envs/ref_gs/bin/python
+exit=0
+
+## python --version
+Python 3.7.12
+exit=0
+
+## nvidia-smi
+Sun Jul  5 18:48:38 2026       
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.247.01             Driver Version: 535.247.01   CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  NVIDIA RTX A5000               Off | 00000000:4F:00.0 Off |                  Off |
+| 30%   58C    P2             194W / 230W |  12857MiB / 24564MiB |    100%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  NVIDIA RTX A5000               Off | 00000000:52:00.0 Off |                  Off |
+| 30%   38C    P2              92W / 230W |   4135MiB / 24564MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   2  NVIDIA RTX A5000               Off | 00000000:56:00.0 Off |                  Off |
+| 30%   25C    P8               7W / 230W |      3MiB / 24564MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   3  NVIDIA RTX A5000               Off | 00000000:57:00.0 Off |                  Off |
+| 30%   26C    P8               5W / 230W |      3MiB / 24564MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   4  NVIDIA GeForce RTX 3090 Ti     Off | 00000000:CE:00.0 Off |                  Off |
+| 59%   75C    P2             402W / 450W |  13670MiB / 24564MiB |     57%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   5  NVIDIA GeForce RTX 3090 Ti     Off | 00000000:D1:00.0 Off |                  Off |
+| 61%   81C    P2             323W / 450W |   9396MiB / 24564MiB |    100%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   6  NVIDIA GeForce RTX 3090 Ti     Off | 00000000:D5:00.0 Off |                  Off |
+|  0%   30C    P8              13W / 450W |   2670MiB / 24564MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   7  NVIDIA GeForce RTX 3090 Ti     Off | 00000000:D6:00.0 Off |                  Off |
+|  0%   33C    P8              21W / 450W |      3MiB / 24564MiB |      0%   Prohibited |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A   1820011      C   python                                    12852MiB |
+|    1   N/A  N/A   1899334      C   python                                     4130MiB |
+|    4   N/A  N/A   1844409      C   ...yuzhen/code/r2loc/.venv/bin/python3    13664MiB |
+|    5   N/A  N/A   1858691      C   python                                     9390MiB |
+|    6   N/A  N/A    233646      C   python                                     2664MiB |
++---------------------------------------------------------------------------------------+
+exit=0
+
+## pip list | head -80
+Package                        Version
+------------------------------ ------------
+addict                         2.4.0
+attrs                          24.2.0
+backcall                       0.2.0
+brotlipy                       0.7.0
+certifi                        2024.8.30
+cffi                           1.15.1
+charset-normalizer             3.4.7
+click                          8.1.8
+comm                           0.1.4
+ConfigArgParse                 1.7.5
+cryptography                   38.0.2
+cycler                         0.11.0
+dash                           2.15.0
+dash-core-components           2.0.0
+dash-html-components           2.0.0
+dash-table                     5.0.0
+decorator                      5.1.1
+diff-surfel-2dgs               0.0.1
+diff-surfel-rasterization      0.0.1
+diff-surfel-rasterization-real 0.0.1
+fastjsonschema                 2.21.2
+Flask                          2.2.5
+flit_core                      3.6.0
+fonttools                      4.38.0
+idna                           3.10
+imageio                        2.31.2
+imageio-ffmpeg                 0.4.7
+importlib-metadata             6.7.0
+importlib-resources            5.12.0
+ipython                        7.34.0
+ipywidgets                     8.1.8
+itsdangerous                   2.1.2
+jedi                           0.19.2
+Jinja2                         3.1.6
+joblib                         1.3.2
+jsonschema                     4.17.3
+jupyter_core                   4.12.0
+jupyterlab_widgets             3.0.16
+kiwisolver                     1.4.5
+kornia                         0.6.0
+lpips                          0.1.4
+MarkupSafe                     2.1.5
+matplotlib                     3.5.3
+matplotlib-inline              0.1.6
+nbformat                       5.7.0
+nest-asyncio                   1.6.0
+networkx                       2.6.3
+ninja                          1.11.1.1
+numpy                          1.21.6
+nvdiffrast                     0.4.0
+open3d                         0.17.0
+opencv-python                  4.6.0.66
+packaging                      24.0
+pandas                         1.3.5
+parso                          0.8.6
+pexpect                        4.9.0
+pickleshare                    0.7.5
+Pillow                         9.5.0
+pip                            22.3.1
+pkgutil_resolve_name           1.3.10
+plotly                         5.18.0
+plyfile                        0.9
+prompt_toolkit                 3.0.48
+ptyprocess                     0.7.0
+pycparser                      2.21
+Pygments                       2.17.2
+pyOpenSSL                      23.0.0
+pyparsing                      3.1.4
+pyquaternion                   0.9.9
+pyrsistent                     0.19.3
+PySocks                        1.7.1
+python-dateutil                2.9.0.post0
+pytz                           2026.1.post1
+PyWavelets                     1.3.0
+PyYAML                         6.0.1
+requests                       2.31.0
+retrying                       1.4.2
+Rtree                          1.0.1
+pipeline_exit=120 0

@@ -1,0 +1,4 @@
+view,target,pred_path,gt_path,mae,psnr,ssim,lpips,status
+r_0,pbr_rgb,experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/pbr_rgb.png,experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/gt.png,0.3772422969341278,7.12458595995151,0.5685837268829346,0.89443039894104,ok
+r_0,render,NA,experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/gt.png,NA,NA,NA,NA,missing
+r_0,albedo,NA,experiments/ref_gs_limitation_analysis/exports/component_sanity_ball/views/00000_r_0/gt.png,NA,NA,NA,NA,missing

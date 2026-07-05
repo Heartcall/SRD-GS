@@ -40,22 +40,22 @@ def build_matrix(inv):
             "id": "E1",
             "limitation": "Evaluation/export gap for the main PBR output and component buffers",
             "dataset_scene": ball,
-            "settings": "stock training checkpoint; render pbr_rgb/render/normal/depth/spec/diff via helper exporter (requires implementation)",
+            "settings": "stock training checkpoint; export pbr_rgb/gt/alpha/depth/normal via export_pbr_views.py; render/albedo/roughness/spec recorded as missing unless renderer returns them",
             "metrics": "PSNR/SSIM/LPIPS on pbr_rgb and SH render; component availability; normal MAE if GT normals are available",
             "dry_run": f"python train.py -s '{root}/{ball}' --eval --iterations 1 --save_iterations 1 --test_iterations 1 --model_path /tmp/ref_gs_e1_dry --help",
-            "small_sanity": f"RUN_TRAIN=1 SANITY_SCENE='{root}/{ball}' bash experiments/ref_gs_limitation_analysis/run_small_sanity.sh",
-            "full_run": f"python train.py -s '{root}/{ball}' --eval --run_dim 256 --albedo_bias 0 --model_path output/ref_gs_limitation/e1_ball_full",
+            "small_sanity": "RUN_TRAIN=1 SANITY_ITER=2 bash experiments/ref_gs_limitation_analysis/run_component_sanity.sh",
+            "full_run": f"python train.py -s '{root}/{ball}' --eval --run_dim 256 --albedo_bias 0 --checkpoint_iterations 31000 --model_path output/ref_gs_limitation/e1_ball_full ; python experiments/ref_gs_limitation_analysis/export_pbr_views.py --source_path '{root}/{ball}' --model_path output/ref_gs_limitation/e1_ball_full --checkpoint output/ref_gs_limitation/e1_ball_full/chkpnt31000.pth --split test --max_views 200 --out_dir experiments/ref_gs_limitation_analysis/exports/e1_ball_full ; python experiments/ref_gs_limitation_analysis/evaluate_pbr.py --export_dir experiments/ref_gs_limitation_analysis/exports/e1_ball_full --out experiments/ref_gs_limitation_analysis/metrics/e1_ball_full_pbr_eval",
             "expected": "If stock reports miss pbr_rgb/component metrics, claims about reflection and components require an extra exporter before validation.",
         },
         {
             "id": "E2",
             "limitation": "Geometry recovery depends on self-derived deferred normals and TSDF extraction settings",
             "dataset_scene": toaster,
-            "settings": "full model; depth_ratio in {0, 0.5, 1}; depth_trunc/voxel_size sweep for mesh extraction (export requires implementation)",
+            "settings": "full model; depth_ratio in {0, 0.5, 1}; depth_trunc/voxel_size sweep for mesh extraction; evaluate_geometry.py is implemented for produced PLY files",
             "metrics": "normal MAE where GT normal exists; Chamfer/F-score to *_gt_mesh.ply; mesh completeness; PSNR/SSIM/LPIPS",
             "dry_run": f"python train.py -s '{root}/{toaster}' --eval --depth_ratio 0 --iterations 1 --save_iterations 1 --test_iterations 1 --model_path /tmp/ref_gs_e2_dry --help",
-            "small_sanity": f"python experiments/ref_gs_limitation_analysis/make_experiment_matrix.py --dry-run --inventory experiments/ref_gs_limitation_analysis/dataset_inventory.json",
-            "full_run": f"python train.py -s '{root}/{toaster}' --eval --run_dim 256 --albedo_bias 0 --model_path output/ref_gs_limitation/e2_toaster_depth0",
+            "small_sanity": f"python experiments/ref_gs_limitation_analysis/evaluate_geometry.py --dry-run --pred missing_pred.ply --gt '{root}/GlossySyntheticConverted/bell_blender/eval_pts.ply' --out experiments/ref_gs_limitation_analysis/metrics/dryrun_geometry",
+            "full_run": f"python train.py -s '{root}/{toaster}' --eval --run_dim 256 --albedo_bias 0 --depth_ratio 0 --checkpoint_iterations 31000 --model_path output/ref_gs_limitation/e2_toaster_depth0 ; python experiments/ref_gs_limitation_analysis/evaluate_geometry.py --pred output/ref_gs_limitation/e2_toaster_depth0/mesh_iter31000.ply --gt '{root}/Shiny Blender Synthetic/toaster/toaster_gt_mesh.ply' --out experiments/ref_gs_limitation_analysis/metrics/e2_toaster_depth0_geometry",
             "expected": "If rendering remains stable but raw-coordinate mesh/normal metrics swing with depth settings, geometry recovery is less robust than NVS metrics suggest.",
         },
         {
@@ -73,11 +73,11 @@ def build_matrix(inv):
             "id": "E4",
             "limitation": "Real-scene results depend on manually specified environment sphere, axis order, and warm-up schedule",
             "dataset_scene": garden,
-            "settings": "train.sh default env_scope; center/radius perturbations; init_until_iter in {0, 700, 1500}",
+            "settings": "train.sh default env_scope; center/radius perturbations; init_until_iter in {0, 700, 1500}; check_env_sphere_coverage.py implemented before training",
             "metrics": "PSNR/SSIM/LPIPS; ref_w/out_w coverage; component artifacts; convergence stability",
             "dry_run": f"python train-real.py -s '{root}/{garden}' -r 6 --eval --run_dim 256 --albedo_bias 2 --albedo_lr 0.0005 --env_scope_center -0.2270 1.9700 1.7740 --env_scope_radius 0.974 --init_until_iter 1 --xyz_axis 2.0 1.0 0.0 --iterations 1 --save_iterations 1 --test_iterations 1 --model_path /tmp/ref_gs_e4_dry --help",
-            "small_sanity": f"RUN_TRAIN=1 SANITY_SCRIPT=train-real.py SANITY_SCENE='{root}/{garden}' SANITY_EXTRA='-r 16 --albedo_bias 2 --albedo_lr 0.0005 --env_scope_center -0.2270 1.9700 1.7740 --env_scope_radius 0.974 --init_until_iter 1 --xyz_axis 2.0 1.0 0.0' bash experiments/ref_gs_limitation_analysis/run_small_sanity.sh",
-            "full_run": f"python train-real.py -s '{root}/{garden}' -r 6 --eval --run_dim 256 --albedo_bias 2 --albedo_lr 0.0005 --env_scope_center -0.2270 1.9700 1.7740 --env_scope_radius 0.974 --init_until_iter 700 --xyz_axis 2.0 1.0 0.0 --model_path output/ref_gs_limitation/e4_garden_default",
+            "small_sanity": f"python experiments/ref_gs_limitation_analysis/check_env_sphere_coverage.py --source_path '{root}/{garden}' --center -0.2270 1.9700 1.7740 --radius 0.974 --xyz_axis 2 1 0 --out experiments/ref_gs_limitation_analysis/metrics/gardenspheres_env_default_coverage",
+            "full_run": f"python experiments/ref_gs_limitation_analysis/check_env_sphere_coverage.py --source_path '{root}/{garden}' --center -0.2270 1.9700 1.7740 --radius 0.974 --xyz_axis 2 1 0 --out experiments/ref_gs_limitation_analysis/metrics/e4_garden_default_coverage ; python train-real.py -s '{root}/{garden}' -r 6 --eval --run_dim 256 --albedo_bias 2 --albedo_lr 0.0005 --env_scope_center -0.2270 1.9700 1.7740 --env_scope_radius 0.974 --init_until_iter 700 --xyz_axis 2.0 1.0 0.0 --checkpoint_iterations 31000 --model_path output/ref_gs_limitation/e4_garden_default",
             "expected": "If small perturbations change ref_w/out_w coverage or NVS metrics substantially, real-scene performance is hand-configuration sensitive.",
         },
         {
@@ -101,7 +101,7 @@ def write_outputs(matrix, out_dir: Path):
     md_path = out_dir / "experiment_matrix.md"
     json_path.write_text(json.dumps(matrix, indent=2), encoding="utf-8")
     with csv_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(matrix[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(matrix[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(matrix)
     lines = [
