@@ -1,0 +1,103 @@
+usage: train.py [-h] [--sh_degree SH_DEGREE] [--source_path SOURCE_PATH]
+                [--model_path MODEL_PATH] [--images IMAGES]
+                [--resolution RESOLUTION] [--white_background]
+                [--data_device DATA_DEVICE] [--eval] [--run_dim RUN_DIM]
+                [--albedo_bias ALBEDO_BIAS] [--gsrgb_loss] [--rand_init]
+                [--init_until_iter INIT_UNTIL_ITER]
+                [--env_scope_center ENV_SCOPE_CENTER [ENV_SCOPE_CENTER ...]]
+                [--env_scope_radius ENV_SCOPE_RADIUS]
+                [--alpha_weight ALPHA_WEIGHT]
+                [--depth_tv_weight DEPTH_TV_WEIGHT]
+                [--density_weight DENSITY_WEIGHT] [--tv_weight TV_WEIGHT]
+                [--xyz_axis XYZ_AXIS [XYZ_AXIS ...]] [--iterations ITERATIONS]
+                [--position_lr_init POSITION_LR_INIT]
+                [--position_lr_final POSITION_LR_FINAL]
+                [--position_lr_delay_mult POSITION_LR_DELAY_MULT]
+                [--position_lr_max_steps POSITION_LR_MAX_STEPS]
+                [--feature_lr FEATURE_LR] [--opacity_lr OPACITY_LR]
+                [--scaling_lr SCALING_LR] [--rotation_lr ROTATION_LR]
+                [--albedo_lr ALBEDO_LR] [--mask_lr MASK_LR]
+                [--roughness_lr ROUGHNESS_LR] [--encoding_lr ENCODING_LR]
+                [--mlp_lr MLP_LR] [--percent_dense PERCENT_DENSE]
+                [--lambda_dssim LAMBDA_DSSIM] [--lambda_dist LAMBDA_DIST]
+                [--lambda_normal LAMBDA_NORMAL] [--opacity_cull OPACITY_CULL]
+                [--densification_interval DENSIFICATION_INTERVAL]
+                [--opacity_reset_interval OPACITY_RESET_INTERVAL]
+                [--densify_from_iter DENSIFY_FROM_ITER]
+                [--densify_until_iter DENSIFY_UNTIL_ITER]
+                [--densify_grad_threshold DENSIFY_GRAD_THRESHOLD]
+                [--convert_SHs_python] [--compute_cov3D_python]
+                [--depth_ratio DEPTH_RATIO] [--debug] [--ip IP] [--port PORT]
+                [--detect_anomaly]
+                [--test_iterations TEST_ITERATIONS [TEST_ITERATIONS ...]]
+                [--save_iterations SAVE_ITERATIONS [SAVE_ITERATIONS ...]]
+                [--quiet]
+                [--checkpoint_iterations CHECKPOINT_ITERATIONS [CHECKPOINT_ITERATIONS ...]]
+                [--start_checkpoint START_CHECKPOINT]
+
+Training script parameters
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --ip IP
+  --port PORT
+  --detect_anomaly
+  --test_iterations TEST_ITERATIONS [TEST_ITERATIONS ...]
+  --save_iterations SAVE_ITERATIONS [SAVE_ITERATIONS ...]
+  --quiet
+  --checkpoint_iterations CHECKPOINT_ITERATIONS [CHECKPOINT_ITERATIONS ...]
+  --start_checkpoint START_CHECKPOINT
+
+Loading Parameters:
+  --sh_degree SH_DEGREE
+  --source_path SOURCE_PATH, -s SOURCE_PATH
+  --model_path MODEL_PATH, -m MODEL_PATH
+  --images IMAGES, -i IMAGES
+  --resolution RESOLUTION, -r RESOLUTION
+  --white_background, -w
+  --data_device DATA_DEVICE
+  --eval
+  --run_dim RUN_DIM
+  --albedo_bias ALBEDO_BIAS
+  --gsrgb_loss
+  --rand_init
+  --init_until_iter INIT_UNTIL_ITER
+  --env_scope_center ENV_SCOPE_CENTER [ENV_SCOPE_CENTER ...], -e ENV_SCOPE_CENTER [ENV_SCOPE_CENTER ...]
+  --env_scope_radius ENV_SCOPE_RADIUS
+  --alpha_weight ALPHA_WEIGHT
+  --depth_tv_weight DEPTH_TV_WEIGHT
+  --density_weight DENSITY_WEIGHT
+  --tv_weight TV_WEIGHT
+  --xyz_axis XYZ_AXIS [XYZ_AXIS ...], -x XYZ_AXIS [XYZ_AXIS ...]
+
+Optimization Parameters:
+  --iterations ITERATIONS
+  --position_lr_init POSITION_LR_INIT
+  --position_lr_final POSITION_LR_FINAL
+  --position_lr_delay_mult POSITION_LR_DELAY_MULT
+  --position_lr_max_steps POSITION_LR_MAX_STEPS
+  --feature_lr FEATURE_LR
+  --opacity_lr OPACITY_LR
+  --scaling_lr SCALING_LR
+  --rotation_lr ROTATION_LR
+  --albedo_lr ALBEDO_LR
+  --mask_lr MASK_LR
+  --roughness_lr ROUGHNESS_LR
+  --encoding_lr ENCODING_LR
+  --mlp_lr MLP_LR
+  --percent_dense PERCENT_DENSE
+  --lambda_dssim LAMBDA_DSSIM
+  --lambda_dist LAMBDA_DIST
+  --lambda_normal LAMBDA_NORMAL
+  --opacity_cull OPACITY_CULL
+  --densification_interval DENSIFICATION_INTERVAL
+  --opacity_reset_interval OPACITY_RESET_INTERVAL
+  --densify_from_iter DENSIFY_FROM_ITER
+  --densify_until_iter DENSIFY_UNTIL_ITER
+  --densify_grad_threshold DENSIFY_GRAD_THRESHOLD
+
+Pipeline Parameters:
+  --convert_SHs_python
+  --compute_cov3D_python
+  --depth_ratio DEPTH_RATIO
+  --debug

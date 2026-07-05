@@ -1,0 +1,3 @@
+model_path,has_cfg_args,checkpoint_iterations,has_light_mlp,has_dir_encoding,has_point_cloud,log_count,eval_split,eval_iter,l1,psnr
+output/ref_gs_limitation,False,NA,False,False,False,0,NA,NA,NA,NA
+/tmp/ref_gs_limitation_sanity,False,NA,False,False,False,0,NA,NA,NA,NA
