@@ -2350,3 +2350,61 @@ Status: bounded runtime-cost collection preflight GO; collection launch blocked 
 - Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_preflight` passed, 1 test.
 - M45 preflight command passed and wrote three output artifacts under `outputs/srd_gs_runtime_cost_collection_preflight_m45`.
 - Final validation commands are recorded in the Milestone 45 completion response.
+
+## Milestone 46: Fresh-root Runtime-cost Collection Package
+
+Status: bounded fresh-root runtime-cost package GO; collection launch still deferred to runtime gates; runtime-cost values still unavailable; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/prepare_runtime_cost_collection_m46.py`.
+- Added `tests/test_runtime_cost_collection_package_m46.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_runtime_cost_collection_m46/package/fresh_runtime_cost_wrapper_plan.csv`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m46/package/fresh_runtime_cost_wrapper_plan.json`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m46/package/fresh_runtime_cost_wrapper_plan.md`.
+- Generated nested M45 preflight artifacts under `outputs/srd_gs_runtime_cost_collection_m46/package/preflight`.
+- Generated cloned train/render command artifacts under `outputs/srd_gs_runtime_cost_collection_m46/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300`.
+- Added `docs/srd_gs/46_runtime_cost_fresh_root_package.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only with respect to source artifacts and consumes the existing M44 runtime-cost wrapper plan.
+- The M32 output root `outputs/srd_gs_instrumented_runtime_m32_i30` was treated as immutable.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- No runtime-cost values were computed.
+
+### Key Results
+
+| Metric | Status | Safe by overwrite preflight | Required log available |
+| --- | --- | --- | --- |
+| `runtime/training_time` | `fresh_root_plan_ready` | true | false |
+| `runtime/peak_memory` | `fresh_root_plan_ready` | true | false |
+| `runtime/render_fps` | `fresh_root_plan_ready` | true | false |
+
+### Key Findings
+
+- Cloned command files: 2.
+- Fresh wrapper entries: 3.
+- Preflight safe collection entries: 3.
+- Existing-output overwrite blockers: 0.
+- Existing runtime-cost logs: 0.
+- Runtime-cost metric values remain unavailable.
+
+### Claim Boundary
+
+- Fresh-root runtime-cost command packaging and overwrite-risk preflight: GO.
+- Runtime-cost metric values: NO-GO.
+- Runtime efficiency claims: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_package_m46` failed before `prepare_runtime_cost_collection_m46.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_package_m46` passed, 1 test.
+- M46 package command passed and wrote the fresh wrapper plan, cloned command files, and nested preflight artifacts under `outputs/srd_gs_runtime_cost_collection_m46`.
+- Final validation commands are recorded in the Milestone 46 completion response.

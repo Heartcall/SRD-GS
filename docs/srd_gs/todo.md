@@ -52,10 +52,24 @@
 - Milestone 43: Runtime-cost logging contract - read-only runtime-cost contract GO / runtime-cost values still unavailable / paper-scale still blocked
 - Milestone 44: Runtime-cost wrapper validation - dry-run wrapper validation GO / runtime-cost values still unavailable / paper-scale still blocked
 - Milestone 45: Runtime-cost collection preflight - bounded preflight GO / collection launch blocked by existing-output targets / runtime-cost values still unavailable / paper-scale still blocked
+- Milestone 46: Fresh-root runtime-cost collection package - bounded package GO / overwrite blocker removed / runtime-cost values still unavailable / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 45 confirms the M44 runtime-cost wrapper plan is not safe to launch as-is because all three collection targets point into the existing M32 output root. The next step should be one bounded M46 action: clone the approved train/render runtime-cost commands into a fresh M46 output root, rerun the M45 preflight, and only launch one short collection if all blockers clear. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 46 removes the M45 existing-output overwrite blocker by cloning the approved train/render runtime-cost commands into a fresh M46 output root and rerunning the M45 preflight. The next step should be one bounded M47 action: run CUDA/storage/process preflight for the fresh M46 package, then launch at most one short runtime-cost collection only if every gate passes. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 46 Notes
+
+- Added `scripts/srd_gs/prepare_runtime_cost_collection_m46.py`.
+- Added `tests/test_runtime_cost_collection_package_m46.py`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m46/package/fresh_runtime_cost_wrapper_plan.csv`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m46/package/fresh_runtime_cost_wrapper_plan.json`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m46/package/fresh_runtime_cost_wrapper_plan.md`.
+- Generated nested preflight artifacts under `outputs/srd_gs_runtime_cost_collection_m46/package/preflight`.
+- Generated cloned `train_command.txt` and `render_eval_pairs_command.txt` under `outputs/srd_gs_runtime_cost_collection_m46/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300`.
+- M46 is a bounded no-launch package milestone: it consumes the M44 runtime-cost wrapper plan, rewrites M32 targets into a fresh M46 root, and treats `outputs/srd_gs_instrumented_runtime_m32_i30` as immutable.
+- Summary result: `runtime/training_time`, `runtime/peak_memory`, and `runtime/render_fps` all have status `fresh_root_plan_ready`; preflight safe collection entries `3`; overwrite blockers `0`; existing runtime-cost logs `0`; metrics computed `false`; runtime launched `false`.
+- This milestone supports fresh-root runtime-cost command packaging and overwrite-risk preflight only. It does not support runtime-cost metric values, runtime efficiency claims, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 45 Notes
 
