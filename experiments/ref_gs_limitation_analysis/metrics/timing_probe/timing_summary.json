@@ -1,0 +1,31 @@
+{
+  "checkpoint": "output/ref_gs_limitation_timing/materials_iter10/chkpnt10.pth",
+  "checkpoint_size_bytes": "NA",
+  "command": [
+    "python",
+    "train-NeRF.py",
+    "-s",
+    "/data/liuly/dataset/3DGS/NeRF Synthetic/materials",
+    "--eval",
+    "--iterations",
+    "10",
+    "--save_iterations",
+    "10",
+    "--checkpoint_iterations",
+    "10",
+    "--test_iterations",
+    "10",
+    "--model_path",
+    "output/ref_gs_limitation_timing/materials_iter10"
+  ],
+  "conda_activate_exit": 0,
+  "dry_run": true,
+  "exit_code": 0,
+  "iterations": 10,
+  "log_path": "experiments/ref_gs_limitation_analysis/sanity_logs/timing_probe_train-NeRF_iter10.log",
+  "model": "output/ref_gs_limitation_timing/materials_iter10",
+  "peak_gpu_memory_mb": "NA",
+  "scene": "/data/liuly/dataset/3DGS/NeRF Synthetic/materials",
+  "script": "train-NeRF.py",
+  "wall_clock_seconds": 0
+}

@@ -1,0 +1,22 @@
+{
+  "notes": [
+    "export_manifest_is_dry_run"
+  ],
+  "pbr_rgb_vs_render_gap": {
+    "lpips_delta": "NA",
+    "mae_delta": "NA",
+    "psnr_delta": "NA",
+    "reason": "pbr_rgb or render has no valid RGB views",
+    "status": "NA"
+  },
+  "targets": {
+    "pbr_rgb": {
+      "lpips": "NA",
+      "mae": "NA",
+      "psnr": "NA",
+      "ssim": "NA",
+      "total_views": 1,
+      "valid_views": 0
+    }
+  }
+}

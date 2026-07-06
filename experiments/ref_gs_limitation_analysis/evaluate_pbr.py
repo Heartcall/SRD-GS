@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate exported Ref-GS PBR and stock render images against GT."""
+"""Evaluate exported Ref-GS PBR/render/component RGB buffers against GT."""
 
 import argparse
 import csv
@@ -9,6 +9,8 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
+
+PREDICTION_KEYS = ["pbr_rgb", "render", "diffuse", "specular", "spec", "albedo"]
 
 
 def load_image(path):
@@ -33,9 +35,21 @@ def ssim_score(pred, gt):
     try:
         from skimage.metrics import structural_similarity
 
+        h, w = pred.shape[:2]
+        if min(h, w) < 7:
+            return "NA"
         return float(structural_similarity(gt, pred, channel_axis=2, data_range=1.0))
     except Exception:
         return "NA"
+
+
+def json_value(value):
+    if isinstance(value, float):
+        if math.isinf(value):
+            return "inf" if value > 0 else "-inf"
+        if math.isnan(value):
+            return "NA"
+    return value
 
 
 def maybe_lpips(pairs):
@@ -48,14 +62,25 @@ def maybe_lpips(pairs):
         device = "cuda" if torch.cuda.is_available() else "cpu"
         loss_fn = lpips.LPIPS(net="alex").to(device)
         scores = {}
-        for key, pred, gt in pairs:
+        for row_id, pred, gt in pairs:
             pred_t = torch.from_numpy(pred).permute(2, 0, 1)[None].to(device) * 2 - 1
             gt_t = torch.from_numpy(gt).permute(2, 0, 1)[None].to(device) * 2 - 1
             with torch.no_grad():
-                scores[key] = float(loss_fn(pred_t, gt_t).item())
+                scores[row_id] = float(loss_fn(pred_t, gt_t).item())
         return scores, None
     except Exception as exc:
         return {}, f"lpips_failed: {exc}"
+
+
+def path_for_buffer(view, key):
+    buffers = view.get("buffers", {})
+    entry = buffers.get(key, {})
+    if entry.get("path"):
+        return entry["path"]
+    paths = entry.get("paths", {})
+    if paths.get("png"):
+        return paths["png"]
+    return view.get("files", {}).get(key)
 
 
 def metric_row(view, key, pred_path, gt_path):
@@ -81,21 +106,79 @@ def metric_row(view, key, pred_path, gt_path):
     row["psnr"] = psnr(pred, gt)
     row["ssim"] = ssim_score(pred, gt)
     row["status"] = "ok"
-    return row, (key, pred, gt)
+    return row, (f"{view}::{key}", pred, gt)
 
 
 def summarize(rows, notes):
     summary = {"notes": notes, "targets": {}}
     for target in sorted(set(row["target"] for row in rows)):
-        valid = [row for row in rows if row["target"] == target and row["status"] == "ok"]
+        target_rows = [row for row in rows if row["target"] == target]
+        valid = [row for row in target_rows if row["status"] == "ok"]
         summary["targets"][target] = {
             "valid_views": len(valid),
-            "total_views": sum(1 for row in rows if row["target"] == target),
+            "total_views": len(target_rows),
         }
         for metric in ("mae", "psnr", "ssim", "lpips"):
-            vals = [row[metric] for row in valid if isinstance(row[metric], (int, float)) and np.isfinite(row[metric])]
-            summary["targets"][target][metric] = float(np.mean(vals)) if vals else "NA"
+            vals = [row[metric] for row in valid if isinstance(row[metric], (int, float))]
+            if vals and any(math.isinf(v) for v in vals):
+                metric_value = "inf" if all(v >= 0 for v in vals if math.isinf(v)) else "NA"
+            else:
+                finite = [v for v in vals if np.isfinite(v)]
+                metric_value = float(np.mean(finite)) if finite else "NA"
+            summary["targets"][target][metric] = json_value(metric_value)
+    summary["pbr_rgb_vs_render_gap"] = compute_gap(summary)
     return summary
+
+
+def compute_gap(summary):
+    pbr = summary["targets"].get("pbr_rgb")
+    render = summary["targets"].get("render")
+    if not pbr or not render or pbr.get("valid_views", 0) == 0 or render.get("valid_views", 0) == 0:
+        return {
+            "status": "NA",
+            "reason": "pbr_rgb or render has no valid RGB views",
+            "psnr_delta": "NA",
+            "mae_delta": "NA",
+            "lpips_delta": "NA",
+        }
+
+    def delta(metric):
+        a = pbr.get(metric)
+        b = render.get(metric)
+        if a == "NA" or b == "NA":
+            return "NA"
+        if a == "inf":
+            return "inf"
+        if b == "inf":
+            return "-inf"
+        return json_value(float(a) - float(b))
+
+    return {
+        "status": "ok",
+        "psnr_delta": delta("psnr"),
+        "mae_delta": delta("mae"),
+        "lpips_delta": delta("lpips"),
+    }
+
+
+def collect_missing(manifest, rows):
+    missing = []
+    for view in manifest.get("views", []):
+        view_name = view.get("image_name", str(view.get("index", "NA")))
+        buffers = view.get("buffers", {})
+        for key, entry in sorted(buffers.items()):
+            if entry.get("missing") or not entry.get("exported"):
+                missing.append(
+                    {
+                        "view": view_name,
+                        "key": key,
+                        "reason": entry.get("reason", "missing"),
+                    }
+                )
+    for row in rows:
+        if row["status"] != "ok":
+            missing.append({"view": row["view"], "key": row["target"], "reason": row["status"]})
+    return missing
 
 
 def write_markdown(path, summary):
@@ -107,6 +190,28 @@ def write_markdown(path, summary):
         lines.append(
             f"| {target} | {item['valid_views']}/{item['total_views']} | {item['mae']} | {item['psnr']} | {item['ssim']} | {item['lpips']} |"
         )
+    gap = summary["pbr_rgb_vs_render_gap"]
+    lines += [
+        "",
+        "## pbr_rgb_vs_render_gap",
+        "",
+        f"- status: `{gap['status']}`",
+        f"- reason: `{gap.get('reason', '')}`",
+        f"- pbr_rgb_psnr - render_psnr: `{gap['psnr_delta']}`",
+        f"- pbr_rgb_mae - render_mae: `{gap['mae_delta']}`",
+        f"- pbr_rgb_lpips - render_lpips: `{gap['lpips_delta']}`",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_missing(path, missing):
+    lines = ["# Missing Buffers", ""]
+    if not missing:
+        lines.append("No missing buffers were reported.")
+    else:
+        lines += ["| View | Key | Reason |", "| -- | -- | -- |"]
+        for item in missing:
+            lines.append(f"| {item['view']} | {item['key']} | {item['reason']} |")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -124,6 +229,7 @@ def main():
     notes = []
     rows = []
     lpips_pairs = []
+    manifest = {"views": []}
     if not manifest_path.exists():
         notes.append(f"manifest_missing: {manifest_path}")
     else:
@@ -131,13 +237,13 @@ def main():
         if manifest.get("dry_run"):
             notes.append("export_manifest_is_dry_run")
         for view in manifest.get("views", []):
-            files = view.get("files", {})
-            gt_path = files.get("gt")
-            for key in ("pbr_rgb", "render", "albedo"):
-                row, pair = metric_row(view.get("image_name", str(view.get("index", "NA"))), key, files.get(key), gt_path)
+            view_name = view.get("image_name", str(view.get("index", "NA")))
+            gt_path = path_for_buffer(view, "gt")
+            for key in PREDICTION_KEYS:
+                row, pair = metric_row(view_name, key, path_for_buffer(view, key), gt_path)
                 rows.append(row)
                 if pair:
-                    lpips_pairs.append((f"{row['view']}::{key}", pair[1], pair[2]))
+                    lpips_pairs.append(pair)
     if not rows:
         rows.append(
             {
@@ -159,17 +265,19 @@ def main():
         if note:
             notes.append(note)
         for row in rows:
-            key = f"{row['view']}::{row['target']}"
-            if key in scores:
-                row["lpips"] = scores[key]
+            row_id = f"{row['view']}::{row['target']}"
+            if row_id in scores:
+                row["lpips"] = scores[row_id]
 
     with (out / "per_view_metrics.csv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
     summary = summarize(rows, notes)
+    missing = collect_missing(manifest, rows)
     (out / "summary_metrics.json").write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
     write_markdown(out / "summary_metrics.md", summary)
+    write_missing(out / "missing_buffers.md", missing)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 

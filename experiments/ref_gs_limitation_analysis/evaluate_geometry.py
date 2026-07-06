@@ -50,6 +50,7 @@ def compute_metrics(pred, gt, thresholds):
     gt_to_pred, _ = pred_tree.query(gt, k=1)
     metrics = {
         "chamfer_l1": float((pred_to_gt.mean() + gt_to_pred.mean()) * 0.5),
+        "chamfer_l2": float((np.mean(pred_to_gt ** 2) + np.mean(gt_to_pred ** 2)) * 0.5),
         "pred_to_gt_mean": float(pred_to_gt.mean()),
         "gt_to_pred_mean": float(gt_to_pred.mean()),
         "thresholds": {},
@@ -69,6 +70,16 @@ def compute_metrics(pred, gt, thresholds):
 def write_outputs(out, payload):
     out.mkdir(parents=True, exist_ok=True)
     (out / "geometry_metrics.json").write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    pair_summary = {
+        "pred": payload["pred"],
+        "gt": payload["gt"],
+        "status": payload["status"],
+        "reason": payload.get("reason", ""),
+        "pred_stats": payload.get("pred_stats", {}),
+        "gt_stats": payload.get("gt_stats", {}),
+        "metric_keys": sorted(payload.get("metrics", {}).keys()),
+    }
+    (out / "geometry_pair_summary.json").write_text(json.dumps(pair_summary, indent=2, sort_keys=True), encoding="utf-8")
     lines = ["# Geometry Metrics", "", f"Status: `{payload['status']}`", ""]
     if payload.get("reason"):
         lines.append(f"Reason: {payload['reason']}")

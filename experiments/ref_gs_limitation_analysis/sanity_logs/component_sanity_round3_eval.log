@@ -1,0 +1,28 @@
+/home/liuly/anaconda3/envs/ref_gs/lib/python3.7/site-packages/torchvision/models/_utils.py:209: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and will be removed in 0.15, please use 'weights' instead.
+  f"The parameter '{pretrained_param}' is deprecated since 0.13 and will be removed in 0.15, "
+/home/liuly/anaconda3/envs/ref_gs/lib/python3.7/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and will be removed in 0.15. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/liuly/anaconda3/envs/ref_gs/lib/python3.7/site-packages/lpips/weights/v0.1/alex.pth
+{
+  "notes": [
+    "export_manifest_is_dry_run"
+  ],
+  "pbr_rgb_vs_render_gap": {
+    "lpips_delta": "NA",
+    "mae_delta": "NA",
+    "psnr_delta": "NA",
+    "reason": "pbr_rgb or render has no valid RGB views",
+    "status": "NA"
+  },
+  "targets": {
+    "pbr_rgb": {
+      "lpips": "NA",
+      "mae": "NA",
+      "psnr": "NA",
+      "ssim": "NA",
+      "total_views": 1,
+      "valid_views": 0
+    }
+  }
+}

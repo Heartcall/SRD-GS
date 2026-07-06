@@ -3,7 +3,9 @@
 This directory contains non-invasive helpers for evidence-first limitation analysis of
 `Ref-GS: Directional Factorization for 2D Gaussian Splatting`.
 
-No core training, renderer, or dataset loader files are modified.
+Round3 adds a default-off `return_components` path in the renderer so component
+buffers can be exported. Core training entrypoints and dataset loaders are not
+modified, and renderer defaults keep training behavior unchanged.
 
 ## Environment
 
@@ -86,8 +88,19 @@ RUN_TRAIN=1 SANITY_ITER=2 bash experiments/ref_gs_limitation_analysis/run_compon
 ```
 
 The component sanity runs `env_check.sh`, optionally trains for exactly
-`SANITY_ITER`, exports one test view with `export_pbr_views.py`, and evaluates
-available PBR/render paths with `evaluate_pbr.py`.
+`SANITY_ITER`, exports one test view with `export_pbr_views.py`, evaluates
+available PBR/render paths with `evaluate_pbr.py`, and can dry-run mesh export.
+It is configurable:
+
+```bash
+SANITY_SCRIPT=train-NeRF.py \
+SCENE_PATH="/data/liuly/dataset/3DGS/NeRF Synthetic/materials" \
+MODEL_PATH=output/ref_gs_limitation_sanity/materials_iter2 \
+SANITY_ITER=2 \
+RUN_TRAIN=0 RUN_EXPORT=1 RUN_EVAL=1 RUN_MESH=1 \
+RENDER_FUNC=nerf \
+bash experiments/ref_gs_limitation_analysis/run_component_sanity.sh
+```
 
 ## Environment Check
 
@@ -110,13 +123,22 @@ python experiments/ref_gs_limitation_analysis/export_pbr_views.py \
   --checkpoint output/ref_gs_limitation_sanity/ball_iter2/chkpnt2.pth \
   --split test \
   --max_views 3 \
+  --return_components \
+  --render_func ref \
   --out_dir experiments/ref_gs_limitation_analysis/exports/ball_iter2
 ```
 
 Use `--dry-run` to validate paths without constructing CUDA modules. The exporter
 writes `manifest.json` and records missing keys instead of fabricating buffers.
-Current stock `render` returns `pbr_rgb`, alpha, normal, and depth, but not
-`render`, albedo, roughness, or specular component images.
+With `--return_components`, the renderer returns additional component buffers
+without changing default training behavior. Supported render functions:
+
+- `ref`: `pbr_rgb`, stock `render`, diffuse/specular, albedo, roughness, features, alpha, normal, depth.
+- `nerf`: same component set plus stock `render`.
+- `real`: same component set plus `ref_w` and `out_w`.
+
+Missing keys are still recorded per view in the manifest when a render function
+does not produce them.
 
 ## PBR Evaluation
 
@@ -131,8 +153,28 @@ Outputs:
 - `per_view_metrics.csv`
 - `summary_metrics.json`
 - `summary_metrics.md`
+- `missing_buffers.md`
 
-Missing inputs are written as `NA`.
+Missing inputs are written as `NA`. The summary includes
+`pbr_rgb_vs_render_gap` when both RGB buffers exist.
+
+## Mesh Export
+
+```bash
+python experiments/ref_gs_limitation_analysis/export_mesh.py \
+  --source_path "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/toaster" \
+  --model_path output/ref_gs_limitation_sanity/toaster_iter2 \
+  --checkpoint output/ref_gs_limitation_sanity/toaster_iter2/chkpnt2.pth \
+  --split test \
+  --max_views 3 \
+  --depth_ratio 1.0 \
+  --out_mesh experiments/ref_gs_limitation_analysis/meshes/toaster_sanity/mesh.ply \
+  --dry-run
+```
+
+The mesh exporter wraps `utils.mesh_utils.GaussianExtractor` and writes
+`mesh_manifest.json` next to `--out_mesh`. If CUDA/Open3D/checkpoint inputs are
+unavailable, it writes a safe `NA` manifest with the failure reason.
 
 ## Geometry Evaluation
 
@@ -146,8 +188,28 @@ python experiments/ref_gs_limitation_analysis/evaluate_geometry.py \
 ```
 
 The evaluator supports PLY mesh/point inputs, Chamfer-L1 style symmetric nearest
-neighbor distance, F-score thresholds, point counts, and bbox stats. Missing
-inputs produce `NA` outputs.
+neighbor distance, Chamfer-L2, F-score thresholds, point counts, bbox stats, and
+`geometry_pair_summary.json`. Missing inputs produce `NA` outputs.
+
+## Timing / Memory Probe
+
+```bash
+bash experiments/ref_gs_limitation_analysis/run_timing_probe.sh \
+  --script train-NeRF.py \
+  --scene "/data/liuly/dataset/3DGS/NeRF Synthetic/materials" \
+  --model output/ref_gs_limitation_timing/materials_iter10 \
+  --iterations 10 \
+  --dry-run
+```
+
+Outputs:
+
+- `metrics/timing_probe/timing_summary.json`
+- `metrics/timing_probe/timing_summary.md`
+
+Without `--dry-run`, the script runs the requested short training command and
+records wall-clock time, best-effort peak GPU memory from `nvidia-smi`,
+checkpoint size, log path, and exit code.
 
 ## Real-Scene Environment Sphere Coverage
 

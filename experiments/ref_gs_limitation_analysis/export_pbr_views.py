@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Export Ref-GS PBR/render/component views when a checkpoint exists.
+"""Export Ref-GS PBR/render/component buffers from a checkpoint.
 
-The script is intentionally conservative: renderer outputs that are not present
-in render_pkg are recorded as missing instead of being fabricated.
+The exporter is intentionally conservative: missing renderer keys are recorded
+in the manifest instead of being fabricated.
 """
 
 import argparse
@@ -14,6 +14,32 @@ from types import SimpleNamespace
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
+
+DESIRED_KEYS = [
+    "gt",
+    "pbr_rgb",
+    "render",
+    "diffuse",
+    "specular",
+    "spec",
+    "albedo",
+    "roughness",
+    "normal",
+    "depth",
+    "alpha",
+    "ref_w",
+    "out_w",
+    "features",
+]
+
+RGB_LIKE_KEYS = {"gt", "pbr_rgb", "render", "diffuse", "specular", "spec", "albedo"}
+VIS_KEYS = {"normal", "depth", "alpha", "roughness", "ref_w", "out_w"}
+ALIASES = {
+    "normal": ["rend_normal"],
+    "depth": ["surf_depth"],
+    "alpha": ["rend_alpha"],
+    "specular": ["spec"],
+}
 
 
 def write_json(path, payload):
@@ -34,7 +60,7 @@ def default_model_args(args):
         run_dim=args.run_dim,
         albedo_bias=args.albedo_bias,
         gsrgb_loss=args.gsrgb_loss,
-        rand_init=False,
+        rand_init=args.rand_init,
         init_until_iter=args.init_until_iter,
         env_scope_center=args.env_scope_center,
         env_scope_radius=args.env_scope_radius,
@@ -83,9 +109,7 @@ def default_pipe_args(args):
     )
 
 
-def tensor_to_image(tensor, kind):
-    import torch
-
+def tensor_to_chw(tensor):
     if tensor is None:
         return None
     tensor = tensor.detach().float().cpu()
@@ -93,19 +117,47 @@ def tensor_to_image(tensor, kind):
         tensor = tensor.unsqueeze(0)
     if tensor.ndim == 3 and tensor.shape[0] not in (1, 3, 4):
         tensor = tensor.permute(2, 0, 1)
+    return tensor
+
+
+def tensor_stats(tensor):
+    import torch
+
+    cpu = tensor_to_chw(tensor)
+    if cpu is None:
+        return {}
+    finite = cpu[torch.isfinite(cpu)]
+    return {
+        "shape": list(cpu.shape),
+        "dtype": str(cpu.dtype),
+        "min": float(finite.min()) if finite.numel() else "NA",
+        "max": float(finite.max()) if finite.numel() else "NA",
+    }
+
+
+def tensor_to_image(tensor, kind):
+    import torch
+
+    image = tensor_to_chw(tensor)
+    if image is None:
+        return None
     if kind == "normal":
-        tensor = (tensor[:3] + 1.0) * 0.5
+        image = (image[:3] + 1.0) * 0.5
     elif kind == "depth":
-        valid = tensor[torch.isfinite(tensor)]
+        valid = image[torch.isfinite(image)]
         if valid.numel() and float(valid.max()) > float(valid.min()):
-            tensor = (tensor - valid.min()) / (valid.max() - valid.min())
+            image = (image - valid.min()) / (valid.max() - valid.min())
         else:
-            tensor = tensor * 0
-    tensor = torch.nan_to_num(tensor, nan=0.0, posinf=1.0, neginf=0.0)
-    return tensor.clamp(0.0, 1.0)
+            image = image * 0
+    elif image.shape[0] == 1:
+        image = image.repeat(3, 1, 1)
+    elif image.shape[0] > 3:
+        image = image[:3]
+    image = torch.nan_to_num(image, nan=0.0, posinf=1.0, neginf=0.0)
+    return image.clamp(0.0, 1.0)
 
 
-def save_tensor_image(path, tensor, kind="rgb"):
+def save_tensor_png(path, tensor, kind="rgb"):
     import torchvision
 
     image = tensor_to_image(tensor, kind)
@@ -116,16 +168,15 @@ def save_tensor_image(path, tensor, kind="rgb"):
     return True
 
 
-def parse_iteration_from_checkpoint(checkpoint):
-    if not checkpoint:
-        return None
-    stem = Path(checkpoint).stem
-    if stem.startswith("chkpnt"):
-        try:
-            return int(stem.replace("chkpnt", ""))
-        except ValueError:
-            return None
-    return None
+def save_tensor_npz(path, key, tensor):
+    import numpy as np
+
+    arr = tensor_to_chw(tensor)
+    if arr is None:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(str(path), **{key: arr.numpy()})
+    return True
 
 
 def load_scene_and_model(args, manifest):
@@ -136,7 +187,6 @@ def load_scene_and_model(args, manifest):
         raise RuntimeError("CUDA is not available; Ref-GS model construction uses .cuda().")
 
     model_args = default_model_args(args)
-    pipe_args = default_pipe_args(args)
     os.makedirs(model_args.model_path, exist_ok=True)
 
     load_iteration = args.iteration
@@ -164,22 +214,33 @@ def load_scene_and_model(args, manifest):
         gaussians.restore(model_params, opt_args)
         manifest["checkpoint_iteration"] = int(iteration)
     elif load_iteration is None:
-        raise FileNotFoundError(
-            "No checkpoint or point_cloud/iteration_* found. Provide --checkpoint or --iteration."
-        )
+        raise FileNotFoundError("No checkpoint or point_cloud/iteration_* found. Provide --checkpoint or --iteration.")
     else:
         manifest["checkpoint_iteration"] = int(load_iteration)
-    return scene, gaussians, pipe_args
+    return scene, gaussians, default_pipe_args(args)
 
 
-def choose_renderer(args, scene, gaussians, pipe, camera):
+def resolve_render_func(args):
+    if args.render_func != "auto":
+        return args.render_func
+    name = Path(args.source_path).as_posix().lower()
+    if "shiny blender real" in name:
+        return "real"
+    if "nerf synthetic" in name:
+        return "nerf"
+    return "ref"
+
+
+def choose_renderer(args, gaussians, pipe, camera):
     import torch
     from gaussian_renderer import render, render_nerf, render_real
 
     bg = torch.tensor([1, 1, 1] if args.white_background else [0, 0, 0], dtype=torch.float32, device="cuda")
-    if args.render_func == "nerf":
-        return render_nerf(camera, gaussians, pipe, bg, iteration=args.render_iteration)
-    if args.render_func == "real":
+    render_func = resolve_render_func(args)
+    common = {"iteration": args.render_iteration, "return_components": args.return_components}
+    if render_func == "nerf":
+        return render_nerf(camera, gaussians, pipe, bg, **common)
+    if render_func == "real":
         center = torch.tensor([float(v) for v in args.env_scope_center], dtype=torch.float32, device="cuda")
         xyz = [int(float(v)) for v in args.xyz_axis]
         return render_real(
@@ -187,16 +248,50 @@ def choose_renderer(args, scene, gaussians, pipe, camera):
             gaussians,
             pipe,
             bg,
-            iteration=args.render_iteration,
             ITER=args.init_until_iter,
             ENV_CENTER=center,
             ENV_RADIUS=args.env_scope_radius,
             XYZ=xyz,
+            **common,
         )
-    return render(camera, gaussians, pipe, bg, iteration=args.render_iteration)
+    return render(camera, gaussians, pipe, bg, **common)
 
 
-def main():
+def get_buffer(render_pkg, key):
+    if key in render_pkg:
+        return render_pkg.get(key), None
+    for alias in ALIASES.get(key, []):
+        if alias in render_pkg:
+            return render_pkg.get(alias), alias
+    return None, None
+
+
+def save_buffer(view_dir, key, tensor, args):
+    entry = {"exported": False, "missing": False}
+    if tensor is None:
+        entry.update({"missing": True, "reason": "not returned by renderer"})
+        return entry, None
+    entry.update(tensor_stats(tensor))
+    paths = {}
+    kind = "normal" if key == "normal" else "depth" if key == "depth" else "rgb"
+    if args.save_png and (key in RGB_LIKE_KEYS or key in VIS_KEYS):
+        png_path = view_dir / f"{key}.png"
+        if save_tensor_png(png_path, tensor, kind):
+            paths["png"] = str(png_path)
+    if args.save_npz or key not in RGB_LIKE_KEYS | VIS_KEYS:
+        npz_path = view_dir / f"{key}.npz"
+        if save_tensor_npz(npz_path, key, tensor):
+            paths["npz"] = str(npz_path)
+    if paths:
+        entry["exported"] = True
+        entry["paths"] = paths
+        entry["path"] = paths.get("png") or paths.get("npz")
+    else:
+        entry.update({"missing": True, "reason": "no supported save format selected"})
+    return entry, entry.get("path")
+
+
+def build_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source_path", required=True)
     parser.add_argument("--model_path", required=True)
@@ -206,7 +301,10 @@ def main():
     parser.add_argument("--max_views", type=int, default=3)
     parser.add_argument("--out_dir", required=True)
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--render_func", choices=["ref", "nerf", "real"], default="ref")
+    parser.add_argument("--return_components", action="store_true")
+    parser.add_argument("--render_func", choices=["ref", "real", "nerf", "auto"], default="ref")
+    parser.add_argument("--save_npz", action="store_true")
+    parser.add_argument("--save_png", action="store_true", default=True)
     parser.add_argument("--render_iteration", type=int, default=1)
     parser.add_argument("--images", default="images")
     parser.add_argument("--resolution", "-r", type=int, default=-1)
@@ -215,13 +313,17 @@ def main():
     parser.add_argument("--run_dim", type=int, default=256)
     parser.add_argument("--albedo_bias", type=float, default=0.0)
     parser.add_argument("--gsrgb_loss", action="store_true")
+    parser.add_argument("--rand_init", action="store_true")
     parser.add_argument("--depth_ratio", type=float, default=0.0)
     parser.add_argument("--init_until_iter", type=int, default=0)
     parser.add_argument("--env_scope_center", nargs=3, type=float, default=[0.0, 0.0, 0.0])
     parser.add_argument("--env_scope_radius", type=float, default=0.0)
     parser.add_argument("--xyz_axis", nargs=3, type=float, default=[0.0, 1.0, 2.0])
-    args = parser.parse_args()
+    return parser
 
+
+def main():
+    args = build_parser().parse_args()
     out_dir = Path(args.out_dir)
     manifest = {
         "source_path": args.source_path,
@@ -230,13 +332,16 @@ def main():
         "split": args.split,
         "max_views": args.max_views,
         "render_func": args.render_func,
+        "resolved_render_func": resolve_render_func(args),
+        "return_components": bool(args.return_components),
+        "save_png": bool(args.save_png),
+        "save_npz": bool(args.save_npz),
         "views": [],
         "exported_keys": [],
         "missing_keys": [],
         "errors": [],
         "dry_run": bool(args.dry_run),
     }
-    desired = ["gt", "pbr_rgb", "render", "albedo", "roughness", "spec", "normal", "depth", "alpha", "ref_w", "out_w"]
 
     if args.dry_run:
         checks = {
@@ -245,7 +350,7 @@ def main():
             "checkpoint_exists": Path(args.checkpoint).exists() if args.checkpoint else None,
         }
         manifest["checks"] = checks
-        manifest["missing_keys"] = desired
+        manifest["missing_keys"] = DESIRED_KEYS
         write_json(out_dir / "manifest.json", manifest)
         print(json.dumps(checks, indent=2, sort_keys=True))
         print(f"Wrote {out_dir / 'manifest.json'}")
@@ -263,24 +368,28 @@ def main():
             for index, camera in enumerate(cameras):
                 view_name = f"{index:05d}_{camera.image_name}"
                 view_dir = out_dir / "views" / view_name
-                view = {"index": index, "image_name": camera.image_name, "files": {}, "missing": [], "errors": []}
+                view = {
+                    "index": index,
+                    "image_name": camera.image_name,
+                    "files": {},
+                    "buffers": {},
+                    "missing": [],
+                    "errors": [],
+                }
                 try:
-                    render_pkg = choose_renderer(args, scene, gaussians, pipe, camera)
-                    mapping = {
-                        "gt": (camera.original_image[:3], "rgb"),
-                        "pbr_rgb": (render_pkg.get("pbr_rgb"), "rgb"),
-                        "render": (render_pkg.get("render"), "rgb"),
-                        "normal": (render_pkg.get("rend_normal"), "normal"),
-                        "depth": (render_pkg.get("surf_depth"), "depth"),
-                        "alpha": (render_pkg.get("rend_alpha"), "rgb"),
-                        "ref_w": (render_pkg.get("ref_w"), "rgb"),
-                        "out_w": (render_pkg.get("out_w"), "rgb"),
-                    }
-                    for key in desired:
-                        if key in mapping and mapping[key][0] is not None:
-                            path = view_dir / f"{key}.png"
-                            save_tensor_image(path, mapping[key][0], mapping[key][1])
-                            view["files"][key] = str(path)
+                    render_pkg = choose_renderer(args, gaussians, pipe, camera)
+                    tensors = {"gt": camera.original_image[:3]}
+                    for key in DESIRED_KEYS:
+                        if key == "gt":
+                            tensor, alias = tensors[key], None
+                        else:
+                            tensor, alias = get_buffer(render_pkg, key)
+                        entry, path = save_buffer(view_dir, key, tensor, args)
+                        if alias:
+                            entry["alias"] = alias
+                        view["buffers"][key] = entry
+                        if path:
+                            view["files"][key] = path
                             exported_keys.add(key)
                         else:
                             view["missing"].append(key)
@@ -298,7 +407,7 @@ def main():
         return 1 if manifest["errors"] else 0
     except Exception as exc:
         manifest["errors"].append(str(exc))
-        manifest["missing_keys"] = desired
+        manifest["missing_keys"] = DESIRED_KEYS
         write_json(out_dir / "manifest.json", manifest)
         print(f"export failed: {exc}", file=sys.stderr)
         return 1

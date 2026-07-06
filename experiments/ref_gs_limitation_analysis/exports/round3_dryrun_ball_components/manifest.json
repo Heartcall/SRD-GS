@@ -1,0 +1,37 @@
+{
+  "checkpoint": "output/ref_gs_limitation_sanity/ball_iter2/chkpnt2.pth",
+  "checks": {
+    "checkpoint_exists": false,
+    "model_path_exists": true,
+    "source_exists": true
+  },
+  "dry_run": true,
+  "errors": [],
+  "exported_keys": [],
+  "max_views": 1,
+  "missing_keys": [
+    "gt",
+    "pbr_rgb",
+    "render",
+    "diffuse",
+    "specular",
+    "spec",
+    "albedo",
+    "roughness",
+    "normal",
+    "depth",
+    "alpha",
+    "ref_w",
+    "out_w",
+    "features"
+  ],
+  "model_path": "output/ref_gs_limitation_sanity/ball_iter2",
+  "render_func": "ref",
+  "resolved_render_func": "ref",
+  "return_components": true,
+  "save_npz": false,
+  "save_png": true,
+  "source_path": "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball",
+  "split": "test",
+  "views": []
+}

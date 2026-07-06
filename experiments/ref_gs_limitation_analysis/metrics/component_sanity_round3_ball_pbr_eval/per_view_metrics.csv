@@ -1,0 +1,2 @@
+view,target,pred_path,gt_path,mae,psnr,ssim,lpips,status
+NA,pbr_rgb,NA,NA,NA,NA,NA,NA,no_exported_views

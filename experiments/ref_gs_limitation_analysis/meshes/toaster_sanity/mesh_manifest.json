@@ -1,0 +1,23 @@
+{
+  "checkpoint": "output/ref_gs_limitation_sanity/toaster_iter2/chkpnt2.pth",
+  "checks": {
+    "checkpoint_exists": false,
+    "model_path_exists": false,
+    "source_exists": true
+  },
+  "depth_ratio": 1.0,
+  "depth_trunc": null,
+  "dry_run": true,
+  "iteration": null,
+  "max_views": 3,
+  "model_path": "output/ref_gs_limitation_sanity/toaster_iter2",
+  "out_mesh": "experiments/ref_gs_limitation_analysis/meshes/toaster_sanity/mesh.ply",
+  "out_points": null,
+  "reason": "paths and parameters checked only",
+  "render_func": "auto",
+  "sdf_trunc": 0.02,
+  "source_path": "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/toaster",
+  "split": "test",
+  "status": "dry_run",
+  "voxel_size": 0.004
+}

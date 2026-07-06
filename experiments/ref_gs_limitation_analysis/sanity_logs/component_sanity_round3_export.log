@@ -1,0 +1,6 @@
+{
+  "checkpoint_exists": false,
+  "model_path_exists": true,
+  "source_exists": true
+}
+Wrote experiments/ref_gs_limitation_analysis/exports/component_sanity_round3_ball/manifest.json

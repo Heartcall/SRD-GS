@@ -26,6 +26,21 @@ DIR="result/"
 use_feature = True
 
 
+def _scatter_component(height, width, select_index, values, channels=3):
+    output = torch.zeros(height, width, channels, device=values.device, dtype=values.dtype)
+    if select_index.numel() > 0:
+        output.reshape(-1, channels)[select_index] = values
+    return output.permute(2, 0, 1)
+
+
+def _component_tensor(tensor):
+    if tensor is None:
+        return None
+    if tensor.ndim == 3 and tensor.shape[-1] in (1, 3, 4):
+        tensor = tensor.permute(2, 0, 1)
+    return tensor.detach()
+
+
 def get_outside_msk(xyz, ENV_CENTER, ENV_RADIUS):
     return torch.sum((xyz - ENV_CENTER[None])**2, dim=-1) > ENV_RADIUS**2
 
@@ -33,7 +48,7 @@ def get_inside_msk(xyz, ENV_CENTER, ENV_RADIUS):
     return torch.sum((xyz - ENV_CENTER[None])**2, dim=-1) <= ENV_RADIUS**2
 
 
-def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, iteration=0):
+def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, iteration=0, return_components=False):
     """
     Render the scene. 
     
@@ -78,6 +93,33 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     scales = pc.get_scaling
     rotations = pc.get_rotation
     shs = pc.get_features
+    rendered_image = None
+    if return_components:
+        raster_settings = GaussianRasterizationSettings_2dgs(
+            image_height=int(viewpoint_camera.image_height),
+            image_width=int(viewpoint_camera.image_width),
+            tanfovx=tanfovx,
+            tanfovy=tanfovy,
+            bg=bg_color,
+            scale_modifier=scaling_modifier,
+            viewmatrix=viewpoint_camera.world_view_transform,
+            projmatrix=viewpoint_camera.full_proj_transform,
+            sh_degree=pc.active_sh_degree,
+            campos=viewpoint_camera.camera_center,
+            prefiltered=False,
+            debug=False,
+        )
+        rasterizer = GaussianRasterizer_2dgs(raster_settings=raster_settings)
+        rendered_image, _, _ = rasterizer(
+            means3D=means3D,
+            means2D=means2D,
+            shs=shs,
+            colors_precomp=None,
+            opacities=opacity,
+            scales=scales,
+            rotations=rotations,
+            cov3D_precomp=None,
+        )
     
     rets =  {}
 
@@ -131,6 +173,9 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     albedo_map = albedo_map.permute(1,2,0)
     roughness_map = out_ts[..., :1]
     feature_map = out_ts[..., 1:]
+    albedo_full = albedo_map
+    roughness_full = roughness_map
+    feature_full = feature_map
     
     #####################################################################################################################
     
@@ -178,6 +223,11 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     output_rgb = torch.zeros(image_height, image_width, 3).cuda()
     output_rgb.reshape(-1, 3)[select_index] = pbr_rgb
     output_rgb = output_rgb.permute(2,0,1)
+    output_spec = None
+    output_diff = None
+    if return_components:
+        output_spec = _scatter_component(image_height, image_width, select_index, linear2srgb(spec_light))
+        output_diff = _scatter_component(image_height, image_width, select_index, linear2srgb(diff_light))
     
     rets.update({
         'pbr_rgb': output_rgb,
@@ -192,6 +242,17 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         "visibility_filter" : radii > 0,
         "radii": radii,
     }) 
+
+    if return_components:
+        rets.update({
+            "render": rendered_image.detach() if rendered_image is not None else None,
+            "diffuse": output_diff.detach(),
+            "specular": output_spec.detach(),
+            "spec": output_spec.detach(),
+            "albedo": _component_tensor(albedo_full),
+            "roughness": _component_tensor(roughness_full),
+            "features": _component_tensor(feature_full),
+        })
         
     if iteration % 500 == 0:
         with torch.no_grad():
@@ -223,7 +284,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
 
     return rets
 
-def render_nerf(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, override_color = None, iteration=0):
+def render_nerf(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, override_color = None, iteration=0, return_components=False):
     """
     Render the scene. 
     
@@ -350,6 +411,9 @@ def render_nerf(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
     albedo_map = albedo_map.permute(1,2,0)
     roughness_map = out_ts[..., :1]
     feature_map = out_ts[..., 1:]
+    albedo_full = albedo_map
+    roughness_full = roughness_map
+    feature_full = feature_map
     
     #####################################################################################################################
     
@@ -397,6 +461,11 @@ def render_nerf(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
     output_rgb = torch.zeros(image_height, image_width, 3).cuda()
     output_rgb.reshape(-1, 3)[select_index] = pbr_rgb
     output_rgb = output_rgb.permute(2,0,1)
+    output_spec = None
+    output_diff = None
+    if return_components:
+        output_spec = _scatter_component(image_height, image_width, select_index, linear2srgb(spec_light))
+        output_diff = _scatter_component(image_height, image_width, select_index, linear2srgb(diff_light))
     
     rets.update({
         'pbr_rgb': output_rgb,
@@ -411,6 +480,16 @@ def render_nerf(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
         "visibility_filter" : radii > 0,
         "radii": radii,
     }) 
+
+    if return_components:
+        rets.update({
+            "diffuse": output_diff.detach(),
+            "specular": output_spec.detach(),
+            "spec": output_spec.detach(),
+            "albedo": _component_tensor(albedo_full),
+            "roughness": _component_tensor(roughness_full),
+            "features": _component_tensor(feature_full),
+        })
         
     if iteration % 500 == 0:
         with torch.no_grad():
@@ -443,7 +522,7 @@ def render_nerf(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
             
     return rets
 
-def render_real(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, iteration=0, ITER=0, ENV_CENTER=None, ENV_RADIUS=None, XYZ=[0,1,2]):
+def render_real(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, iteration=0, ITER=0, ENV_CENTER=None, ENV_RADIUS=None, XYZ=[0,1,2], return_components=False):
     
     screenspace_points = torch.zeros_like(pc.get_xyz, dtype=pc.get_xyz.dtype, requires_grad=True, device="cuda") + 0
     try:
@@ -572,6 +651,11 @@ def render_real(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
     roughness_map = out_ts[..., :1]
     feature_map = out_ts[..., 1:5]
     in_map = out_ts[..., 5:6]
+    albedo_full = albedo_map
+    roughness_full = roughness_map
+    feature_full = feature_map
+    output_spec_component = None
+    output_diff_component = None
     
     #####################################################################################################################
     
@@ -622,6 +706,9 @@ def render_real(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
         output_rgb = torch.zeros(image_height, image_width, 3).cuda()
         output_rgb.reshape(-1, 3)[select_index] = pbr_rgb
         output_rgb = output_rgb.permute(2,0,1)
+        if return_components:
+            output_spec_component = _scatter_component(image_height, image_width, select_index, linear2srgb(spec_light))
+            output_diff_component = _scatter_component(image_height, image_width, select_index, linear2srgb(diff_light))
 
         ref_w = out_ts[..., 5:6].permute(2,0,1).detach()
         out_w = out_ts[..., 6:7].permute(2,0,1).detach()
@@ -648,6 +735,20 @@ def render_real(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
         "visibility_filter" : radii > 0,
         "radii": radii,
     }) 
+
+    if return_components:
+        if output_spec_component is None:
+            output_spec_component = torch.zeros(image_height, image_width, 3, device=rendered_image.device, dtype=rendered_image.dtype).permute(2,0,1)
+        if output_diff_component is None:
+            output_diff_component = torch.zeros(image_height, image_width, 3, device=rendered_image.device, dtype=rendered_image.dtype).permute(2,0,1)
+        rets.update({
+            "diffuse": output_diff_component.detach(),
+            "specular": output_spec_component.detach(),
+            "spec": output_spec_component.detach(),
+            "albedo": _component_tensor(albedo_full),
+            "roughness": _component_tensor(roughness_full),
+            "features": _component_tensor(feature_full),
+        })
         
     if iteration % 500 == 0:
         with torch.no_grad():    
