@@ -51,10 +51,22 @@
 - Milestone 42: Accepted-GT depth/material protocol audit - read-only GT-protocol audit GO / depth-material GT still missing / paper-scale still blocked
 - Milestone 43: Runtime-cost logging contract - read-only runtime-cost contract GO / runtime-cost values still unavailable / paper-scale still blocked
 - Milestone 44: Runtime-cost wrapper validation - dry-run wrapper validation GO / runtime-cost values still unavailable / paper-scale still blocked
+- Milestone 45: Runtime-cost collection preflight - bounded preflight GO / collection launch blocked by existing-output targets / runtime-cost values still unavailable / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 44 validates dry-run wrapper readiness for runtime-cost logging, but it does not collect runtime-cost logs or values. The next step should be one bounded M45 action. A reasonable next step is a runtime-cost parser for existing logs if logs appear, or exactly one short preflight-gated runtime-cost collection before parsing values. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 45 confirms the M44 runtime-cost wrapper plan is not safe to launch as-is because all three collection targets point into the existing M32 output root. The next step should be one bounded M46 action: clone the approved train/render runtime-cost commands into a fresh M46 output root, rerun the M45 preflight, and only launch one short collection if all blockers clear. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 45 Notes
+
+- Added `scripts/srd_gs/preflight_runtime_cost_collection_m45.py`.
+- Added `tests/test_runtime_cost_collection_preflight.py`.
+- Generated `outputs/srd_gs_runtime_cost_collection_preflight_m45/runtime_cost_collection_preflight.csv`.
+- Generated `outputs/srd_gs_runtime_cost_collection_preflight_m45/runtime_cost_collection_preflight.json`.
+- Generated `outputs/srd_gs_runtime_cost_collection_preflight_m45/runtime_cost_collection_preflight.md`.
+- M45 is a bounded no-launch preflight: it consumes the M44 runtime-cost wrapper plan and treats `outputs/srd_gs_instrumented_runtime_m32_i30` as immutable.
+- Summary result: `runtime/training_time`, `runtime/peak_memory`, and `runtime/render_fps` all have status `blocked_existing_output_target`; safe collection entries `0`; existing runtime-cost logs `0`; metrics computed `false`; runtime launched `false`.
+- This milestone supports runtime-cost collection safety classification only. It does not support runtime-cost metric values, runtime efficiency claims, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 44 Notes
 

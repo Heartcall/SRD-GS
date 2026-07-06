@@ -2295,3 +2295,58 @@ Status: dry-run runtime-cost wrapper validation GO; runtime-cost values still un
 - Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_wrapper_validation` passed, 1 test.
 - M44 wrapper-validation command passed and wrote three output artifacts under `outputs/srd_gs_runtime_cost_wrapper_m44`.
 - Final validation commands are recorded in the Milestone 44 completion response.
+
+## Milestone 45: Runtime-cost Collection Preflight
+
+Status: bounded runtime-cost collection preflight GO; collection launch blocked by existing-output targets; runtime-cost values still unavailable; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/preflight_runtime_cost_collection_m45.py`.
+- Added `tests/test_runtime_cost_collection_preflight.py`.
+- Ran a TDD RED check before the script existed.
+- Generated `outputs/srd_gs_runtime_cost_collection_preflight_m45/runtime_cost_collection_preflight.csv`.
+- Generated `outputs/srd_gs_runtime_cost_collection_preflight_m45/runtime_cost_collection_preflight.json`.
+- Generated `outputs/srd_gs_runtime_cost_collection_preflight_m45/runtime_cost_collection_preflight.md`.
+- Added `docs/srd_gs/45_runtime_cost_collection_preflight.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script is CPU/read-only and consumes the existing M44 runtime-cost wrapper plan.
+- The M32 output root `outputs/srd_gs_instrumented_runtime_m32_i30` was treated as immutable.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- No runtime-cost values were computed.
+
+### Key Results
+
+| Metric | Status | Safe to launch | Required log available |
+| --- | --- | --- | --- |
+| `runtime/training_time` | `blocked_existing_output_target` | false | false |
+| `runtime/peak_memory` | `blocked_existing_output_target` | false | false |
+| `runtime/render_fps` | `blocked_existing_output_target` | false | false |
+
+### Key Findings
+
+- The M44 plan is not safe to launch as-is because all three runtime-cost targets point into the existing M32 output root.
+- Safe collection entries: 0.
+- Existing-output overwrite blockers: 3.
+- Existing runtime-cost logs: 0.
+- Runtime-cost metric values remain unavailable.
+
+### Claim Boundary
+
+- Runtime-cost collection preflight and overwrite-risk classification: GO.
+- Runtime-cost metric values: NO-GO.
+- Runtime efficiency claims: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_preflight` failed before `preflight_runtime_cost_collection_m45.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_preflight` passed, 1 test.
+- M45 preflight command passed and wrote three output artifacts under `outputs/srd_gs_runtime_cost_collection_preflight_m45`.
+- Final validation commands are recorded in the Milestone 45 completion response.
