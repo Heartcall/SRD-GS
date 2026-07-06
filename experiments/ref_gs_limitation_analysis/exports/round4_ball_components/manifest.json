@@ -1,0 +1,277 @@
+{
+  "checkpoint": "output/ref_gs_limitation_sanity/ball_iter2/chkpnt2.pth",
+  "checkpoint_iteration": 2,
+  "dry_run": false,
+  "errors": [],
+  "exported_keys": [
+    "albedo",
+    "alpha",
+    "depth",
+    "diffuse",
+    "features",
+    "gt",
+    "normal",
+    "pbr_rgb",
+    "render",
+    "roughness",
+    "spec",
+    "specular"
+  ],
+  "max_views": 1,
+  "missing_keys": [
+    "out_w",
+    "ref_w"
+  ],
+  "model_path": "output/ref_gs_limitation_sanity/ball_iter2",
+  "num_views": 1,
+  "render_func": "ref",
+  "resolved_render_func": "ref",
+  "return_components": true,
+  "save_npz": true,
+  "save_png": true,
+  "source_path": "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball",
+  "split": "test",
+  "views": [
+    {
+      "buffers": {
+        "albedo": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.16706643998622894,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/albedo.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/albedo.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/albedo.png"
+          },
+          "shape": [
+            3,
+            800,
+            800
+          ]
+        },
+        "alpha": {
+          "alias": "rend_alpha",
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.835331916809082,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/alpha.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/alpha.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/alpha.png"
+          },
+          "shape": [
+            1,
+            800,
+            800
+          ]
+        },
+        "depth": {
+          "alias": "surf_depth",
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 4.65906286239624,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/depth.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/depth.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/depth.png"
+          },
+          "shape": [
+            1,
+            800,
+            800
+          ]
+        },
+        "diffuse": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.445560097694397,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/diffuse.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/diffuse.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/diffuse.png"
+          },
+          "shape": [
+            3,
+            800,
+            800
+          ]
+        },
+        "features": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.0,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/features.npz",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/features.npz"
+          },
+          "shape": [
+            4,
+            800,
+            800
+          ]
+        },
+        "gt": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 1.0,
+          "min": 0.05882352963089943,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/gt.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/gt.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/gt.png"
+          },
+          "shape": [
+            3,
+            800,
+            800
+          ]
+        },
+        "normal": {
+          "alias": "rend_normal",
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.9999973177909851,
+          "min": -0.9969955682754517,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/normal.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/normal.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/normal.png"
+          },
+          "shape": [
+            3,
+            800,
+            800
+          ]
+        },
+        "out_w": {
+          "exported": false,
+          "missing": true,
+          "reason": "not returned by renderer"
+        },
+        "pbr_rgb": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.6799494624137878,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/pbr_rgb.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/pbr_rgb.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/pbr_rgb.png"
+          },
+          "shape": [
+            3,
+            800,
+            800
+          ]
+        },
+        "ref_w": {
+          "exported": false,
+          "missing": true,
+          "reason": "not returned by renderer"
+        },
+        "render": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.41602808237075806,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/render.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/render.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/render.png"
+          },
+          "shape": [
+            3,
+            800,
+            800
+          ]
+        },
+        "roughness": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.4176660478115082,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/roughness.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/roughness.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/roughness.png"
+          },
+          "shape": [
+            1,
+            800,
+            800
+          ]
+        },
+        "spec": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.5399485230445862,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/spec.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/spec.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/spec.png"
+          },
+          "shape": [
+            3,
+            800,
+            800
+          ]
+        },
+        "specular": {
+          "dtype": "torch.float32",
+          "exported": true,
+          "max": 0.5399485230445862,
+          "min": 0.0,
+          "missing": false,
+          "path": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/specular.png",
+          "paths": {
+            "npz": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/specular.npz",
+            "png": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/specular.png"
+          },
+          "shape": [
+            3,
+            800,
+            800
+          ]
+        }
+      },
+      "errors": [],
+      "files": {
+        "albedo": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/albedo.png",
+        "alpha": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/alpha.png",
+        "depth": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/depth.png",
+        "diffuse": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/diffuse.png",
+        "features": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/features.npz",
+        "gt": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/gt.png",
+        "normal": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/normal.png",
+        "pbr_rgb": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/pbr_rgb.png",
+        "render": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/render.png",
+        "roughness": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/roughness.png",
+        "spec": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/spec.png",
+        "specular": "experiments/ref_gs_limitation_analysis/exports/round4_ball_components/views/00000_r_0/specular.png"
+      },
+      "image_name": "r_0",
+      "index": 0,
+      "missing": [
+        "ref_w",
+        "out_w"
+      ]
+    }
+  ]
+}

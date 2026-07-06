@@ -1,18 +1,19 @@
 # Timing Probe Summary
 
-- script: `train-NeRF.py`
-- scene: `/data/liuly/dataset/3DGS/NeRF Synthetic/materials`
-- model: `output/ref_gs_limitation_timing/materials_iter10`
-- iterations: `10`
-- dry_run: `True`
-- exit_code: `0`
+- script: `definitely_missing_train_script.py`
+- scene: `/tmp/tmpxj6iyg1o/scene`
+- model: `/tmp/tmpxj6iyg1o/model`
+- iterations: `1`
+- dry_run: `False`
+- exit_code: `2`
 - wall_clock_seconds: `0`
 - peak_gpu_memory_mb: `NA`
+- peak_gpu_memory_reason: `nvidia-smi unavailable`
 - checkpoint_size_bytes: `NA`
-- log_path: `experiments/ref_gs_limitation_analysis/sanity_logs/timing_probe_train-NeRF_iter10.log`
+- log_path: `experiments/ref_gs_limitation_analysis/sanity_logs/timing_probe_definitely_missing_train_script_iter1.log`
 
 ## Command
 
 ```bash
-python train-NeRF.py -s /data/liuly/dataset/3DGS/NeRF Synthetic/materials --eval --iterations 10 --save_iterations 10 --checkpoint_iterations 10 --test_iterations 10 --model_path output/ref_gs_limitation_timing/materials_iter10
+python definitely_missing_train_script.py -s /tmp/tmpxj6iyg1o/scene --eval --iterations 1 --save_iterations 1 --checkpoint_iterations 1 --test_iterations 1 --model_path /tmp/tmpxj6iyg1o/model
 ```

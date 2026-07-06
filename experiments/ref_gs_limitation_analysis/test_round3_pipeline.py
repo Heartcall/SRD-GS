@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import os
 from pathlib import Path
 
 from PIL import Image
@@ -99,6 +100,73 @@ class Round3PipelineTests(unittest.TestCase):
             self.assertIn("pbr_rgb_vs_render_gap", summary)
             self.assertEqual(summary["pbr_rgb_vs_render_gap"]["psnr_delta"], "inf")
             self.assertTrue((out / "missing_buffers.md").exists())
+
+    def test_export_mesh_accepts_strict_dry_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "scene"
+            model = tmp_path / "model"
+            source.mkdir()
+            cmd = [
+                sys.executable,
+                "experiments/ref_gs_limitation_analysis/export_mesh.py",
+                "--source_path",
+                str(source),
+                "--model_path",
+                str(model),
+                "--checkpoint",
+                str(model / "chkpnt2.pth"),
+                "--out_mesh",
+                str(tmp_path / "mesh" / "mesh.ply"),
+                "--dry-run",
+                "--strict",
+            ]
+            result = subprocess.run(cmd, cwd=REPO_ROOT, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
+    def test_timing_probe_strict_returns_training_exit_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cmd = [
+                "bash",
+                "experiments/ref_gs_limitation_analysis/run_timing_probe.sh",
+                "--script",
+                "definitely_missing_train_script.py",
+                "--scene",
+                str(Path(tmp) / "scene"),
+                "--model",
+                str(Path(tmp) / "model"),
+                "--iterations",
+                "1",
+                "--strict",
+            ]
+            result = subprocess.run(cmd, cwd=REPO_ROOT, text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+
+    def test_component_sanity_strict_returns_nonzero_on_failed_training(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env = dict(os.environ)
+            env.update(
+                {
+                    "STRICT": "1",
+                    "ROUND_NAME": "unit_strict",
+                    "RUN_TRAIN": "1",
+                    "RUN_EXPORT": "0",
+                    "RUN_EVAL": "0",
+                    "RUN_MESH": "0",
+                    "SANITY_SCRIPT": "definitely_missing_train_script.py",
+                    "SCENE_PATH": str(Path(tmp) / "scene"),
+                    "MODEL_PATH": str(Path(tmp) / "model"),
+                    "SANITY_ITER": "1",
+                }
+            )
+            result = subprocess.run(
+                ["bash", "experiments/ref_gs_limitation_analysis/run_component_sanity.sh"],
+                cwd=REPO_ROOT,
+                env=env,
+                text=True,
+                capture_output=True,
+            )
+            self.assertNotEqual(result.returncode, 0, result.stdout)
 
 
 if __name__ == "__main__":

@@ -6,17 +6,19 @@ cd "$ROOT_DIR" || exit 1
 
 LOG_DIR="experiments/ref_gs_limitation_analysis/sanity_logs"
 mkdir -p "$LOG_DIR"
-SUMMARY="$LOG_DIR/component_sanity_round3_summary.md"
-TRAIN_LOG="$LOG_DIR/component_sanity_round3_train.log"
-EXPORT_LOG="$LOG_DIR/component_sanity_round3_export.log"
-EVAL_LOG="$LOG_DIR/component_sanity_round3_eval.log"
-MESH_LOG="$LOG_DIR/component_sanity_round3_mesh.log"
+ROUND_NAME="${ROUND_NAME:-round3}"
+SUMMARY="$LOG_DIR/component_sanity_${ROUND_NAME}_summary.md"
+TRAIN_LOG="$LOG_DIR/component_sanity_${ROUND_NAME}_train.log"
+EXPORT_LOG="$LOG_DIR/component_sanity_${ROUND_NAME}_export.log"
+EVAL_LOG="$LOG_DIR/component_sanity_${ROUND_NAME}_eval.log"
+MESH_LOG="$LOG_DIR/component_sanity_${ROUND_NAME}_mesh.log"
 
 RUN_TRAIN="${RUN_TRAIN:-0}"
 RUN_EXPORT="${RUN_EXPORT:-1}"
 RUN_EVAL="${RUN_EVAL:-1}"
 RUN_MESH="${RUN_MESH:-0}"
 MESH_DRY_RUN="${MESH_DRY_RUN:-1}"
+STRICT="${STRICT:-0}"
 SANITY_ITER="${SANITY_ITER:-2}"
 SANITY_SCRIPT="${SANITY_SCRIPT:-train.py}"
 SANITY_EXTRA="${SANITY_EXTRA:-}"
@@ -50,7 +52,7 @@ conda activate ref_gs
 ACTIVATE_STATUS=$?
 
 {
-  echo "# Component Sanity Round3 Summary"
+  echo "# Component Sanity ${ROUND_NAME} Summary"
   echo
   echo "- env_check_exit: $ENV_STATUS"
   echo "- activate_exit: $ACTIVATE_STATUS"
@@ -60,6 +62,7 @@ ACTIVATE_STATUS=$?
   echo "- RUN_EXPORT: $RUN_EXPORT"
   echo "- RUN_EVAL: $RUN_EVAL"
   echo "- RUN_MESH: $RUN_MESH"
+  echo "- STRICT: $STRICT"
   echo "- SANITY_SCRIPT: \`$SANITY_SCRIPT\`"
   echo "- SANITY_ITER: $SANITY_ITER"
   echo "- SANITY_EXTRA: \`$SANITY_EXTRA\`"
@@ -132,8 +135,21 @@ if [ "$RUN_EVAL" = "1" ]; then
     --out "$METRIC_DIR" \
     >> "$EVAL_LOG" 2>&1
   EVAL_STATUS=$?
+  VALID_VIEW_COUNT="$(python - "$METRIC_DIR/summary_metrics.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+if not p.exists():
+    print(0)
+else:
+    summary = json.loads(p.read_text(encoding="utf-8"))
+    print(sum(int(v.get("valid_views", 0)) for v in summary.get("targets", {}).values()))
+PY
+)"
 else
   echo "RUN_EVAL is not 1; skipping PBR eval." >> "$EVAL_LOG"
+  VALID_VIEW_COUNT=0
 fi
 
 if [ "$RUN_MESH" = "1" ]; then
@@ -154,8 +170,40 @@ if [ "$RUN_MESH" = "1" ]; then
     "${MESH_ARGS[@]}" \
     >> "$MESH_LOG" 2>&1
   MESH_STATUS=$?
+  MESH_MANIFEST="$(dirname "$MESH_PATH")/mesh_manifest.json"
+  MESH_MANIFEST_STATUS="$(python - "$MESH_MANIFEST" <<'PY'
+import json
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+if p.exists():
+    print(json.loads(p.read_text(encoding="utf-8")).get("status", "missing"))
+else:
+    print("missing")
+PY
+)"
 else
   echo "RUN_MESH is not 1; skipping mesh export." >> "$MESH_LOG"
+  MESH_MANIFEST_STATUS="skipped"
+fi
+
+STRICT_STATUS=0
+if [ "$STRICT" = "1" ]; then
+  if [ "$RUN_TRAIN" = "1" ] && [ "$TRAIN_STATUS" -ne 0 ]; then
+    STRICT_STATUS=1
+  fi
+  if [ "$RUN_TRAIN" = "1" ] && [ ! -f "$CHECKPOINT" ]; then
+    STRICT_STATUS=1
+  fi
+  if [ "$RUN_EXPORT" = "1" ] && [ "$EXPORT_STATUS" -ne 0 ]; then
+    STRICT_STATUS=1
+  fi
+  if [ "$RUN_EVAL" = "1" ] && { [ "$EVAL_STATUS" -ne 0 ] || [ "${VALID_VIEW_COUNT:-0}" -eq 0 ]; }; then
+    STRICT_STATUS=1
+  fi
+  if [ "$RUN_MESH" = "1" ] && { [ "$MESH_STATUS" -ne 0 ] || { [ "$MESH_DRY_RUN" != "1" ] && [ "$MESH_MANIFEST_STATUS" != "ok" ]; }; }; then
+    STRICT_STATUS=1
+  fi
 fi
 
 {
@@ -164,7 +212,10 @@ fi
   echo "- checkpoint_exists: $([ -f "$CHECKPOINT" ] && echo true || echo false)"
   echo "- export_exit: $EXPORT_STATUS"
   echo "- eval_exit: $EVAL_STATUS"
+  echo "- eval_valid_view_count: ${VALID_VIEW_COUNT:-0}"
   echo "- mesh_exit: $MESH_STATUS"
+  echo "- mesh_manifest_status: ${MESH_MANIFEST_STATUS:-skipped}"
+  echo "- strict_exit: $STRICT_STATUS"
   echo "- train_log: \`$TRAIN_LOG\`"
   echo "- export_log: \`$EXPORT_LOG\`"
   echo "- eval_log: \`$EVAL_LOG\`"
@@ -175,4 +226,7 @@ fi
 } >> "$SUMMARY"
 
 echo "Wrote $SUMMARY"
+if [ "$STRICT" = "1" ]; then
+  exit "$STRICT_STATUS"
+fi
 exit 0

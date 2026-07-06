@@ -1,5 +1,5 @@
 # Ref-GS limitation env check
-Mon Jul  6 11:22:31 CST 2026
+Mon Jul  6 15:27:55 CST 2026
 
 ## conda activation
 sourced /home/liuly/anaconda3/etc/profile.d/conda.sh
@@ -11,40 +11,36 @@ exit=0
 
 ## git status --short
  M experiments/ref_gs_limitation_analysis/README.md
- M experiments/ref_gs_limitation_analysis/evaluate_geometry.py
- M experiments/ref_gs_limitation_analysis/evaluate_pbr.py
- M experiments/ref_gs_limitation_analysis/experiment_matrix.csv
- M experiments/ref_gs_limitation_analysis/experiment_matrix.json
- M experiments/ref_gs_limitation_analysis/experiment_matrix.md
- M experiments/ref_gs_limitation_analysis/export_pbr_views.py
- M experiments/ref_gs_limitation_analysis/make_experiment_matrix.py
+ M experiments/ref_gs_limitation_analysis/export_mesh.py
+ M experiments/ref_gs_limitation_analysis/metrics/timing_probe/timing_summary.json
+ M experiments/ref_gs_limitation_analysis/metrics/timing_probe/timing_summary.md
  M experiments/ref_gs_limitation_analysis/run_component_sanity.sh
+ M experiments/ref_gs_limitation_analysis/run_timing_probe.sh
  M experiments/ref_gs_limitation_analysis/sanity_logs/env_check.txt
- M gaussian_renderer/__init__.py
+ M experiments/ref_gs_limitation_analysis/test_round3_pipeline.py
+ M output/ref_gs_limitation_sanity/ball_iter2/input.ply
+ M output/ref_gs_limitation_sanity/ball_iter2/point_cloud/iteration_2/dir_encoding.pt
+ M output/ref_gs_limitation_sanity/ball_iter2/point_cloud/iteration_2/point_cloud.ply
 ?? experiments/ref_gs_limitation_analysis/__pycache__/
-?? experiments/ref_gs_limitation_analysis/ablation_implementation_notes.md
-?? experiments/ref_gs_limitation_analysis/export_mesh.py
-?? experiments/ref_gs_limitation_analysis/exports/component_sanity_round3_ball/
-?? experiments/ref_gs_limitation_analysis/exports/round3_dryrun_ball_components/
-?? experiments/ref_gs_limitation_analysis/followup_report_round3.md
-?? experiments/ref_gs_limitation_analysis/meshes/
-?? experiments/ref_gs_limitation_analysis/metrics/component_sanity_round3_ball_pbr_eval/
-?? experiments/ref_gs_limitation_analysis/metrics/round3_dryrun_ball_pbr_eval/
-?? experiments/ref_gs_limitation_analysis/metrics/timing_probe/
-?? experiments/ref_gs_limitation_analysis/run_timing_probe.sh
-?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_eval.log
-?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_export.log
-?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_mesh.log
-?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_summary.md
-?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_train.log
-?? experiments/ref_gs_limitation_analysis/sanity_logs/env_check_round3.txt
-?? experiments/ref_gs_limitation_analysis/sanity_logs/timing_probe_train-NeRF_iter10.log
-?? experiments/ref_gs_limitation_analysis/test_round3_pipeline.py
+?? experiments/ref_gs_limitation_analysis/exports/round4_ball_components/
+?? experiments/ref_gs_limitation_analysis/followup_report_round4.md
+?? experiments/ref_gs_limitation_analysis/meshes/round4_ball_sanity/
+?? experiments/ref_gs_limitation_analysis/metrics/round4_ball_pbr_eval/
+?? experiments/ref_gs_limitation_analysis/metrics/timing_probe/timing_summary_round4_dryrun.json
+?? experiments/ref_gs_limitation_analysis/metrics/timing_probe/timing_summary_round4_dryrun.md
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round4_train.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round4_train_summary.md
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_unit_strict_eval.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_unit_strict_export.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_unit_strict_mesh.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_unit_strict_train.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/timing_probe_definitely_missing_train_script_iter1.log
+?? experiments/ref_gs_limitation_analysis/sanity_logs/timing_probe_train-NeRF_iter2.log
 ?? gaussian_renderer/__pycache__/
 exit=0
 
 ## git rev-parse HEAD
-b4c3d3d520f1b62c12bf4db448b85a47a0d005bd
+241f639ae1248727cb1e449269d6ccb61ba1e54c
 exit=0
 
 ## conda info --envs

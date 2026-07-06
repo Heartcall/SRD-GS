@@ -34,6 +34,7 @@ def build_parser():
     parser.add_argument("--out_mesh", required=True)
     parser.add_argument("--out_points", default=None)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--strict", action="store_true")
     parser.add_argument("--render_func", choices=["ref", "real", "nerf", "auto"], default="auto")
     parser.add_argument("--images", default="images")
     parser.add_argument("--resolution", "-r", type=int, default=-1)
@@ -180,6 +181,8 @@ def main():
         manifest["reason"] = str(exc)
     write_json(manifest_path, manifest)
     print(json.dumps(manifest, indent=2, sort_keys=True))
+    if args.strict and manifest["status"] != "ok":
+        return 1
     return 0 if manifest["status"] in {"ok", "NA"} else 1
 
 

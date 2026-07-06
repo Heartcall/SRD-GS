@@ -1,0 +1,22 @@
+/home/liuly/anaconda3/envs/ref_gs/lib/python3.7/site-packages/torch/functional.py:478: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1659484809535/work/aten/src/ATen/native/TensorShape.cpp:2894.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+Optimizing output/ref_gs_limitation_sanity/ball_iter2
+Output folder: output/ref_gs_limitation_sanity/ball_iter2 [06/07 14:54:46]
+Tensorboard not available: not logging progress [06/07 14:54:46]
+SphMipEncoding ### level: 9   size: 512 [06/07 14:54:49]
+Found transforms_train.json file, assuming Blender data set! [06/07 14:54:49]
+Reading Training Transforms [06/07 14:54:49]
+Reading Test Transforms [06/07 14:54:52]
+Generating random point cloud (100000)... [06/07 14:54:57]
+resolution_scales [1.0] [06/07 14:54:57]
+Loading Training Cameras [06/07 14:54:57]
+Loading Test Cameras [06/07 14:55:07]
+Number of points at initialisation :  100000 [06/07 14:55:18]
+Training set length 100 [06/07 14:55:19]
+Training progress:   0%|          | 0/2 [00:00<?, ?it/s]Training progress:   0%|          | 0/2 [00:00<?, ?it/s]
+
+[ITER 2] Saving Gaussians [06/07 14:55:19]
+
+[ITER 2] Saving Checkpoint [06/07 14:55:20]
+
+Training complete. [06/07 14:55:20]

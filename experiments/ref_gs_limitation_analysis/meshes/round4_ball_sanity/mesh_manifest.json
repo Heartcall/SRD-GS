@@ -1,0 +1,23 @@
+{
+  "checkpoint": "output/ref_gs_limitation_sanity/ball_iter2/chkpnt2.pth",
+  "checks": {
+    "checkpoint_exists": true,
+    "model_path_exists": true,
+    "source_exists": true
+  },
+  "depth_ratio": 1.0,
+  "depth_trunc": null,
+  "dry_run": false,
+  "iteration": null,
+  "max_views": 1,
+  "model_path": "output/ref_gs_limitation_sanity/ball_iter2",
+  "out_mesh": "experiments/ref_gs_limitation_analysis/meshes/round4_ball_sanity/mesh.ply",
+  "out_points": "experiments/ref_gs_limitation_analysis/meshes/round4_ball_sanity/points.ply",
+  "reason": "/lib/x86_64-linux-gnu/libstdc++.so.6: version `GLIBCXX_3.4.29' not found (required by /home/liuly/anaconda3/envs/ref_gs/lib/python3.7/site-packages/PIL/../../.././libLerc.so.4)",
+  "render_func": "ref",
+  "sdf_trunc": 0.02,
+  "source_path": "/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball",
+  "split": "test",
+  "status": "NA",
+  "voxel_size": 0.004
+}

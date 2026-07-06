@@ -102,6 +102,14 @@ RENDER_FUNC=nerf \
 bash experiments/ref_gs_limitation_analysis/run_component_sanity.sh
 ```
 
+For CI/audit usage, set `STRICT=1`. Default mode stays safe-fail and records
+internal failures in logs; strict mode returns nonzero when requested training
+fails, an expected checkpoint is missing, export fails, eval has no valid views,
+or a requested non-dry-run mesh export does not finish with `status=ok`.
+
+Use `ROUND_NAME=round4` to write `component_sanity_round4_*.log` files instead
+of the default round3 filenames.
+
 ## Environment Check
 
 ```bash
@@ -176,6 +184,9 @@ The mesh exporter wraps `utils.mesh_utils.GaussianExtractor` and writes
 `mesh_manifest.json` next to `--out_mesh`. If CUDA/Open3D/checkpoint inputs are
 unavailable, it writes a safe `NA` manifest with the failure reason.
 
+Use `--strict` when a non-dry-run mesh export is expected to succeed and should
+return nonzero on `status != ok`.
+
 ## Geometry Evaluation
 
 ```bash
@@ -210,6 +221,10 @@ Outputs:
 Without `--dry-run`, the script runs the requested short training command and
 records wall-clock time, best-effort peak GPU memory from `nvidia-smi`,
 checkpoint size, log path, and exit code.
+
+Use `--strict` for CI/audit checks. In strict mode, a non-dry-run timing probe
+returns the underlying training exit code when it is nonzero. GPU memory remains
+`NA` with a reason when `nvidia-smi` is unavailable.
 
 ## Real-Scene Environment Sphere Coverage
 

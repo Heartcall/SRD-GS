@@ -1,0 +1,29 @@
+# Component Sanity Round3 Summary
+
+- env_check_exit: 0
+- activate_exit: 0
+- python: `/home/liuly/anaconda3/envs/ref_gs/bin/python`
+- python_version: `Python 3.7.12`
+- RUN_TRAIN: 1
+- RUN_EXPORT: 0
+- RUN_EVAL: 0
+- RUN_MESH: 0
+- SANITY_SCRIPT: `train.py`
+- SANITY_ITER: 2
+- SANITY_EXTRA: ``
+- SCENE_PATH: `/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball`
+- MODEL_PATH: `output/ref_gs_limitation_sanity/ball_iter2`
+- RENDER_FUNC: `auto`
+- train_exit: 0
+- checkpoint: `output/ref_gs_limitation_sanity/ball_iter2/chkpnt2.pth`
+- checkpoint_exists: true
+- export_exit: 99
+- eval_exit: 99
+- mesh_exit: 99
+- train_log: `experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_train.log`
+- export_log: `experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_export.log`
+- eval_log: `experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_eval.log`
+- mesh_log: `experiments/ref_gs_limitation_analysis/sanity_logs/component_sanity_round3_mesh.log`
+- export_dir: `experiments/ref_gs_limitation_analysis/exports/component_sanity_round3_ball`
+- metric_dir: `experiments/ref_gs_limitation_analysis/metrics/component_sanity_round3_ball_pbr_eval`
+- mesh_path: `experiments/ref_gs_limitation_analysis/meshes/component_sanity_ball/mesh.ply`

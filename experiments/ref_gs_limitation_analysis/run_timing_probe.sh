@@ -9,6 +9,7 @@ SCENE="/data/liuly/dataset/3DGS/NeRF Synthetic/materials"
 MODEL="output/ref_gs_limitation_timing/materials_iter10"
 ITERATIONS="10"
 DRY_RUN="0"
+STRICT="0"
 EXTRA_ARGS=()
 
 while [ "$#" -gt 0 ]; do
@@ -18,6 +19,7 @@ while [ "$#" -gt 0 ]; do
     --model) MODEL="$2"; shift 2 ;;
     --iterations) ITERATIONS="$2"; shift 2 ;;
     --dry-run) DRY_RUN="1"; shift ;;
+    --strict) STRICT="1"; shift ;;
     --extra) EXTRA_ARGS+=("$2"); shift 2 ;;
     *) EXTRA_ARGS+=("$1"); shift ;;
   esac
@@ -52,6 +54,7 @@ fi
 START_TS="$(date +%s)"
 EXIT_CODE=99
 PEAK_GPU_MEMORY="NA"
+GPU_MEMORY_REASON="dry_run"
 
 if [ "$DRY_RUN" = "1" ]; then
   printf 'dry-run command: %q ' "${COMMAND[@]}" > "$LOG_PATH"
@@ -60,11 +63,19 @@ if [ "$DRY_RUN" = "1" ]; then
 else
   "${COMMAND[@]}" > "$LOG_PATH" 2>&1 &
   TRAIN_PID=$!
-  PEAK_GPU_MEMORY=0
+  if nvidia-smi --query-gpu=index --format=csv,noheader >/dev/null 2>&1; then
+    PEAK_GPU_MEMORY=0
+    GPU_MEMORY_REASON=""
+  else
+    PEAK_GPU_MEMORY="NA"
+    GPU_MEMORY_REASON="nvidia-smi unavailable"
+  fi
   while kill -0 "$TRAIN_PID" 2>/dev/null; do
-    SAMPLE="$(nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader,nounits 2>/dev/null | awk -F, -v pid="$TRAIN_PID" '$1 ~ pid {gsub(/ /, "", $2); print $2}' | sort -nr | head -1)"
-    if [ -n "$SAMPLE" ] && [ "$SAMPLE" -gt "$PEAK_GPU_MEMORY" ] 2>/dev/null; then
-      PEAK_GPU_MEMORY="$SAMPLE"
+    if [ "$PEAK_GPU_MEMORY" != "NA" ]; then
+      SAMPLE="$(nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader,nounits 2>/dev/null | awk -F, -v pid="$TRAIN_PID" '$1 ~ pid {gsub(/ /, "", $2); print $2}' | sort -nr | head -1)"
+      if [ -n "$SAMPLE" ] && [ "$SAMPLE" -gt "$PEAK_GPU_MEMORY" ] 2>/dev/null; then
+        PEAK_GPU_MEMORY="$SAMPLE"
+      fi
     fi
     sleep 1
   done
@@ -81,15 +92,15 @@ else
   CHECKPOINT_SIZE="NA"
 fi
 
-python - "$SUMMARY_JSON" "$SUMMARY_MD" "${SCRIPT}" "${SCENE}" "${MODEL}" "${ITERATIONS}" "${DRY_RUN}" "${ACTIVATE_STATUS}" "${WALL_CLOCK}" "${PEAK_GPU_MEMORY}" "${CHECKPOINT}" "${CHECKPOINT_SIZE}" "${LOG_PATH}" "${EXIT_CODE}" "${COMMAND[@]}" <<'PY'
+python - "$SUMMARY_JSON" "$SUMMARY_MD" "${SCRIPT}" "${SCENE}" "${MODEL}" "${ITERATIONS}" "${DRY_RUN}" "${ACTIVATE_STATUS}" "${WALL_CLOCK}" "${PEAK_GPU_MEMORY}" "${GPU_MEMORY_REASON}" "${CHECKPOINT}" "${CHECKPOINT_SIZE}" "${LOG_PATH}" "${EXIT_CODE}" "${COMMAND[@]}" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 summary_json = Path(sys.argv[1])
 summary_md = Path(sys.argv[2])
-script, scene, model, iterations, dry_run, activate_status, wall_clock, peak_gpu, checkpoint, checkpoint_size, log_path, exit_code = sys.argv[3:15]
-command = sys.argv[15:]
+script, scene, model, iterations, dry_run, activate_status, wall_clock, peak_gpu, gpu_reason, checkpoint, checkpoint_size, log_path, exit_code = sys.argv[3:16]
+command = sys.argv[16:]
 payload = {
     "script": script,
     "scene": scene,
@@ -100,6 +111,7 @@ payload = {
     "command": command,
     "wall_clock_seconds": int(wall_clock),
     "peak_gpu_memory_mb": peak_gpu,
+    "peak_gpu_memory_reason": gpu_reason,
     "checkpoint": checkpoint,
     "checkpoint_size_bytes": checkpoint_size,
     "log_path": log_path,
@@ -117,6 +129,7 @@ lines = [
     f"- exit_code: `{exit_code}`",
     f"- wall_clock_seconds: `{wall_clock}`",
     f"- peak_gpu_memory_mb: `{peak_gpu}`",
+    f"- peak_gpu_memory_reason: `{gpu_reason}`",
     f"- checkpoint_size_bytes: `{checkpoint_size}`",
     f"- log_path: `{log_path}`",
     "",
@@ -129,5 +142,9 @@ lines = [
 summary_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 print(json.dumps(payload, indent=2, sort_keys=True))
 PY
+
+if [ "$STRICT" = "1" ] && [ "$DRY_RUN" != "1" ] && [ "$EXIT_CODE" -ne 0 ]; then
+  exit "$EXIT_CODE"
+fi
 
 exit 0
