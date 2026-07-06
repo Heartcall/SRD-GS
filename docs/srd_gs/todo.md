@@ -53,10 +53,22 @@
 - Milestone 44: Runtime-cost wrapper validation - dry-run wrapper validation GO / runtime-cost values still unavailable / paper-scale still blocked
 - Milestone 45: Runtime-cost collection preflight - bounded preflight GO / collection launch blocked by existing-output targets / runtime-cost values still unavailable / paper-scale still blocked
 - Milestone 46: Fresh-root runtime-cost collection package - bounded package GO / overwrite blocker removed / runtime-cost values still unavailable / paper-scale still blocked
+- Milestone 47: Runtime-cost launch gate - bounded launch-gate GO / runtime_go true / runtime-cost values still unavailable / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 46 removes the M45 existing-output overwrite blocker by cloning the approved train/render runtime-cost commands into a fresh M46 output root and rerunning the M45 preflight. The next step should be one bounded M47 action: run CUDA/storage/process preflight for the fresh M46 package, then launch at most one short runtime-cost collection only if every gate passes. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 47 confirms the fresh M46 runtime-cost package currently passes CUDA/storage/process/overwrite launch gates, but it does not collect runtime-cost logs or values. The next step should be one bounded M48 action: if the fresh M46 package still passes the M47 gate immediately before launch, launch exactly one short runtime-cost collection and parse only the resulting runtime logs. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 47 Notes
+
+- Added `scripts/srd_gs/preflight_runtime_cost_launch_m47.py`.
+- Added `tests/test_runtime_cost_launch_gate_m47.py`.
+- Generated `outputs/srd_gs_runtime_cost_launch_gate_m47/runtime_cost_launch_gate.csv`.
+- Generated `outputs/srd_gs_runtime_cost_launch_gate_m47/runtime_cost_launch_gate.json`.
+- Generated `outputs/srd_gs_runtime_cost_launch_gate_m47/runtime_cost_launch_gate.md`.
+- M47 is a bounded no-launch gate milestone: it consumes the M46 fresh wrapper plan and nested M45 preflight, checks CUDA/GPU/storage/process gates, and does not launch train/render/eval/export.
+- Summary result: runtime GO `true`; fresh wrapper entries `3`; overwrite blockers `0`; Torch CUDA available `true`; Torch device count `8`; training GPU index `2`; training GPU utilization `0`; workspace free GB `59.49984359741211`; process matches `0`; runtime-cost logs `0`; metrics computed `false`; runtime launched `false`.
+- This milestone supports runtime-cost launch readiness only. It does not support runtime-cost metric values, runtime efficiency claims, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 46 Notes
 

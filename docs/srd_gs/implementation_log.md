@@ -2408,3 +2408,68 @@ Status: bounded fresh-root runtime-cost package GO; collection launch still defe
 - Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_package_m46` passed, 1 test.
 - M46 package command passed and wrote the fresh wrapper plan, cloned command files, and nested preflight artifacts under `outputs/srd_gs_runtime_cost_collection_m46`.
 - Final validation commands are recorded in the Milestone 46 completion response.
+
+## Milestone 47: Runtime-cost Launch Gate
+
+Status: bounded runtime-cost launch gate GO; runtime collection still not launched; runtime-cost values still unavailable; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/preflight_runtime_cost_launch_m47.py`.
+- Added `tests/test_runtime_cost_launch_gate_m47.py`.
+- Ran a TDD RED check before the script existed.
+- Fixed the direct CLI import path for `scripts/srd_gs/preflight_runtime_cost_launch_m47.py`.
+- Generated `outputs/srd_gs_runtime_cost_launch_gate_m47/runtime_cost_launch_gate.csv`.
+- Generated `outputs/srd_gs_runtime_cost_launch_gate_m47/runtime_cost_launch_gate.json`.
+- Generated `outputs/srd_gs_runtime_cost_launch_gate_m47/runtime_cost_launch_gate.md`.
+- Added `docs/srd_gs/47_runtime_cost_launch_gate.md`.
+
+### Runtime Notes
+
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The script consumes the M46 fresh wrapper plan and nested M45 preflight.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- No runtime-cost values were computed.
+
+### Key Results
+
+| Gate | Value |
+| --- | ---: |
+| Runtime GO | true |
+| Fresh wrapper entries | 3 |
+| Runtime-cost logs | 0 |
+| Collection preflight safe | true |
+| Overwrite blockers | 0 |
+| Torch CUDA available | true |
+| Torch device count | 8 |
+| Torch training GPU visible | true |
+| Training GPU index | 2 |
+| Training GPU memory used MB | 22559 |
+| Training GPU utilization percent | 0 |
+| Workspace free GB | 59.49984359741211 |
+| Process match count | 0 |
+| Blocker count | 0 |
+
+### Key Findings
+
+- The fresh M46 package currently passes CUDA, storage, process, and overwrite launch gates.
+- Runtime-cost logs remain unavailable.
+- Runtime-cost metric values remain unavailable.
+- The launch GO is an engineering readiness result, not a runtime-efficiency metric.
+
+### Claim Boundary
+
+- Runtime-cost launch readiness gate: GO.
+- Runtime-cost metric values: NO-GO.
+- Runtime efficiency claims: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_launch_gate_m47` failed before `preflight_runtime_cost_launch_m47.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_launch_gate_m47` passed, 1 test.
+- M47 launch-gate command passed and wrote three output artifacts under `outputs/srd_gs_runtime_cost_launch_gate_m47`.
+- Final validation commands are recorded in the Milestone 47 completion response.

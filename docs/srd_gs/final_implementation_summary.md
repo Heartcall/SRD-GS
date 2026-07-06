@@ -154,6 +154,7 @@ A read-only M43 runtime-cost logging contract defines future log paths for `runt
 A dry-run M44 runtime-cost wrapper validation converts the M43 manifest into wrapper-readiness plans for `runtime/training_time`, `runtime/peak_memory`, and `runtime/render_fps`; all three source command artifacts are present, but runtime-cost logs and values remain unavailable.
 A bounded M45 runtime-cost collection preflight checks the M44 wrapper plan against immutable M32 outputs and blocks collection launch as-is because all three train/render log targets point into `outputs/srd_gs_instrumented_runtime_m32_i30`; runtime-cost logs and values remain unavailable.
 A bounded M46 fresh-root runtime-cost package rewrites the approved train/render command and log targets into `outputs/srd_gs_runtime_cost_collection_m46`, reruns the M45 preflight, and removes the existing-output overwrite blocker; runtime-cost logs and values remain unavailable.
+A bounded M47 runtime-cost launch gate checks the fresh M46 package for overwrite safety, CUDA visibility, GPU utilization, workspace storage, and prohibited processes; `runtime_go=true`, but runtime-cost logs and values remain unavailable because no train/render collection was launched.
 ```
 
 Current unsupported claims:
@@ -204,31 +205,34 @@ SRD-GS has stable multi-scene mesh/material superiority.
 34. The M44 runtime-cost wrapper validation confirms the dry-run wrapper plan is ready for all three runtime-cost targets, but it still does not launch a collection run or produce runtime-cost values. Runtime efficiency claims remain blocked.
 35. The M45 runtime-cost collection preflight confirms the M44 wrapper plan must not be launched as-is because it targets existing M32 outputs; a fresh output root is required before any runtime-cost collection.
 36. The M46 fresh-root runtime-cost package removes the M45 overwrite blocker, but it still does not launch runtime collection or produce runtime-cost values; CUDA/storage/process gates remain required before any launch.
+37. The M47 runtime-cost launch gate currently passes for the fresh M46 package, but it is readiness evidence only; runtime-cost values and runtime-efficiency claims remain blocked until exactly one bounded collection writes logs.
 
 ## Recommended Next Engineering Tasks
 
 1. Regenerate one-scene Ref-GS and SRD-GS checkpoints with `eval=True` before test-split render metrics are used.
 2. Expand the accepted GT mesh protocol scene-by-scene; keep raw-coordinate metrics primary and reject generated `points3d.ply` by default.
-3. Keep the next step bounded: run CUDA/storage/process preflight for the fresh M46 runtime-cost package, then collect exactly one short bounded runtime-cost run only if all gates pass.
+3. Keep the next step bounded: if the fresh M46 package still passes the M47 gate immediately before launch, collect exactly one short bounded runtime-cost run and parse only the resulting runtime logs.
 4. Preserve `--enable_srd_gs=False` behavior and avoid changing Ref-GS baseline training/rendering.
 5. If another bounded control is executed later, keep it to `ball` and one short checkpoint before any broader claims.
 6. Only after the validation gates pass, launch multi-scene ablations from `configs/srd_gs/*.yaml`.
 
 ## Verification Status
 
-Fresh verification through Milestone 46:
+Fresh verification through Milestone 47:
 
+- `conda run -n ref_gs python -m unittest tests.test_runtime_cost_launch_gate_m47`: passed, 1 test.
+- `conda run -n ref_gs python scripts/srd_gs/preflight_runtime_cost_launch_m47.py --fresh_plan_csv outputs/srd_gs_runtime_cost_collection_m46/package/fresh_runtime_cost_wrapper_plan.csv --collection_preflight_json outputs/srd_gs_runtime_cost_collection_m46/package/preflight/runtime_cost_collection_preflight.json --result_root outputs/srd_gs_runtime_cost_collection_m46/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --label M47_runtime_cost_launch_gate --output_dir outputs/srd_gs_runtime_cost_launch_gate_m47 --training_gpu_index 2 --max_gpu_utilization_percent 50 --workspace_path . --min_workspace_free_gb 25`: passed.
 - `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_package_m46`: passed, 1 test.
 - `conda run -n ref_gs python scripts/srd_gs/prepare_runtime_cost_collection_m46.py --wrapper_plan_csv outputs/srd_gs_runtime_cost_wrapper_m44/runtime_cost_wrapper_plan.csv --source_result_root outputs/srd_gs_instrumented_runtime_m32_i30/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --source_model_root outputs/srd_gs_instrumented_runtime_m32_i30/models/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --target_result_root outputs/srd_gs_runtime_cost_collection_m46/results/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --target_model_root outputs/srd_gs_runtime_cost_collection_m46/models/ball/full_srd_gs_branch_raster_opacity_quarter_i300 --immutable_root outputs/srd_gs_instrumented_runtime_m32_i30 --output_dir outputs/srd_gs_runtime_cost_collection_m46/package`: passed.
 - `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_preflight`: passed, 1 test.
 - `conda run -n ref_gs python scripts/srd_gs/preflight_runtime_cost_collection_m45.py --wrapper_plan_csv outputs/srd_gs_runtime_cost_wrapper_m44/runtime_cost_wrapper_plan.csv --immutable_root outputs/srd_gs_instrumented_runtime_m32_i30 --output_dir outputs/srd_gs_runtime_cost_collection_preflight_m45`: passed.
 - `conda run -n ref_gs python -m unittest tests.test_runtime_cost_wrapper_validation`: passed, 1 test.
 - `conda run -n ref_gs python scripts/srd_gs/validate_runtime_cost_wrapper_m44.py --contract_json outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_logging_contract.json --manifest_template outputs/srd_gs_runtime_cost_logging_m43/runtime_cost_manifest_template.json --output_dir outputs/srd_gs_runtime_cost_wrapper_m44`: passed.
-- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 102 tests.
-- `conda run -n ref_gs python -m py_compile scripts/srd_gs/prepare_runtime_cost_collection_m46.py tests/test_runtime_cost_collection_package_m46.py`: passed.
+- `conda run -n ref_gs python -m unittest discover -s tests`: passed, 103 tests.
+- `conda run -n ref_gs python -m py_compile scripts/srd_gs/preflight_runtime_cost_launch_m47.py tests/test_runtime_cost_launch_gate_m47.py`: passed.
 - `bash -n scripts/srd_gs/*.sh`: passed.
 - `git diff --check`: passed.
-- M46 artifact existence checks: passed.
+- M47 artifact existence checks: passed.
 - Prohibited process scan for SRD-GS train/render/eval/export scripts: no residual processes.
 - `conda run -n ref_gs python -m unittest tests.test_srd_branch_raster_features tests.test_srd_gaussian_model_static tests.test_srd_branch_map_fallback_policy tests.test_srd_render_contract_static`: passed, 16 tests.
 - `conda run -n ref_gs python -m unittest tests.test_ablation_system_contract`: passed, 3 tests.
