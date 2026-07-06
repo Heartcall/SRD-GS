@@ -2473,3 +2473,77 @@ Status: bounded runtime-cost launch gate GO; runtime collection still not launch
 - Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_launch_gate_m47` passed, 1 test.
 - M47 launch-gate command passed and wrote three output artifacts under `outputs/srd_gs_runtime_cost_launch_gate_m47`.
 - Final validation commands are recorded in the Milestone 47 completion response.
+
+## Milestone 48: Runtime-cost Collection Gate-blocked Attempt
+
+Status: bounded runtime-cost collector/parser GO; immediate prelaunch gate NO-GO; runtime collection not launched; runtime-cost values still unavailable; paper-scale still blocked
+
+### Actions Completed
+
+- Added `scripts/srd_gs/collect_runtime_cost_m48.py`.
+- Added `tests/test_runtime_cost_collection_m48.py`.
+- Ran a TDD RED check before the script existed.
+- Generated immediate prelaunch gate artifacts under `outputs/srd_gs_runtime_cost_collection_m48/prelaunch_gate`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m48/runtime_cost_metrics.csv`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m48/runtime_cost_summary.csv`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m48/runtime_cost_metrics.json`.
+- Generated `outputs/srd_gs_runtime_cost_collection_m48/runtime_cost_metrics.md`.
+- Added `docs/srd_gs/48_runtime_cost_collection_gate_blocked.md`.
+
+### Runtime Notes
+
+- The immediate prelaunch gate returned `runtime_go=false` because `training_gpu_busy`.
+- No training, rendering, mesh extraction, texture export, evaluation, broad evaluation, or multi-scene process was launched.
+- The collector preserves the M47/M48 safety contract: it refuses to execute train/render when the launch gate is NO-GO.
+- Baseline Ref-GS behavior is untouched; no training/rendering/eval metric semantics were modified.
+- No runtime-cost values were computed.
+
+### Key Results
+
+| Gate / Metric | Value |
+| --- | ---: |
+| Prelaunch runtime GO | false |
+| Prelaunch blocker | `training_gpu_busy` |
+| Fresh wrapper entries | 3 |
+| Training GPU index | 2 |
+| Training GPU memory used MB | 21575 |
+| Training GPU utilization percent | 98 |
+| Workspace free GB | 59.14317321777344 |
+| Process match count | 0 |
+| Runtime launched | false |
+| Training launched | false |
+| Rendering launched | false |
+| Metrics computed | false |
+
+Metric table:
+
+| Metric | Status | Value | Unit | Failure condition |
+| --- | --- | ---: | --- | --- |
+| `runtime/training_time` | failed |  | seconds | `train_command_failed_or_not_run` |
+| `runtime/peak_memory` | not_available |  | MB | `gpu_memory_trace_missing_training_gpu` |
+| `runtime/render_fps` | failed |  | frames_per_second | `render_command_failed_or_manifest_missing` |
+
+### Key Findings
+
+- M48 removes the missing collector/parser implementation blocker.
+- Runtime-cost logs and values remain unavailable because the immediate launch gate was NO-GO.
+- The correct bounded outcome is no-launch, not a forced runtime collection.
+- The no-launch result is an environment gate outcome, not a quality or efficiency metric.
+
+### Claim Boundary
+
+- Bounded runtime-cost collector/parser contract: GO.
+- Runtime-cost metric values: NO-GO.
+- Runtime efficiency claims: NO-GO.
+- Runtime quality improvement: NO-GO.
+- Stable geometry superiority: NO-GO.
+- SRD-GS superiority over Ref-GS: NO-GO.
+- Multi-scene paper-scale launch: still blocked.
+
+### Tests and Checks
+
+- Focused TDD RED: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_m48` failed before `collect_runtime_cost_m48.py` existed.
+- Focused TDD GREEN: `conda run -n ref_gs python -m unittest tests.test_runtime_cost_collection_m48` passed, 1 test.
+- M48 prelaunch gate command passed and wrote three artifacts with `runtime_go=false`.
+- M48 no-launch collector command passed and wrote four summary artifacts.
+- Final validation commands are recorded in the Milestone 48 completion response.

@@ -54,10 +54,23 @@
 - Milestone 45: Runtime-cost collection preflight - bounded preflight GO / collection launch blocked by existing-output targets / runtime-cost values still unavailable / paper-scale still blocked
 - Milestone 46: Fresh-root runtime-cost collection package - bounded package GO / overwrite blocker removed / runtime-cost values still unavailable / paper-scale still blocked
 - Milestone 47: Runtime-cost launch gate - bounded launch-gate GO / runtime_go true / runtime-cost values still unavailable / paper-scale still blocked
+- Milestone 48: Runtime-cost collection gate-blocked attempt - bounded collector/parser GO / immediate prelaunch gate NO-GO due to training_gpu_busy / runtime-cost values still unavailable / paper-scale still blocked
 
 ## Immediate Next Milestone
 
-Do not launch broad paper-scale experiments yet. Milestone 47 confirms the fresh M46 runtime-cost package currently passes CUDA/storage/process/overwrite launch gates, but it does not collect runtime-cost logs or values. The next step should be one bounded M48 action: if the fresh M46 package still passes the M47 gate immediately before launch, launch exactly one short runtime-cost collection and parse only the resulting runtime logs. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+Do not launch broad paper-scale experiments yet. Milestone 48 added the bounded runtime-cost collector/parser, but the immediate prelaunch gate returned `runtime_go=false` because training GPU 2 was busy. The next step should be one bounded M49 action: rerun the M47/M48 prelaunch gate when GPU utilization is below threshold, then launch the same single short runtime-cost collection only if `runtime_go=true`. Stage B/C activation, opacity scheduling, and any multi-scene runtime remain deferred unless selected as the single bounded milestone. Do not broaden into paper-scale experiments.
+
+## Completed Milestone 48 Notes
+
+- Added `scripts/srd_gs/collect_runtime_cost_m48.py`.
+- Added `tests/test_runtime_cost_collection_m48.py`.
+- Added `docs/srd_gs/48_runtime_cost_collection_gate_blocked.md`.
+- Generated immediate prelaunch gate artifacts under `outputs/srd_gs_runtime_cost_collection_m48/prelaunch_gate`.
+- Generated M48 no-launch summary artifacts under `outputs/srd_gs_runtime_cost_collection_m48`.
+- M48 is a bounded collector/parser milestone: it consumes the M46 fresh wrapper plan and immediate M47-style launch gate, and it launches at most one train command plus one render command only if `runtime_go=true`.
+- Actual M48 summary result: prelaunch `runtime_go=false`; blocker `training_gpu_busy`; training GPU index `2`; training GPU utilization `98`; workspace free GB `59.14317321777344`; process matches `0`; runtime launched `false`; metrics computed `false`.
+- Metric status: `runtime/training_time=failed`, `runtime/peak_memory=not_available`, `runtime/render_fps=failed` because collection was not launched.
+- This milestone supports bounded collector/parser readiness and correct no-launch gate behavior only. It does not support runtime-cost metric values, runtime efficiency claims, SRD-GS superiority over Ref-GS, rendering recovery, geometry superiority, GT PBR material accuracy, or paper-scale claims.
 
 ## Completed Milestone 47 Notes
 
