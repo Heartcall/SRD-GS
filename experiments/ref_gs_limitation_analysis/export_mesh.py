@@ -162,9 +162,12 @@ def main():
             depth_trunc=depth_trunc,
             mask_backgrond=True,
         )
+        manifest["num_vertices_raw"] = int(len(mesh.vertices))
+        manifest["num_triangles_raw"] = int(len(mesh.triangles))
         mesh = post_process_mesh(mesh)
         out_mesh.parent.mkdir(parents=True, exist_ok=True)
-        ok = bool(o3d.io.write_triangle_mesh(str(out_mesh), mesh))
+        empty_mesh = len(mesh.vertices) == 0 or len(mesh.triangles) == 0
+        ok = bool(o3d.io.write_triangle_mesh(str(out_mesh), mesh)) if not empty_mesh else False
         manifest["mesh_exists"] = out_mesh.exists()
         manifest["mesh_write_ok"] = ok
         manifest["num_vertices"] = int(len(mesh.vertices))
@@ -175,7 +178,12 @@ def main():
             manifest["points_write_ok"] = write_points(points_path, gaussians)
             manifest["points_exists"] = points_path.exists()
         manifest["status"] = "ok" if ok else "NA"
-        manifest["reason"] = "" if ok else "Open3D write_triangle_mesh returned false"
+        if ok:
+            manifest["reason"] = ""
+        elif empty_mesh:
+            manifest["reason"] = "TSDF produced an empty mesh"
+        else:
+            manifest["reason"] = "Open3D write_triangle_mesh returned false"
     except Exception as exc:
         manifest["status"] = "NA"
         manifest["reason"] = str(exc)

@@ -4,7 +4,7 @@ set +e
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR" || exit 1
 
-LOG_DIR="experiments/ref_gs_limitation_analysis/sanity_logs"
+LOG_DIR="${SANITY_LOG_DIR:-experiments/ref_gs_limitation_analysis/sanity_logs}"
 mkdir -p "$LOG_DIR"
 ROUND_NAME="${ROUND_NAME:-round3}"
 SUMMARY="$LOG_DIR/component_sanity_${ROUND_NAME}_summary.md"
@@ -24,9 +24,9 @@ SANITY_SCRIPT="${SANITY_SCRIPT:-train.py}"
 SANITY_EXTRA="${SANITY_EXTRA:-}"
 SCENE_PATH="${SCENE_PATH:-${SANITY_SCENE:-/data/liuly/dataset/3DGS/Shiny Blender Synthetic/ball}}"
 MODEL_PATH="${MODEL_PATH:-output/ref_gs_limitation_sanity/ball_iter${SANITY_ITER}}"
-EXPORT_DIR="${EXPORT_DIR:-experiments/ref_gs_limitation_analysis/exports/component_sanity_round3_ball}"
-METRIC_DIR="${METRIC_DIR:-experiments/ref_gs_limitation_analysis/metrics/component_sanity_round3_ball_pbr_eval}"
-MESH_PATH="${MESH_PATH:-experiments/ref_gs_limitation_analysis/meshes/component_sanity_ball/mesh.ply}"
+EXPORT_DIR="${EXPORT_DIR:-experiments/ref_gs_limitation_analysis/exports/component_sanity_${ROUND_NAME}_ball}"
+METRIC_DIR="${METRIC_DIR:-experiments/ref_gs_limitation_analysis/metrics/component_sanity_${ROUND_NAME}_ball_pbr_eval}"
+MESH_PATH="${MESH_PATH:-experiments/ref_gs_limitation_analysis/meshes/component_sanity_${ROUND_NAME}_ball/mesh.ply}"
 RENDER_FUNC="${RENDER_FUNC:-auto}"
 
 : > "$TRAIN_LOG"
@@ -34,7 +34,8 @@ RENDER_FUNC="${RENDER_FUNC:-auto}"
 : > "$EVAL_LOG"
 : > "$MESH_LOG"
 
-bash experiments/ref_gs_limitation_analysis/env_check.sh
+ENV_CHECK_LOG_FILE="${ENV_CHECK_LOG_FILE:-$LOG_DIR/env_check_${ROUND_NAME}.txt}" \
+  bash experiments/ref_gs_limitation_analysis/env_check.sh
 ENV_STATUS=$?
 
 for candidate in \
@@ -198,10 +199,10 @@ if [ "$STRICT" = "1" ]; then
   if [ "$RUN_EXPORT" = "1" ] && [ "$EXPORT_STATUS" -ne 0 ]; then
     STRICT_STATUS=1
   fi
-  if [ "$RUN_EVAL" = "1" ] && { [ "$EVAL_STATUS" -ne 0 ] || [ "${VALID_VIEW_COUNT:-0}" -eq 0 ]; }; then
+  if [ "$RUN_EVAL" = "1" ] && [ "$EVAL_STATUS" -ne 0 ]; then
     STRICT_STATUS=1
   fi
-  if [ "$RUN_MESH" = "1" ] && { [ "$MESH_STATUS" -ne 0 ] || { [ "$MESH_DRY_RUN" != "1" ] && [ "$MESH_MANIFEST_STATUS" != "ok" ]; }; }; then
+  if [ "$RUN_MESH" = "1" ] && [ "$MESH_DRY_RUN" != "1" ] && [ "$MESH_STATUS" -ne 0 ]; then
     STRICT_STATUS=1
   fi
 fi

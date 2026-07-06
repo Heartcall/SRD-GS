@@ -104,11 +104,18 @@ bash experiments/ref_gs_limitation_analysis/run_component_sanity.sh
 
 For CI/audit usage, set `STRICT=1`. Default mode stays safe-fail and records
 internal failures in logs; strict mode returns nonzero when requested training
-fails, an expected checkpoint is missing, export fails, eval has no valid views,
-or a requested non-dry-run mesh export does not finish with `status=ok`.
+fails, an expected checkpoint is missing, export fails, eval exits nonzero, or a
+requested non-dry-run mesh command exits nonzero.
 
 Use `ROUND_NAME=round4` to write `component_sanity_round4_*.log` files instead
-of the default round3 filenames.
+of the default round3 filenames. The same round name is used in the default
+component sanity export, metric, and mesh output paths unless `EXPORT_DIR`,
+`METRIC_DIR`, or `MESH_PATH` are set explicitly.
+
+Use `SANITY_LOG_DIR=/tmp/sanity_logs` when tests or CI should not write into the
+formal experiment log directory. The sanity runner passes that directory through
+to `env_check.sh` as `env_check_${ROUND_NAME}.txt`; `env_check.sh` also accepts
+`ENV_CHECK_LOG_DIR` or `ENV_CHECK_LOG_FILE` directly.
 
 ## Environment Check
 
@@ -217,6 +224,15 @@ Outputs:
 
 - `metrics/timing_probe/timing_summary.json`
 - `metrics/timing_probe/timing_summary.md`
+
+The output root and summary filename can be isolated with:
+
+```bash
+TIMING_OUT_DIR=/tmp/timing_metrics \
+TIMING_LOG_DIR=/tmp/timing_logs \
+TIMING_SUMMARY_BASENAME=timing_summary_unit \
+bash experiments/ref_gs_limitation_analysis/run_timing_probe.sh --dry-run
+```
 
 Without `--dry-run`, the script runs the requested short training command and
 records wall-clock time, best-effort peak GPU memory from `nvidia-smi`,

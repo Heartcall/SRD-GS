@@ -25,11 +25,12 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-OUT_DIR="experiments/ref_gs_limitation_analysis/metrics/timing_probe"
-LOG_DIR="experiments/ref_gs_limitation_analysis/sanity_logs"
+OUT_DIR="${TIMING_OUT_DIR:-experiments/ref_gs_limitation_analysis/metrics/timing_probe}"
+LOG_DIR="${TIMING_LOG_DIR:-experiments/ref_gs_limitation_analysis/sanity_logs}"
+SUMMARY_BASENAME="${TIMING_SUMMARY_BASENAME:-timing_summary}"
 mkdir -p "$OUT_DIR" "$LOG_DIR" "$(dirname "$MODEL")"
-SUMMARY_JSON="$OUT_DIR/timing_summary.json"
-SUMMARY_MD="$OUT_DIR/timing_summary.md"
+SUMMARY_JSON="$OUT_DIR/${SUMMARY_BASENAME}.json"
+SUMMARY_MD="$OUT_DIR/${SUMMARY_BASENAME}.md"
 LOG_PATH="$LOG_DIR/timing_probe_$(basename "$SCRIPT" .py)_iter${ITERATIONS}.log"
 
 for candidate in \

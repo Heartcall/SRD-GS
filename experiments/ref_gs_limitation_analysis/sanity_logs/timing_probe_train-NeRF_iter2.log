@@ -1,22 +1,26 @@
 /home/liuly/anaconda3/envs/ref_gs/lib/python3.7/site-packages/torch/functional.py:478: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1659484809535/work/aten/src/ATen/native/TensorShape.cpp:2894.)
   return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
-Optimizing output/ref_gs_limitation_timing/materials_iter2_round4
-Output folder: output/ref_gs_limitation_timing/materials_iter2_round4 [06/07 15:11:49]
-Tensorboard not available: not logging progress [06/07 15:11:49]
-SphMipEncoding ### level: 9   size: 512 [06/07 15:11:50]
-Found transforms_train.json file, assuming Blender data set! [06/07 15:11:50]
-Reading Training Transforms [06/07 15:11:50]
-Reading Test Transforms [06/07 15:11:50]
-Generating random point cloud (100000)... [06/07 15:11:50]
-resolution_scales [1.0] [06/07 15:11:50]
-Loading Training Cameras [06/07 15:11:50]
-Loading Test Cameras [06/07 15:11:54]
-Number of points at initialisation :  100000 [06/07 15:12:00]
-Training set length 100 [06/07 15:12:00]
-Training progress:   0%|          | 0/2 [00:00<?, ?it/s]Training progress:   0%|          | 0/2 [00:00<?, ?it/s]
-
-[ITER 2] Saving Gaussians [06/07 15:12:00]
-
-[ITER 2] Saving Checkpoint [06/07 15:12:01]
-
-Training complete. [06/07 15:12:01]
+Optimizing output/ref_gs_limitation_timing/materials_iter2_round5
+Output folder: output/ref_gs_limitation_timing/materials_iter2_round5 [06/07 17:15:02]
+Tensorboard not available: not logging progress [06/07 17:15:02]
+SphMipEncoding ### level: 9   size: 512 [06/07 17:15:04]
+Found transforms_train.json file, assuming Blender data set! [06/07 17:15:04]
+Reading Training Transforms [06/07 17:15:04]
+Reading Test Transforms [06/07 17:15:04]
+Generating random point cloud (100000)... [06/07 17:15:04]
+resolution_scales [1.0] [06/07 17:15:05]
+Loading Training Cameras [06/07 17:15:05]
+Traceback (most recent call last):
+  File "train-NeRF.py", line 238, in <module>
+    training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint)
+  File "train-NeRF.py", line 32, in training
+    scene = Scene(dataset, gaussians, resolution_scales=[1.0,])
+  File "/home/liuly/Surface_Reconstruction/Glossy/SRD-GS-ref/scene/__init__.py", line 75, in __init__
+    self.train_cameras[resolution_scale] = cameraList_from_camInfos(scene_info.train_cameras, resolution_scale, args)
+  File "/home/liuly/Surface_Reconstruction/Glossy/SRD-GS-ref/utils/camera_utils.py", line 101, in cameraList_from_camInfos
+    camera_list.append(loadCam(args, id, c, resolution_scale))
+  File "/home/liuly/Surface_Reconstruction/Glossy/SRD-GS-ref/utils/camera_utils.py", line 95, in loadCam
+    rays_o=rays_o, rays_d=rays_d
+  File "/home/liuly/Surface_Reconstruction/Glossy/SRD-GS-ref/scene/cameras.py", line 59, in __init__
+    self.full_proj_transform = (self.world_view_transform.unsqueeze(0).bmm(self.projection_matrix.unsqueeze(0))).squeeze(0)
+RuntimeError: CUDA error: CUBLAS_STATUS_NOT_INITIALIZED when calling `cublasCreate(handle)`

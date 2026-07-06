@@ -19,14 +19,14 @@
     "output/ref_gs_limitation_timing/materials_iter2_round5"
   ],
   "conda_activate_exit": 0,
-  "dry_run": false,
-  "exit_code": 1,
+  "dry_run": true,
+  "exit_code": 0,
   "iterations": 2,
   "log_path": "experiments/ref_gs_limitation_analysis/sanity_logs/timing_probe_train-NeRF_iter2.log",
   "model": "output/ref_gs_limitation_timing/materials_iter2_round5",
-  "peak_gpu_memory_mb": "822",
-  "peak_gpu_memory_reason": "",
+  "peak_gpu_memory_mb": "NA",
+  "peak_gpu_memory_reason": "dry_run",
   "scene": "/data/liuly/dataset/3DGS/NeRF Synthetic/materials",
   "script": "train-NeRF.py",
-  "wall_clock_seconds": 7
+  "wall_clock_seconds": 0
 }

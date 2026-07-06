@@ -2,8 +2,8 @@
 set +e
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-LOG_DIR="$ROOT_DIR/experiments/ref_gs_limitation_analysis/sanity_logs"
-LOG_FILE="$LOG_DIR/env_check.txt"
+LOG_DIR="${ENV_CHECK_LOG_DIR:-$ROOT_DIR/experiments/ref_gs_limitation_analysis/sanity_logs}"
+LOG_FILE="${ENV_CHECK_LOG_FILE:-$LOG_DIR/env_check.txt}"
 mkdir -p "$LOG_DIR"
 
 {

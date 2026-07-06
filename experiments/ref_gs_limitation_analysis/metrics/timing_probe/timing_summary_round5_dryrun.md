@@ -4,11 +4,11 @@
 - scene: `/data/liuly/dataset/3DGS/NeRF Synthetic/materials`
 - model: `output/ref_gs_limitation_timing/materials_iter2_round5`
 - iterations: `2`
-- dry_run: `False`
-- exit_code: `1`
-- wall_clock_seconds: `7`
-- peak_gpu_memory_mb: `822`
-- peak_gpu_memory_reason: ``
+- dry_run: `True`
+- exit_code: `0`
+- wall_clock_seconds: `0`
+- peak_gpu_memory_mb: `NA`
+- peak_gpu_memory_reason: `dry_run`
 - checkpoint_size_bytes: `NA`
 - log_path: `experiments/ref_gs_limitation_analysis/sanity_logs/timing_probe_train-NeRF_iter2.log`
 

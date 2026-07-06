@@ -126,6 +126,15 @@ class Round3PipelineTests(unittest.TestCase):
 
     def test_timing_probe_strict_returns_training_exit_code(self):
         with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            env = dict(os.environ)
+            env.update(
+                {
+                    "TIMING_OUT_DIR": str(tmp_path / "timing_metrics"),
+                    "TIMING_LOG_DIR": str(tmp_path / "timing_logs"),
+                    "TIMING_SUMMARY_BASENAME": "unit_timing_summary",
+                }
+            )
             cmd = [
                 "bash",
                 "experiments/ref_gs_limitation_analysis/run_timing_probe.sh",
@@ -139,16 +148,21 @@ class Round3PipelineTests(unittest.TestCase):
                 "1",
                 "--strict",
             ]
-            result = subprocess.run(cmd, cwd=REPO_ROOT, text=True, capture_output=True)
+            result = subprocess.run(cmd, cwd=REPO_ROOT, env=env, text=True, capture_output=True)
             self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertTrue((tmp_path / "timing_metrics" / "unit_timing_summary.json").exists())
+            self.assertTrue((tmp_path / "timing_metrics" / "unit_timing_summary.md").exists())
+            self.assertTrue((tmp_path / "timing_logs" / "timing_probe_definitely_missing_train_script_iter1.log").exists())
 
     def test_component_sanity_strict_returns_nonzero_on_failed_training(self):
         with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
             env = dict(os.environ)
             env.update(
                 {
                     "STRICT": "1",
                     "ROUND_NAME": "unit_strict",
+                    "SANITY_LOG_DIR": str(tmp_path / "sanity_logs"),
                     "RUN_TRAIN": "1",
                     "RUN_EXPORT": "0",
                     "RUN_EVAL": "0",
@@ -167,6 +181,9 @@ class Round3PipelineTests(unittest.TestCase):
                 capture_output=True,
             )
             self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertTrue((tmp_path / "sanity_logs" / "component_sanity_unit_strict_summary.md").exists())
+            self.assertTrue((tmp_path / "sanity_logs" / "component_sanity_unit_strict_train.log").exists())
+            self.assertTrue((tmp_path / "sanity_logs" / "env_check_unit_strict.txt").exists())
 
 
 if __name__ == "__main__":
